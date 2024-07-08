@@ -5,21 +5,19 @@ using TelltaleTextureTool.Utilities;
 using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.TelltaleEnums;
 using System.Linq;
-using TelltaleTextureTool.TelltaleTypes;
 using Hexa.NET.DirectXTex;
-using TelltaleTextureTool.DirectX.Enums;
 using Silk.NET.DXGI;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 
 namespace TelltaleTextureTool.Main
 {
     /// <summary>
-    /// Main class for generating a DDS header.
+    /// Main class for generating a DDS file from a D3DTX.
     /// </summary>
-    public class DDS_Master
+    public unsafe class DDS_Master
     {
-        public DDS dds;
-        public List<byte[]> textureData = [];
+        public byte[] header = [];
+        public byte[] pixelData = [];
 
         /// <summary>
         /// Create a DDS file from a D3DTX.
@@ -27,154 +25,89 @@ namespace TelltaleTextureTool.Main
         /// <param name="d3dtx">The D3DTX data that will be used.</param>
         public DDS_Master(D3DTX_Master d3dtx)
         {
-            // NOTES: Remember that mip tables are reversed
-            // So in that vein cubemap textures are likely in order but reversed
-            // Some normal maps specifically with type 4 (eTxNormalMap) channels are all reversed (ABGR instead of RGBA)
-
-            // Initialize the DDS with a default header
-            dds = new DDS
+            if (d3dtx.HasDDSHeader())
             {
-                header = DDS_HEADER.GetPresetHeader()
-            };
-
-            if (d3dtx.IsMbin())
-            {
-                InitializeDDSHeaderForMBIN(d3dtx);
                 return;
             }
 
-            // If the D3DTX is a legacy D3DTX (before mVersions exist), we can just get the DDS header from the file
+            InitializeDDSHeader(d3dtx);
+            InitializeDDSPixelData(d3dtx);
+        }
+
+        private void InitializeDDSHeader(D3DTX_Master d3dtx)
+        {
+            ScratchImage image = DirectXTex.CreateScratchImage();
+            D3DTXMetadata d3dtxMetadata = d3dtx.GetMetadata();
+
+            Console.WriteLine("D3dtx width: " + d3dtxMetadata.Width);
+            Console.WriteLine("D3dtx height: " + d3dtxMetadata.Height);
+            Console.WriteLine("D3dtx mip map count: " + d3dtxMetadata.MipLevels);
+            Console.WriteLine("D3dtx d3d format: " + d3dtxMetadata.D3DFormat);
+
+            T3SurfaceFormat surfaceFormat = d3dtxMetadata.Format;
+            T3SurfaceGamma surfaceGamma = d3dtxMetadata.SurfaceGamma;
+            T3PlatformType platformType = d3dtxMetadata.Platform;
+
+            TexMetadata metadata = new()
+            {
+                Width = d3dtxMetadata.Width,
+                Height = d3dtxMetadata.Height,
+                ArraySize = d3dtxMetadata.ArraySize,
+                Depth = d3dtxMetadata.Depth,
+                MipLevels = d3dtxMetadata.MipLevels,
+                Format = d3dtx.IsLegacyD3DTX() ? (int)DDS_HELPER.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (int)DDS_HELPER.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
+                Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
+            };
+
+            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat))
+            {
+                metadata.MipLevels = 1;
+            }
+
+            image.Initialize(metadata, CPFlags.None);
+
+            header = DDS_DirectXTexNet.GetDDSHeaderBytes(image);
+
+            Console.WriteLine("Header length: " + header.Length);
+
+            image.Release();
+        }
+
+        private void InitializeDDSPixelData(D3DTX_Master d3dtx)
+        {
+            // NOTES: Telltale mip levels are reversed in Poker Night 2 and above. The first level are the smallest mip levels and the last level is the largest mip level.
+            // The faces are NOT reverse.
+            // This is likely corelating with the way that KTX and KTX2 files are written.
+            // Some normal maps specifically with type 4 (eTxNormalMap) channels are all reversed (ABGR instead of RGBA) (Only applies for newer games)
+            // Some surface formats are dependant on platforms. For example, iOS textures have their R and B channels swapped.
+            // Some surface formats are not supported by DDS. In this case, the texture will be written as a raw texture.
+
             if (d3dtx.IsLegacyD3DTX())
             {
-                var pixelData = d3dtx.GetLegacyPixelData();
-                dds.header = DDS_HEADER.GetHeaderFromBytes(pixelData[0], true);
+                pixelData = d3dtx.GetPixelData()[d3dtx.GetPixelData().Count - 1];
                 return;
             }
 
             D3DTXMetadata metadata = d3dtx.GetMetadata();
 
             T3SurfaceFormat surfaceFormat = metadata.Format;
-            T3SurfaceGamma surfaceGamma = metadata.SurfaceGamma;
 
-            // Initialize DDS flags
-            dds.header.dwFlags |= metadata.MipLevels > 1 ? DDSD.MIPMAPCOUNT : 0x0;
-            dds.header.dwFlags |= d3dtx.IsTextureCompressed() ? DDSD.LINEARSIZE : DDSD.PITCH;
-            dds.header.dwFlags |= metadata.IsVolumemap() ? DDSD.DEPTH : 0x0;
+            List<byte[]> textureData = [];
 
-            DXGIFormat dxgiFormat = DDS_HELPER.GetDXGIFromTelltaleSurfaceFormat(surfaceFormat, surfaceGamma);
-            if (metadata.Platform == T3PlatformType.ePlatform_iPhone)
+            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) || D3DTX_Master.IsPlatformIncompatibleWithDDS(metadata.Platform))
             {
-                dxgiFormat = DDS_HELPER.GetDXGIFormatWithSwappedChannels(dxgiFormat);
+                textureData.Add(d3dtx.GetPixelDataByFirstMipmapIndex(metadata.Format, (int)metadata.Width, (int)metadata.Height, metadata.Platform));
             }
-
-            // Initialize DDS width, height, depth, pitch, mip level count
-            dds.header.dwWidth = metadata.Width;
-            dds.header.dwHeight = metadata.Height;
-            dds.header.dwPitchOrLinearSize = DDS_DirectXTexNet.ComputePitch(dxgiFormat, dds.header.dwWidth, dds.header.dwHeight);
-            dds.header.dwDepth = metadata.Depth;
-
-            // If the texture has more than 1 mip level, set the mip level count
-            if (metadata.MipLevels > 1)
-                dds.header.dwMipMapCount = metadata.MipLevels;
-            else dds.header.dwMipMapCount = 0;
-
-            if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB || surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGBA || surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB1A)
+            else
             {
-                dds.header.dwMipMapCount = 1;
-                dds.header.dwPitchOrLinearSize = 0;
-            }
-
-            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat))
-            {
-                // dds.header.dwPitchOrLinearSize = 0;
-                dds.header.dwMipMapCount = 1;
-            }
-
-            // Set the DDS pixel format info
-            dds.header.ddspf = GetPixelFormatHeaderFromT3Surface(surfaceFormat);
-
-            // We will enable DX10 header if the format is not a legacy format. Telltale won't use old formats in DirectX 11 and above.
-            if (dds.header.ddspf.dwFourCC == ByteFunctions.ConvertStringToUInt32("DX10") || metadata.IsArrayTexture())
-            {
-                dds.header.ddspf.dwFourCC = ByteFunctions.ConvertStringToUInt32("DX10");
-                dds.dxt10Header = DDS_HEADER_DXT10.GetPresetDXT10Header();
-
-                dds.dxt10Header.dxgiFormat = dxgiFormat;
-
-                // 1D textures don't exist in Telltale games
-                dds.dxt10Header.resourceDimension = metadata.IsVolumemap() ? D3D10_RESOURCE_DIMENSION.TEXTURE3D : D3D10_RESOURCE_DIMENSION.TEXTURE2D;
-
-                dds.dxt10Header.arraySize = metadata.ArraySize;
-
-                if (metadata.IsCubemap())
-                {
-                    dds.dxt10Header.miscFlag |= DDS_RESOURCE.MISC_TEXTURECUBE;
-                }
-
-            }
-
-            // Mandatory flag
-            dds.header.dwCaps |= DDSCAPS.TEXTURE;
-
-            // If the texture has mipmaps, enable the mipmap flags
-            if (metadata.MipLevels > 1)
-            {
-                dds.header.dwCaps |= DDSCAPS.COMPLEX;
-                dds.header.dwCaps |= DDSCAPS.MIPMAP;
-            }
-
-            // If the texture is a cube texture, enable the cube texture flags
-            if (metadata.IsCubemap())
-            {
-                dds.header.dwCaps |= DDSCAPS.COMPLEX;
-
-                dds.header.dwCaps2 |= DDSCAPS2.CUBEMAP;
-                dds.header.dwCaps2 |= DDSCAPS2.CUBEMAP_POSITIVEX;
-                dds.header.dwCaps2 |= DDSCAPS2.CUBEMAP_NEGATIVEX;
-                dds.header.dwCaps2 |= DDSCAPS2.CUBEMAP_POSITIVEY;
-                dds.header.dwCaps2 |= DDSCAPS2.CUBEMAP_NEGATIVEY;
-                dds.header.dwCaps2 |= DDSCAPS2.CUBEMAP_POSITIVEZ;
-                dds.header.dwCaps2 |= DDSCAPS2.CUBEMAP_NEGATIVEZ;
-            }
-            // If the texture is a volume texture, enable the volume texture flags
-            else if (metadata.IsVolumemap())
-            {
-                dds.header.dwCaps |= DDSCAPS.COMPLEX;
-
-                dds.header.dwCaps2 |= DDSCAPS2.VOLUME;
-            }
-
-            // Extract pixel data using streamheaders to make my life easier
-            RegionStreamHeader[] streamHeaders = d3dtx.GetRegionStreamHeaders();
-
-            textureData = [];
-
-            // Get all pixel data from the D3DTX
-            var d3dtxTextureData = d3dtx.GetPixelData();
-
-            if (metadata.IsVolumemap())
-            {
-                if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) || D3DTX_Master.IsPlatformIncompatibleWithDDS(metadata.Platform))
-                {
-                    dds.header.dwMipMapCount = 1;
-                    textureData.Add(d3dtx.GetPixelDataByFirstMipmapIndex(metadata.Format, (int)metadata.Width, (int)metadata.Height, metadata.Platform));
-                }
-                else
+                if (metadata.IsVolumemap())
                 {
                     int divideBy = 1;
-                    for (int i = 0; i < dds.header.dwMipMapCount; i++)
+                    for (int i = 0; i < metadata.MipLevels; i++)
                     {
                         textureData.Add(d3dtx.GetPixelDataByMipmapIndex(i, metadata.Format, (int)metadata.Width / divideBy, (int)metadata.Height / divideBy, metadata.Platform));
                         divideBy *= 2;
                     }
-                }
-            }
-            else
-            {
-                if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) || D3DTX_Master.IsPlatformIncompatibleWithDDS(metadata.Platform))
-                {
-                    dds.header.dwMipMapCount = 1;
-                    textureData.Add(d3dtx.GetPixelDataByFirstMipmapIndex(metadata.Format, (int)metadata.Width, (int)metadata.Height, metadata.Platform));
                 }
                 else
                 {
@@ -186,189 +119,9 @@ namespace TelltaleTextureTool.Main
                         textureData.Add(d3dtx.GetPixelDataByFaceIndex(i, metadata.Format, (int)metadata.Width, (int)metadata.Height, metadata.Platform));
                     }
                 }
-
-                Console.WriteLine("texture data count: " + textureData.Count);
-
-                // byte[] d3dtxTextureDataArray = textureData.SelectMany(b => b).ToArray();
-
-                for (int i = 0; i < streamHeaders.Length; i++)
-                {
-                    // else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB)
-                    // {
-                    //     AtcDecoder atcDecoder = new AtcDecoder();
-                    //     if (i == 0)
-                    //     {
-                    //         data = UTEX.readATC(data, 0, new byte[(int)dds.header.dwWidth * (int)dds.header.dwHeight * 4], (int)dds.header.dwWidth, (int)dds.header.dwHeight);
-                    //         // data = atcDecoder.DecompressAtcRgb4(data, (int)dds.header.dwWidth, (int)dds.header.dwHeight);
-                    //     }
-                    //     else
-                    //     {
-                    //         // data = atcDecoder.DecompressAtcRgb4(data, (int)dds.header.dwWidth / (i * 2), (int)dds.header.dwHeight / (i * 2));
-                    //     }
-
-                    // }
-                    // else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGBA || surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB1A)
-                    // {
-                    //     AtcDecoder atcDecoder = new AtcDecoder();
-                    //     if (i == 0)
-                    //     {
-                    //         data = UTEX.readATA(data, 0, new byte[(int)dds.header.dwWidth * (int)dds.header.dwHeight * 4], (int)dds.header.dwWidth, (int)dds.header.dwHeight);
-                    //         // data = atcDecoder.DecompressAtcRgba8(data, (int)dds.header.dwWidth, (int)dds.header.dwHeight);
-                    //     }
-                    //     else
-                    //     {
-                    //         // data = atcDecoder.DecompressAtcRgba8(data, (int)dds.header.dwWidth / (i * 2), (int)dds.header.dwHeight / (i * 2));
-                    //     }
-                    // }
-                }
             }
 
-            dds.Print();
-        }
-
-        public void InitializeDDSHeaderForMBIN(D3DTX_Master d3dtx)
-        {
-            ScratchImage image = DirectXTex.CreateScratchImage();
-            D3DTXMetadata d3dtxMetadata = d3dtx.GetMetadata();
-
-            Console.WriteLine("D3dtx width: " + d3dtxMetadata.Width);
-            Console.WriteLine("D3dtx height: " + d3dtxMetadata.Height);
-            Console.WriteLine("D3dtx mip map count: " + d3dtxMetadata.MipLevels);
-            Console.WriteLine("D3dtx d3d format: " + d3dtxMetadata.D3DFormat);
-
-            TexMetadata metadata = new()
-            {
-                ArraySize = 1,
-                Depth = 1,
-                Dimension = TexDimension.Texture2D,
-                Format = (int)DDS_HELPER.GetDXGIFormatFromD3DFormat(d3dtxMetadata.D3DFormat),
-                Height = d3dtxMetadata.Width,
-                Width = d3dtxMetadata.Height,
-                MipLevels = d3dtxMetadata.MipLevels,
-                MiscFlags = 0,
-                MiscFlags2 = 0,
-            };
-
-            image.Initialize(metadata, CPFlags.None);
-            Console.WriteLine("DDS Metadata:");
-
-            Console.WriteLine("Width: " + image.GetMetadata().Width);
-            Console.WriteLine("Width: " + image.GetMetadata().Width);
-            Console.WriteLine("Height: " + image.GetMetadata().Height);
-            Console.WriteLine("Depth: " + image.GetMetadata().Depth);
-            Console.WriteLine("Array Size: " + image.GetMetadata().ArraySize);
-            Console.WriteLine("Mip Levels: " + image.GetMetadata().MipLevels);
-
-
-            dds.header = DDS_HEADER.GetHeaderFromBytes(DDS_DirectXTexNet.GetDDSByteArray(image, DDSFlags.ForceDx9Legacy), true);
-
-            Console.WriteLine("DDS Header:");
-            dds.header.Print();
-
-            image.Release();
-        }
-
-        /// <summary>
-        /// Get the DDS Pixelformat data from a Telltale surface format.
-        /// </summary>
-        /// <param name="surface">The Telltale surface format.</param>
-        /// <returns>DDS Pixelformat object with the correct surface format settings.</returns>
-        private DDSPixelFormat GetPixelFormatHeaderFromT3Surface(T3SurfaceFormat surface)
-        {
-            return surface switch
-            {
-                // Uncompressed formats
-                T3SurfaceFormat.eSurface_ARGB8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'ARGB8'
-                T3SurfaceFormat.eSurface_ARGB16 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 64, 0x00, 0x00, 0x00, 0x00),// 'ARGB16'
-                T3SurfaceFormat.eSurface_RGB565 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 16, 0x00, 0x00, 0x00, 0x00),// 'RGB565'
-                T3SurfaceFormat.eSurface_ARGB1555 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 16, 0x00, 0x00, 0x00, 0x00),// 'ARGB1555'
-                T3SurfaceFormat.eSurface_ARGB4 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 16, 0x00, 0x00, 0x00, 0x00),// 'ARGB4'  //Due to a long-standing issue in DDS readers and writers, it's better to use DX10 header for this format
-                T3SurfaceFormat.eSurface_ARGB2101010 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'ARGB2101010'   
-                T3SurfaceFormat.eSurface_R16 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 16, 0x00, 0x00, 0x00, 0x00),// 'R16' TODO, COULD BE L16
-                T3SurfaceFormat.eSurface_RG16 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.ALPHAPIXELS, DDPF.RGB), 0, 32, 0x00, 0x00, 0x00, 0x00),// 'RG16'
-                T3SurfaceFormat.eSurface_RGBA16 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 64, 0x00, 0x00, 0x00, 0x00),// 'RGBA16'
-                T3SurfaceFormat.eSurface_RG8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 16, 0x00, 0x00, 0x00, 0x00),// 'RG8'
-                T3SurfaceFormat.eSurface_RGBA8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RGBA8'
-                T3SurfaceFormat.eSurface_R32 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'R32'
-                T3SurfaceFormat.eSurface_RG32 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 64, 0x00, 0x00, 0x00, 0x00),// 'RG32' 
-                T3SurfaceFormat.eSurface_RGBA32 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 128, 0x00, 0x00, 0x00, 0x00),// 'RGBA32'
-                T3SurfaceFormat.eSurface_R8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 8, 0x00, 0x00, 0x00, 0x00),// 'R8'
-                T3SurfaceFormat.eSurface_RGBA8S => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RGBA8S'
-                T3SurfaceFormat.eSurface_A8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.ALPHA), 0, 8, 0x00, 0x00, 0x00, 0xff),// 'A8'
-                T3SurfaceFormat.eSurface_L8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.LUMINANCE), 0, 8, 0xff, 0x00, 0x00, 0x00),// 'L8'
-                T3SurfaceFormat.eSurface_AL8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.LUMINANCE, DDPF.ALPHAPIXELS), 0, 16, 0x00ff, 0x00, 0x00, 0xff00),// 'AL8'
-                T3SurfaceFormat.eSurface_L16 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.LUMINANCE), 0, 16, 0xffff, 0x00, 0x00, 0x00),// 'L16'
-                T3SurfaceFormat.eSurface_RG16S => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RG16S'
-                T3SurfaceFormat.eSurface_RGBA16S => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 64, 0x00, 0x00, 0x00, 0x00),// 'RGBA16S'
-                T3SurfaceFormat.eSurface_R16UI => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 16, 0x00, 0x00, 0x00, 0x00),// 'R16UI'
-                T3SurfaceFormat.eSurface_RG16UI => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RG16UI'
-                T3SurfaceFormat.eSurface_RGBA1010102F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RGBA1010102F'
-                T3SurfaceFormat.eSurface_RGB111110F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RGB111110F'
-                T3SurfaceFormat.eSurface_R16F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 16, 0x00, 0x00, 0x00, 0x00),// 'R16F'
-                T3SurfaceFormat.eSurface_RG16F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RG16F'
-                T3SurfaceFormat.eSurface_RGBA16F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 64, 0x00, 0x00, 0x00, 0x00),// 'RGBA16F'
-                T3SurfaceFormat.eSurface_R32F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'R32F'
-                T3SurfaceFormat.eSurface_RG32F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 64, 0x00, 0x00, 0x00, 0x00),// 'RG32F'
-                T3SurfaceFormat.eSurface_RGBA32F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 128, 0x00, 0x00, 0x00, 0x00),// 'RGBA32F'
-                T3SurfaceFormat.eSurface_RGB9E5F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'RGB9E5F'  
-
-                // Compressed formats
-                T3SurfaceFormat.eSurface_BC1 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'DXT1'
-                T3SurfaceFormat.eSurface_BC2 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'DXT3'
-                T3SurfaceFormat.eSurface_BC3 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'DXT5'
-                T3SurfaceFormat.eSurface_BC4 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'DXT5'
-                T3SurfaceFormat.eSurface_BC5 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'DXN'
-                T3SurfaceFormat.eSurface_BC6 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'BC6H'
-                T3SurfaceFormat.eSurface_BC7 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'BC7U'
-
-                // Unneeded depth conversions. These are probably inaccurate headers if they ever existed
-                T3SurfaceFormat.eSurface_DepthPCF16 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), 80, 16, 0x00, 0x00, 0x00, 0x00),// 'DepthPCF16'
-                T3SurfaceFormat.eSurface_DepthPCF24 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), 77, 24, 0x00, 0x00, 0x00, 0x00),// 'DepthPCF24'
-                T3SurfaceFormat.eSurface_Depth16 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), 80, 16, 0x00, 0x00, 0x00, 0x00),// 'Depth16'
-                T3SurfaceFormat.eSurface_Depth24 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), 77, 24, 0x00, 0x00, 0x00, 0x00),// 'Depth24'
-                T3SurfaceFormat.eSurface_DepthStencil32 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), 71, 32, 0x00, 0x00, 0x00, 0x00),// 'DepthStencil32'
-                T3SurfaceFormat.eSurface_Depth32F => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'Depth32F'
-                T3SurfaceFormat.eSurface_Depth32F_Stencil8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),// 'Depth32F_Stencil8'
-                T3SurfaceFormat.eSurface_Depth24F_Stencil8 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), 83, 32, 0x00, 0x00, 0x00, 0x00),// 'Depth24F_Stencil8'
-
-                // ATC
-                T3SurfaceFormat.eSurface_ATC_RGB => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'ATC_RGB'
-                                                                                                                                                                                //  T3SurfaceFormat.eSurface_ATC_RGB => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.Convert_String_To_UInt32("ATC "), 0x00, 0x00, 0x00, 0x00, 0x00),// 'ATC_RGB'
-
-                // ATCI
-                T3SurfaceFormat.eSurface_ATC_RGBA => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'ATC_RGBA'
-                                                                                                                                                                                 //  T3SurfaceFormat.eSurface_ATC_RGBA => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.Convert_String_To_UInt32("ATCI"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'ATC_RGBA'
-
-                // ATCA
-                T3SurfaceFormat.eSurface_ATC_RGB1A => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'ATC_RGB1A'
-                                                                                                                                                                                  //   T3SurfaceFormat.eSurface_ATC_RGB1A => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.Convert_String_To_UInt32("ATCA"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'ATC_RGB1A'
-
-                T3SurfaceFormat.eSurface_PVRTC2 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),
-                T3SurfaceFormat.eSurface_PVRTC4 => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),
-                T3SurfaceFormat.eSurface_PVRTC2a => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),
-                T3SurfaceFormat.eSurface_PVRTC4a => DDSPixelFormat.Of(32, SetDDPFFlags(DDPF.FOURCC), ByteFunctions.ConvertStringToUInt32("DX10"), 32, 0x00, 0x00, 0x00, 0x00),
-
-                // Default to DXT1 Compression
-                _ => DDSPixelFormat.Of(32, 0x04, ByteFunctions.ConvertStringToUInt32("DXT1"), 0x00, 0x00, 0x00, 0x00, 0x00),// 'DXT1'
-            };
-        }
-
-
-        /// <summary>
-        /// Set the DDS Pixel Format flags with a bitwise-OR operation.
-        /// </summary>
-        /// <param name="flags">The byte flags.</param>
-        /// <returns>The final byte flag.</returns>
-        private static uint SetDDPFFlags(params DDPF[] flags)
-        {
-            uint result = 0;
-
-            foreach (DDPF flag in flags)
-            {
-                result |= (uint)flag;
-            }
-
-            return result;
+            pixelData = textureData.SelectMany(b => b).ToArray();
         }
 
         /// <summary>
@@ -392,110 +145,29 @@ namespace TelltaleTextureTool.Main
         }
 
         /// <summary>
-        /// Get the correct DDS file from Telltale texture.????
+        /// Get the correct DDS data from a Telltale texture.
         /// </summary>
         /// <param name="d3dtx"></param>
         /// <returns></returns>
         public byte[] GetData(D3DTX_Master d3dtx)
         {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-
             Console.WriteLine("Getting data for: " + d3dtx.FilePath);
 
-            if (d3dtx.GetD3DTXObject() == null)
+
+            // If the D3DTX exists, return the pixel data.
+            if (d3dtx.d3dtxObject == null)
             {
                 throw new InvalidDataException("There is no pixel data to be written.");
             }
 
-            // Turn the dds header into bytes
-            byte[] dds_header = ByteFunctions.Combine(ByteFunctions.GetBytes(DDS.MAGIC_WORD), DDS_HELPER.GetObjectBytes(dds.header));
-
-            if (d3dtx.IsLegacyD3DTX())
+            // If the D3DTX has a DDS header, return the whole pixel data.
+            if (d3dtx.HasDDSHeader())
             {
-                if (d3dtx.IsMbin())
-                {
-                    var legacyPixelData = d3dtx.GetLegacyPixelData();
-
-                    return ByteFunctions.Combine(dds_header, legacyPixelData[legacyPixelData.Count - 1]);
-                }
-                else
-                {
-                    var legacyPixelData = d3dtx.GetLegacyPixelData();
-
-                    return legacyPixelData[legacyPixelData.Count - 1];
-                }
+                return d3dtx.GetPixelData()[d3dtx.GetPixelData().Count - 1];
             }
 
-            if (dds.header.ddspf.dwFourCC == ByteFunctions.ConvertStringToUInt32(DDS.DX10_FOURCC))
-            {
-                dds_header = ByteFunctions.Combine(dds_header, DDS_HELPER.GetObjectBytes(dds.dxt10Header));
-            }
-
-            Console.WriteLine("Getting data for: " + textureData.Count);
-
-            return ByteFunctions.Combine(dds_header, textureData.SelectMany(b => b).ToArray());
-
-            // int arraySize = 1; arraySize = (int)dds.dxt10Header.arraySize;
-            // if (d3dtx.IsLegacyD3DTX())
-            // {
-            //     var legacyByteArray = d3dtx.GetLegacyPixelData()[0].ToArray();
-            //     finalData = ByteFunctions.Combine(finalData, legacyByteArray);
-
-            //     return finalData;
-            // }
-
-            // // If the texture is Volumemap, just use the texture data we already have. We stable sorted the data earlier.
-            // if (d3dtx.IsVolumeTexture())
-            // {
-            //     byte[] volumeTextureData = textureData.SelectMany(b => b).ToArray();
-
-            //     finalData = ByteFunctions.Combine(finalData, volumeTextureData);
-            //     return finalData;
-            // }
-
-            // // If the texture is anything else, but a Volumemap, use this sorting algorithm
-            // // It supports Cubemap array textures as well (Cubemap array textures are like 2D array textures * 6)
-
-            // // This is the initial offset from the texture data. Currently it only skips through 1 region header at a time.
-            // int sizeOffset = d3dtx.IsCubeTexture() ? 6 : 1;
-
-            // // Loop through the regions array size by the offset. 
-            // // Example 1: A normal 2D texture with 10 mips only has 10 regions. The array size is 1 and the offset is 1. It will loop 1 time.
-            // // Example 2: A 2D array texture with 3 textures and 4 mips each will have 12 (3*4) regions. The array size is 3 and the offset is 1. It will loop 3 times.
-            // // Example 3: A Cubemap texture with 7 mips will have 42 (6*7) regions. The array size is 1 and the offset is 6. It will loop 6 times.
-            // // Example 4: A Cubemap array texture with 3 cubemaps and 3 mips will have 54 (3*6*3) regions. The array size is 3 and the offset is 6. It will loop 18 times.
-            // for (int i = 0; i < arraySize * sizeOffset; i++)
-            // {
-            //     // The first index of the face.
-            //     int faceIndex = i;
-            //     List<byte[]> faceData = [];
-
-            //     //Make sure we loop at least once
-            //     nuint mipCount = dds.header.dwMipMapCount > 1 ? dds.header.dwMipMapCount : 1;
-
-            //     // Each loop here collects only 1 face of the texture. Let's use the examples from earlier.
-            //     // Example 1: The mips are 10 - the texture is 1 (1 face). We iterate 10 times while incrementing the index by 1.
-            //     // Example 2: The mips are 4 - the textures are 3 (3 faces). We iterate 4 times while incrementing the index by 3.
-            //     // Example 3: The mips are 7 - the textures are 6 (6 faces). We iterate 7 times while incrementing the index by 6.
-            //     // Example 4: The mips are 3 - the textures are 6*3 (18 faces). We iterate 3 times while incrementing the index by 18.
-            //     for (nuint j = 0; j < mipCount; j++)
-            //     {
-            //         faceData.Add(textureData[faceIndex]);
-
-            //         faceIndex += arraySize * sizeOffset;
-            //     }
-
-            //     byte[] faceDataArray = faceData.SelectMany(b => b).ToArray();
-
-            //     finalData = ByteFunctions.Combine(finalData, faceDataArray);
-            // }
-
-            // watch.Stop();
-            // var elapsedMs = watch.ElapsedMilliseconds;
-            // Console.WriteLine("Time to get data: {0}", elapsedMs);
-            // return finalData;
+            // Return the created DDS file.
+            return ByteFunctions.Combine(header, pixelData);
         }
-
-
     }
 }

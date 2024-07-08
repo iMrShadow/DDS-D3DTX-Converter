@@ -1,9 +1,6 @@
 ﻿using TelltaleTextureTool.DirectX.Enums;
 using TelltaleTextureTool.TelltaleEnums;
 using Hexa.NET.DirectXTex;
-using System;
-using System.Runtime.InteropServices;
-using System.Numerics;
 
 namespace TelltaleTextureTool.DirectX;
 
@@ -22,29 +19,12 @@ namespace TelltaleTextureTool.DirectX;
 public static partial class DDS_HELPER
 {
     /// <summary>
-    /// Returns an array of bytes from an object.
-    /// </summary>
-    /// <param name="o">The object.</param>
-    /// <returns>An array of bytes composed from the object's raw data.</returns>
-    public static byte[] GetObjectBytes(object o)
-    {
-        int size = Marshal.SizeOf(o);
-        byte[] arr = new byte[size];
-
-        IntPtr ptr = Marshal.AllocHGlobal(size);
-        Marshal.StructureToPtr(o, ptr, true);
-        Marshal.Copy(ptr, arr, 0, size);
-        Marshal.FreeHGlobal(ptr);
-        return arr;
-    }
-
-    /// <summary>
     /// Get the Telltale surface format from a DXGI format.
     /// This is used for the conversion process from .dds to .d3dtx.
     /// </summary>
     /// <param name="dxgiFormat">The Direct3D10/DXGI format.</param>
     /// <returns>The corresponding T3SurfaceFormat enum from the DXGI format.</returns>
-    private static T3SurfaceFormat GetTelltaleSurfaceFormatFromDXGI(DXGIFormat dxgiFormat)
+    private static T3SurfaceFormat GetTelltaleSurfaceFormat(DXGIFormat dxgiFormat)
     {
         return dxgiFormat switch
         {
@@ -107,9 +87,9 @@ public static partial class DDS_HELPER
     /// <param name="dxgiFormat">The Direct3D10/DXGI format.</param>
     /// <param name="surfaceFormat">(Optional) The existing Telltale surface format. Default value is UNKNOWN.</param>
     /// <returns>The corresponding T3SurfaceFormat enum from the DXGI format and Telltale surface format.</returns>
-    public static T3SurfaceFormat GetTelltaleSurfaceFormatFromDXGI(DXGIFormat dxgiFormat, T3SurfaceFormat surfaceFormat = T3SurfaceFormat.eSurface_Unknown)
+    public static T3SurfaceFormat GetTelltaleSurfaceFormat(DXGIFormat dxgiFormat, T3SurfaceFormat surfaceFormat = T3SurfaceFormat.eSurface_Unknown)
     {
-        T3SurfaceFormat surfaceFormatFromDXGI = GetTelltaleSurfaceFormatFromDXGI(dxgiFormat);
+        T3SurfaceFormat surfaceFormatFromDXGI = GetTelltaleSurfaceFormat(dxgiFormat);
 
         if (surfaceFormatFromDXGI == T3SurfaceFormat.eSurface_Unknown)
         {
@@ -149,278 +129,137 @@ public static partial class DDS_HELPER
     }
 
     /// <summary>
-    /// Returns the corresponding Direct3D10/DXGI format from a Telltale surface format. 
-    /// This is used for the conversion process from .d3dtx to .dds.
+    /// Get the DXGI format from a Telltale surface format. Gamma and platform type are optional.
     /// </summary>
     /// <param name="format"></param>
     /// <param name="gamma"></param>
+    /// <param name="platformType"></param>
     /// <returns>The corresponding DXGI_Format.</returns>
-    public static DXGIFormat GetDXGIFromTelltaleSurfaceFormat(T3SurfaceFormat format, T3SurfaceGamma gamma = T3SurfaceGamma.eSurfaceGamma_Linear)
+    public static DXGIFormat GetDXGIFormat(T3SurfaceFormat format, T3SurfaceGamma gamma = T3SurfaceGamma.eSurfaceGamma_Linear, T3PlatformType platformType = T3PlatformType.ePlatform_PC)
     {
-        switch (format)
+        DXGIFormat dxgiFormat = format switch
         {
-            default:
-                return DXGIFormat.R8G8B8A8_UNORM; // Choose R8G8B8A8 if the format is not specified. (Raw data)
-
             // In order of T3SurfaceFormat enum
             //--------------------ARGB8--------------------
-            case T3SurfaceFormat.eSurface_ARGB8:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.B8G8R8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.B8G8R8A8_UNORM;
+            T3SurfaceFormat.eSurface_ARGB8 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.B8G8R8A8_UNORM_SRGB : DXGIFormat.B8G8R8A8_UNORM,
             //--------------------ARGB16--------------------
-            case T3SurfaceFormat.eSurface_ARGB16:
-                return DXGIFormat.R16G16B16A16_UNORM;
-
+            T3SurfaceFormat.eSurface_ARGB16 => DXGIFormat.R16G16B16A16_UNORM,
             //--------------------RGB565--------------------
-            case T3SurfaceFormat.eSurface_RGB565:
-                return DXGIFormat.B5G6R5_UNORM;
-
+            T3SurfaceFormat.eSurface_RGB565 => DXGIFormat.B5G6R5_UNORM,
             //--------------------ARGB1555--------------------
-            case T3SurfaceFormat.eSurface_ARGB1555:
-                return DXGIFormat.B5G5R5A1_UNORM;
-
+            T3SurfaceFormat.eSurface_ARGB1555 => DXGIFormat.B5G5R5A1_UNORM,
             //--------------------ARGB4--------------------
-            case T3SurfaceFormat.eSurface_ARGB4:
-                return DXGIFormat.B4G4R4A4_UNORM;
-
+            T3SurfaceFormat.eSurface_ARGB4 => DXGIFormat.B4G4R4A4_UNORM,
             //--------------------ARGB2101010--------------------
-            case T3SurfaceFormat.eSurface_ARGB2101010:
-                return DXGIFormat.R10G10B10A2_UNORM;
-
+            T3SurfaceFormat.eSurface_ARGB2101010 => DXGIFormat.R10G10B10A2_UNORM,
             //--------------------R16--------------------
-            case T3SurfaceFormat.eSurface_R16:
-                return DXGIFormat.R16_UNORM;
-
+            T3SurfaceFormat.eSurface_R16 => DXGIFormat.R16_UNORM,
             //--------------------RG16--------------------
-            case T3SurfaceFormat.eSurface_RG16:
-                return DXGIFormat.R16G16_UNORM;
-
+            T3SurfaceFormat.eSurface_RG16 => DXGIFormat.R16G16_UNORM,
             //--------------------RGBA16--------------------
-            case T3SurfaceFormat.eSurface_RGBA16:
-                return DXGIFormat.R16G16B16A16_UNORM;
-
+            T3SurfaceFormat.eSurface_RGBA16 => DXGIFormat.R16G16B16A16_UNORM,
             //--------------------RG8--------------------
-            case T3SurfaceFormat.eSurface_RG8:
-                return DXGIFormat.R8G8_UNORM;
-
+            T3SurfaceFormat.eSurface_RG8 => DXGIFormat.R8G8_UNORM,
             //--------------------RGBA8--------------------
-            case T3SurfaceFormat.eSurface_RGBA8:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_RGBA8 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //--------------------R32--------------------
-            case T3SurfaceFormat.eSurface_R32:
-                return DXGIFormat.R32_FLOAT;
-
+            T3SurfaceFormat.eSurface_R32 => DXGIFormat.R32_FLOAT,
             //--------------------RG32--------------------
-            case T3SurfaceFormat.eSurface_RG32:
-                return DXGIFormat.R32G32_FLOAT;
-
+            T3SurfaceFormat.eSurface_RG32 => DXGIFormat.R32G32_FLOAT,
             //--------------------RGBA32--------------------
-            case T3SurfaceFormat.eSurface_RGBA32:
-                return DXGIFormat.R32G32B32A32_FLOAT; // It could be UINT
-
+            T3SurfaceFormat.eSurface_RGBA32 => DXGIFormat.R32G32B32A32_FLOAT,
             //--------------------R8--------------------
-            case T3SurfaceFormat.eSurface_R8:
-                return DXGIFormat.R8_UNORM;
-
+            T3SurfaceFormat.eSurface_R8 => DXGIFormat.R8_UNORM,
             //--------------------RGBA8S--------------------
-            case T3SurfaceFormat.eSurface_RGBA8S:
-                return DXGIFormat.R8G8B8A8_SNORM;
-
+            T3SurfaceFormat.eSurface_RGBA8S => DXGIFormat.R8G8B8A8_SNORM,
             //--------------------A8--------------------
-            case T3SurfaceFormat.eSurface_A8:
-                return DXGIFormat.A8_UNORM;
-
+            T3SurfaceFormat.eSurface_A8 => DXGIFormat.A8_UNORM,
             //--------------------L8--------------------
-            case T3SurfaceFormat.eSurface_L8:
-                return DXGIFormat.R8_UNORM;
-
+            T3SurfaceFormat.eSurface_L8 => DXGIFormat.R8_UNORM,
             //--------------------AL8--------------------
-            case T3SurfaceFormat.eSurface_AL8:
-                return DXGIFormat.R8G8_UNORM;
-
+            T3SurfaceFormat.eSurface_AL8 => DXGIFormat.R8G8_UNORM,
             //--------------------R16--------------------
-            case T3SurfaceFormat.eSurface_L16:
-                return DXGIFormat.R16_UNORM;
-
+            T3SurfaceFormat.eSurface_L16 => DXGIFormat.R16_UNORM,
             //--------------------RG16S--------------------
-            case T3SurfaceFormat.eSurface_RG16S:
-                return DXGIFormat.R16G16_SNORM;
-
+            T3SurfaceFormat.eSurface_RG16S => DXGIFormat.R16G16_SNORM,
             //--------------------RGBA16S--------------------
-            case T3SurfaceFormat.eSurface_RGBA16S:
-                return DXGIFormat.R16G16B16A16_SNORM;
-
+            T3SurfaceFormat.eSurface_RGBA16S => DXGIFormat.R16G16B16A16_SNORM,
             //--------------------RGBA16UI--------------------
-            case T3SurfaceFormat.eSurface_R16UI:
-                return DXGIFormat.R16G16B16A16_UINT;
-
+            T3SurfaceFormat.eSurface_R16UI => DXGIFormat.R16G16B16A16_UINT,
             //--------------------RG16F--------------------
-            case T3SurfaceFormat.eSurface_R16F:
-                return DXGIFormat.R16_FLOAT;
-
+            T3SurfaceFormat.eSurface_R16F => DXGIFormat.R16_FLOAT,
             //--------------------RGBA16F--------------------
-            case T3SurfaceFormat.eSurface_RGBA16F:
-                return DXGIFormat.R16G16B16A16_FLOAT;
-
+            T3SurfaceFormat.eSurface_RGBA16F => DXGIFormat.R16G16B16A16_FLOAT,
             //--------------------R32F--------------------
-            case T3SurfaceFormat.eSurface_R32F:
-                return DXGIFormat.R32_FLOAT;
-
+            T3SurfaceFormat.eSurface_R32F => DXGIFormat.R32_FLOAT,
             //--------------------RG32F--------------------
-            case T3SurfaceFormat.eSurface_RG32F:
-                return DXGIFormat.R32G32_FLOAT; // It could be UINT
-
+            T3SurfaceFormat.eSurface_RG32F => DXGIFormat.R32G32_FLOAT,
             //--------------------RGBA32F--------------------
-            case T3SurfaceFormat.eSurface_RGBA32F:
-                return DXGIFormat.R32G32B32A32_FLOAT;
-
+            T3SurfaceFormat.eSurface_RGBA32F => DXGIFormat.R32G32B32A32_FLOAT,
             //--------------------RGBA1010102F--------------------
-            case T3SurfaceFormat.eSurface_RGBA1010102F:
-                return DXGIFormat.R10G10B10A2_UNORM;
-
+            T3SurfaceFormat.eSurface_RGBA1010102F => DXGIFormat.R10G10B10A2_UNORM,
             //--------------------RGB111110F--------------------
-            case T3SurfaceFormat.eSurface_RGB111110F:
-                return DXGIFormat.R11G11B10_FLOAT;
-
+            T3SurfaceFormat.eSurface_RGB111110F => DXGIFormat.R11G11B10_FLOAT,
             //--------------------RGB9E5F--------------------
-            case T3SurfaceFormat.eSurface_RGB9E5F:
-                return DXGIFormat.R9G9B9E5_SHAREDEXP;
-
+            T3SurfaceFormat.eSurface_RGB9E5F => DXGIFormat.R9G9B9E5_SHAREDEXP,
             //--------------------DepthPCF16--------------------
-            case T3SurfaceFormat.eSurface_DepthPCF16:
-                return DXGIFormat.D16_UNORM;
-
+            T3SurfaceFormat.eSurface_DepthPCF16 => DXGIFormat.D16_UNORM,
             //--------------------DepthPCF24--------------------
-            case T3SurfaceFormat.eSurface_DepthPCF24:
-                return DXGIFormat.D24_UNORM_S8_UINT;
-
+            T3SurfaceFormat.eSurface_DepthPCF24 => DXGIFormat.D24_UNORM_S8_UINT,
             //--------------------Depth16--------------------
-            case T3SurfaceFormat.eSurface_Depth16:
-                return DXGIFormat.D16_UNORM;
-
+            T3SurfaceFormat.eSurface_Depth16 => DXGIFormat.D16_UNORM,
             //--------------------Depth24--------------------
-            case T3SurfaceFormat.eSurface_Depth24:
-                return DXGIFormat.D24_UNORM_S8_UINT;
-
+            T3SurfaceFormat.eSurface_Depth24 => DXGIFormat.D24_UNORM_S8_UINT,
             //--------------------DepthStencil32--------------------
-            case T3SurfaceFormat.eSurface_DepthStencil32:
-                return DXGIFormat.D32_FLOAT_S8X24_UINT;
-
+            T3SurfaceFormat.eSurface_DepthStencil32 => DXGIFormat.D32_FLOAT_S8X24_UINT,
             //--------------------Depth32F--------------------
-            case T3SurfaceFormat.eSurface_Depth32F:
-                return DXGIFormat.D32_FLOAT;
-
+            T3SurfaceFormat.eSurface_Depth32F => DXGIFormat.D32_FLOAT,
             //--------------------Depth32F_Stencil8--------------------
-            case T3SurfaceFormat.eSurface_Depth32F_Stencil8:
-                return DXGIFormat.D32_FLOAT_S8X24_UINT;
-
+            T3SurfaceFormat.eSurface_Depth32F_Stencil8 => DXGIFormat.D32_FLOAT_S8X24_UINT,
             //--------------------Depth24F_Stencil8--------------------
-            case T3SurfaceFormat.eSurface_Depth24F_Stencil8:
-                return DXGIFormat.D24_UNORM_S8_UINT;
-
+            T3SurfaceFormat.eSurface_Depth24F_Stencil8 => DXGIFormat.D24_UNORM_S8_UINT,
             //--------------------DXT1 / BC1--------------------
-            case T3SurfaceFormat.eSurface_BC1:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.BC1_UNORM_SRGB;
-                else
-                    return DXGIFormat.BC1_UNORM;
-
+            T3SurfaceFormat.eSurface_BC1 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
             //--------------------DXT2 and DXT3 / BC2--------------------
-            case T3SurfaceFormat.eSurface_BC2:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.BC2_UNORM_SRGB;
-                else
-                    return DXGIFormat.BC2_UNORM;
-
+            T3SurfaceFormat.eSurface_BC2 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC2_UNORM_SRGB : DXGIFormat.BC2_UNORM,
             //--------------------DXT4 and DXT5 / BC3--------------------
-            case T3SurfaceFormat.eSurface_BC3:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.BC3_UNORM_SRGB;
-                else
-                    return DXGIFormat.BC3_UNORM;
-
+            T3SurfaceFormat.eSurface_BC3 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
             //--------------------ATI1 / BC4--------------------
-            case T3SurfaceFormat.eSurface_BC4:
-                return DXGIFormat.BC4_UNORM;
-
+            T3SurfaceFormat.eSurface_BC4 => DXGIFormat.BC4_UNORM,
             //--------------------ATI2 / BC5--------------------
-            case T3SurfaceFormat.eSurface_BC5:
-                return DXGIFormat.BC5_UNORM;
-
+            T3SurfaceFormat.eSurface_BC5 => DXGIFormat.BC5_UNORM,
             //--------------------BC6H--------------------
-            case T3SurfaceFormat.eSurface_BC6:
-                return DXGIFormat.BC6H_UF16;
-
+            T3SurfaceFormat.eSurface_BC6 => DXGIFormat.BC6H_UF16,
             //--------------------BC7--------------------
-            case T3SurfaceFormat.eSurface_BC7:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.BC7_UNORM_SRGB;
-                else
-                    return DXGIFormat.BC7_UNORM;
-
+            T3SurfaceFormat.eSurface_BC7 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC7_UNORM_SRGB : DXGIFormat.BC7_UNORM,
             //--------------------ATC--------------------
-            case T3SurfaceFormat.eSurface_ATC_RGB:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_ATC_RGB => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //--------------------ATCA--------------------
-            case T3SurfaceFormat.eSurface_ATC_RGB1A:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_ATC_RGB1A => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //--------------------ATCI--------------------
-            case T3SurfaceFormat.eSurface_ATC_RGBA:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_ATC_RGBA => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC2--------------------
-            case T3SurfaceFormat.eSurface_PVRTC2:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_PVRTC2 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC2a--------------------
-            case T3SurfaceFormat.eSurface_PVRTC2a:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_PVRTC2a => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC4--------------------
-            case T3SurfaceFormat.eSurface_PVRTC4:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_PVRTC4 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC4a--------------------
-            case T3SurfaceFormat.eSurface_PVRTC4a:
-                if (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB)
-                    return DXGIFormat.R8G8B8A8_UNORM_SRGB;
-                else
-                    return DXGIFormat.R8G8B8A8_UNORM;
-
+            T3SurfaceFormat.eSurface_PVRTC4a => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------CTX1--------------------
-            case T3SurfaceFormat.eSurface_CTX1:
-                return DXGIFormat.BC1_UNORM;
-
+            T3SurfaceFormat.eSurface_CTX1 => DXGIFormat.BC1_UNORM,
             //--------------------UNKNOWN--------------------
-            case T3SurfaceFormat.eSurface_Unknown:
-                return DXGIFormat.UNKNOWN;
+            T3SurfaceFormat.eSurface_Unknown => DXGIFormat.UNKNOWN,
+            //--------------------Default Conversion--------------------
+            _ => DXGIFormat.R8G8B8A8_UNORM, // Choose R8G8B8A8 if the format is not specified. (Raw data)
+        };
+
+        if (platformType == T3PlatformType.ePlatform_iPhone)
+        {
+            dxgiFormat = GetDXGIFormatWithSwappedChannels(dxgiFormat);
         }
+
+        return dxgiFormat;
     }
 
     public static DXGIFormat GetDXGIFormatWithSwappedChannels(DXGIFormat dxgiFormat)
@@ -444,7 +283,7 @@ public static partial class DDS_HELPER
     /// <param name="dxgiFormat">The DXGI format.</param>
     /// <param name="metadata">The metadata of our .dds file. It is used in determining if the alpha is premultiplied.</param>
     /// <returns>The corresponding Direct3D9 format.</returns>
-    public static D3DFormat GetD3DFORMATFromDXGIFormat(DXGIFormat dxgiFormat, TexMetadata metadata)
+    public static D3DFormat GetD3DFORMAT(DXGIFormat dxgiFormat, TexMetadata metadata)
     {
         return dxgiFormat switch
         {
@@ -498,7 +337,7 @@ public static partial class DDS_HELPER
     /// <param name="dxgiFormat">The DXGI format.</param>
     /// <param name="metadata">The metadata of our .dds file. It is used in determining if the alpha is premultiplied.</param>
     /// <returns>The corresponding Direct3D9 format.</returns>
-    public static DXGIFormat GetDXGIFormatFromD3DFormat(D3DFormat format)
+    public static DXGIFormat GetDXGIFormat(D3DFormat format)
     {
         return format switch
         {
@@ -548,25 +387,7 @@ public static partial class DDS_HELPER
         };
     }
 
-    /// <summary>
-    /// Returns the corresponding Direct3D9 surface format from a Direct3D10/DXGI format.
-    /// This is used for the conversion process from .d3dtx to .dds. (Legacy .d3dtx)
-    /// </summary>
-    /// <param name="dxgiFormat">The DXGI format.</param>
-    /// <param name="metadata">The metadata of our .dds file. It is used in determining if the alpha is premultiplied.</param>
-    /// <returns>The corresponding Direct3D9 format.</returns>
-    public static bool IsPremultipliedAlpha(D3DFormat format)
-    {
-        return format switch
-        {
-            D3DFormat.DXT2 => true,
-            D3DFormat.DXT4 => true,
-
-            _ => false
-        };
-    }
-
-    internal static T3TextureLayout GetDimensionFromDDS(TexMetadata metadata)
+    public static T3TextureLayout GetDimensionFromDDS(TexMetadata metadata)
     {
         if (metadata.ArraySize > 1)
         {
@@ -581,6 +402,4 @@ public static partial class DDS_HELPER
             return metadata.IsCubemap() ? T3TextureLayout.eTextureLayout_Cube : T3TextureLayout.eTextureLayout_2D;
         }
     }
-
-    
 }
