@@ -19,6 +19,8 @@ using TelltaleTextureTool.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using IImage = Avalonia.Media.IImage;
+using TelltaleTextureTool.DirectX;
+using Hexa.NET.DirectXTex;
 
 namespace TelltaleTextureTool.ViewModels;
 
@@ -149,7 +151,7 @@ public partial class MainViewModel : ViewModelBase
             if (_dataGridSelectedItem != value)
             {
                 _dataGridSelectedItem = value;
-                PreviewImageAsync();
+                PreviewImage();
                 ResetPanAndZoomCommand.Execute(null);
             }
         }
@@ -650,15 +652,25 @@ public partial class MainViewModel : ViewModelBase
             if (!File.Exists(textureFilePath))
                 throw new DirectoryNotFoundException("File was not found.");
 
-            D3DTXVersion conversionType = GetD3DTXConversionType();
+            string debugInfo = string.Empty;
 
-            var d3dtx = new D3DTX_Master();
+            if (workingDirectoryFile.FileType == ".d3dtx")
+            {
+                D3DTXVersion conversionType = GetD3DTXConversionType();
 
-            d3dtx.ReadD3DTXFile(textureFilePath, conversionType);
+                var d3dtx = new D3DTX_Master();
+                d3dtx.ReadD3DTXFile(textureFilePath, conversionType);
+
+                debugInfo = d3dtx.GetD3DTXDebugInfo();
+            }
+            else if (workingDirectoryFile.FileType == ".dds")
+            {
+                debugInfo = DDS_DirectXTexNet.GetDDSDebugInfo(textureFilePath);
+            }
+
+            var messageBox = MessageBoxes.GetDebugInformationBox(debugInfo);
 
             var mainWindow = GetMainWindow();
-            var messageBox = MessageBoxes.GetDebugInformationBox(d3dtx.GetD3DTXDebugInfo());
-
             var result = await MessageBoxManager.GetMessageBoxStandard(messageBox)
                     .ShowWindowDialogAsync(mainWindow);
         }
@@ -724,7 +736,7 @@ public partial class MainViewModel : ViewModelBase
         }
         finally
         {
-            PreviewImageAsync();
+            await PreviewImage();
             await UpdateUiAsync();
         }
     }
@@ -888,7 +900,8 @@ public partial class MainViewModel : ViewModelBase
         ChooseOutputDirectoryCheckBoxEnabledStatus = false;
         DebugButtonStatus = false;
         ChooseOutputDirectoryCheckboxStatus = false;
-        ImageProperties = ImageProperties.GetImagePropertiesFromInvalid();
+
+        ImageProperties = ImageData.GetImagePropertiesFromInvalid();
         ImagePreview = new SvgImage()
         {
             Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
@@ -896,7 +909,7 @@ public partial class MainViewModel : ViewModelBase
         ImageNamePreview = string.Empty;
     }
 
-    private async Task PreviewImageAsync()
+    private async Task PreviewImage()
     {
         try
         {
@@ -910,8 +923,28 @@ public partial class MainViewModel : ViewModelBase
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
 
             ImageNamePreview = workingDirectoryFile.FileName + workingDirectoryFile.FileType;
-            ImageProperties = GetImageProperties(filePath, extension);
-            ImagePreview = GetImagePreview(filePath, extension);
+
+
+            TextureType textureType = TextureType.Unknown;
+            if (extension != string.Empty)
+                textureType = GetTextureTypeFromItem(extension.ToUpperInvariant().Remove(0, 1));
+
+            ImageData imageData = new(filePath, textureType, GetD3DTXConversionType());
+
+            ImageProperties = imageData.ImageProperties;
+
+            if (imageData.ImageBitmap == null)
+            {
+                ImagePreview = new SvgImage()
+                {
+                    Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
+                };
+            }
+            else
+            {
+                ImagePreview = imageData.ImageBitmap;
+            }
+
         }
         catch (Exception ex)
         {
@@ -931,44 +964,6 @@ public partial class MainViewModel : ViewModelBase
         await SafeRefreshDirectoryAsync();
         await UpdateUiAsync();
     }
-
-    private IImage GetImagePreview(string filePath, string extension)
-    {
-        return extension.ToLower() switch
-        {
-            ".d3dtx" => ImageUtilities.ConvertD3dtxToBitmap(filePath, GetD3DTXConversionType()),
-            ".dds" => ImageUtilities.ConvertFileFromDdsToBitmap(filePath),
-            ".tga" => ImageUtilities.ConvertFileFromTgaToBitmap(filePath),
-            ".tiff" => ImageUtilities.ConvertTiffToBitmap(filePath),
-            ".tif" => ImageUtilities.ConvertTiffToBitmap(filePath),
-            ".png" => new Bitmap(filePath),
-            ".jpg" => new Bitmap(filePath),
-            ".jpeg" => new Bitmap(filePath),
-            ".bmp" => new Bitmap(filePath),
-            _ => new SvgImage { Source = SvgSource.Load(ErrorSvgFilename, _assetsUri) }
-        };
-    }
-
-
-    private ImageProperties GetImageProperties(string filePath, string extension)
-    {
-        var supportedExtensions = _allTypes;
-
-        if (supportedExtensions.Contains(extension.ToLower()))
-        {
-            return extension.ToLower() switch
-            {
-                ".d3dtx" => ImageProperties.GetImagePropertiesFromD3DTX(filePath, GetD3DTXConversionType()),
-                ".dds" => ImageProperties.GetDdsProperties(filePath),
-                ".ktx2" => ImageProperties.GetKtx2Properties(filePath),
-                _ => ImageProperties.GetImagePropertiesFromOthers(filePath),
-            };
-        }
-
-        // Return empty properties for unsupported formats
-        return ImageProperties.GetImagePropertiesFromInvalid();
-    }
-
 
     private async Task HandleImagePreviewErrorAsync(Exception ex)
     {

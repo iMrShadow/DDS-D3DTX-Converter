@@ -21,7 +21,6 @@ public class AboutViewModel : ViewModelBase
 
     public string Url1 = "https://docs.avaloniaui.net/docs/styling/styles";
    
-  
     public string Alias1 = "dedede/dedede/dedede/dedede";
 
     public HyperlinkContent HyperlinkContentProvider => new HyperlinkContent
@@ -33,7 +32,7 @@ public class AboutViewModel : ViewModelBase
         var url = urlObj as string;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            //https://stackoverflow.com/a/2796367/241446
+            // https://stackoverflow.com/a/2796367/241446
             using var proc = new Process { StartInfo = { UseShellExecute = true, FileName = url } };
             proc.Start();
 
