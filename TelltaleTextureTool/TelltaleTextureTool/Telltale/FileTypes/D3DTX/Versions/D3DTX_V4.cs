@@ -412,7 +412,7 @@ public class D3DTX_V4 : ID3DTX
     {
         mWidth = (uint)metadata.Width;
         mHeight = (uint)metadata.Height;
-        mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormatFromDXGI((DXGIFormat)metadata.Format, mSurfaceFormat);
+        mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format, mSurfaceFormat);
         mNumMipLevels = (uint)metadata.MipLevels > 0 ? (uint)metadata.MipLevels : 1;
 
         mPixelData.Clear();
@@ -469,8 +469,6 @@ public class D3DTX_V4 : ID3DTX
             TextureName = mName,
             Width = mWidth,
             Height = mHeight,
-            Depth = 0,
-            ArraySize = 1,
             Format = mSurfaceFormat,
             MipLevels = mNumMipLevels,
             SurfaceGamma = T3SurfaceGamma.eSurfaceGamma_Linear,

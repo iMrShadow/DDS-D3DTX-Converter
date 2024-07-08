@@ -7,6 +7,7 @@ using TelltaleTextureTool.Utilities;
 using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.DirectX.Enums;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
+using System.Linq;
 
 /*
  * NOTE:
@@ -165,14 +166,9 @@ public class D3DTX_LV5 : ID3DTX
     public int mNormalMapFmt { get; set; }
 
     /// <summary>
-    /// [4 bytes] The size of the texture data.
-    /// </summary>
-    public int mTextureDataSize { get; set; }
-
-    /// <summary>
     /// A byte array of the pixel regions in a texture. 
     /// </summary>
-    public List<byte[]> mPixelData { get; set; } = [];
+    public List<TelltalePixelData> mPixelData { get; set; } = [];
 
     public D3DTX_LV5() { }
 
@@ -205,20 +201,22 @@ public class D3DTX_LV5 : ID3DTX
         ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); //mbEncrypted [1 byte]
         writer.Write(mDetailMapBrightness); //mDetailMapBrightness [4 bytes]
         writer.Write(mNormalMapFmt); //mNormalMapFmt [4 bytes]
-        writer.Write(mTextureDataSize); //mTextureDataSize [4 bytes]
 
-        for (int i = 0; i < mTextureDataSize; i++) //DDS file including header [mTextureDataSize bytes]
+        for (int i = 0; i < mPixelData.Count; i++) //DDS file including header [mTextureDataSize bytes]
         {
-            writer.Write(mPixelData[0][i]);
+            mPixelData[i].WriteBinaryData(writer);
         }
     }
 
     public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
     {
         bool read = true;
+        bool isValid = true;
 
-        while (read)
+        while (read && isValid)
         {
+            isValid = true;
+
             mName_BlockSize = reader.ReadInt32();
             mName = ByteFunctions.ReadString(reader);
             mImportName_BlockSize = reader.ReadInt32();
@@ -255,30 +253,39 @@ public class D3DTX_LV5 : ID3DTX
                 throw new PixelDataNotFoundException("The texture does not have any pixel data!");
             }
 
-            mTextureDataSize = reader.ReadInt32();
+            uint mTextureDataSize = reader.ReadUInt32();
 
-            if (mTextureDataSize == 0)
+            if (mTextureDataSize == 0 && mbHasTextureData.mbTelltaleBoolean)
             {
                 continue;
             }
 
-            if (reader.ReadUInt32() != ByteFunctions.ConvertStringToUInt32(DDS.MAGIC_WORD))
-            {
-                PrintConsole();
-                throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
-            }
+            if (reader.BaseStream.Position == reader.BaseStream.Length)
+        {
+          PrintConsole();
+          throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
+        }
 
+        reader.BaseStream.Position -= 4;
+
+        mPixelData = [];
+
+        while (reader.BaseStream.Position < reader.BaseStream.Length)
+        {
+          int magic = reader.ReadInt32();
+          if (magic == 8 || magic == mName.Length + 8)
+          {
+            isValid = false;
             reader.BaseStream.Position -= 4;
+            break;
+          }
 
-            mPixelData = [];
+          reader.BaseStream.Position -= 4;
+          TelltalePixelData telltalePixelData = new(reader);
+          mPixelData.Add(telltalePixelData);
+        }
 
-            byte[] pixelArray = new byte[mTextureDataSize];
-            for (int i = 0; i < mTextureDataSize; i++)
-            {
-                pixelArray[i] = reader.ReadByte();
-            }
-            mPixelData.Add(pixelArray);
-            read = false;
+        read = false;
         }
 
         if (printDebug)
@@ -297,9 +304,15 @@ public class D3DTX_LV5 : ID3DTX
 
         var textureData = DDS_DirectXTexNet.GetPixelDataArrayFromSections(imageSections);
 
-        mTextureDataSize = textureData.Length;
         mPixelData.Clear();
-        mPixelData.Add(textureData);
+
+        TelltalePixelData telltalePixelData = new TelltalePixelData()
+        {
+            length = (uint)textureData.Length,
+            pixelData = textureData
+        };
+
+        mPixelData.Add(telltalePixelData);
 
         PrintConsole();
     }
@@ -311,8 +324,6 @@ public class D3DTX_LV5 : ID3DTX
             TextureName = mName,
             Width = mWidth,
             Height = mHeight,
-            Depth = 0,
-            ArraySize = 1,
             MipLevels = mNumMipLevels,
             Dimension = T3TextureLayout.eTextureLayout_2D,
             AlphaMode = mAlphaMode,
@@ -324,7 +335,7 @@ public class D3DTX_LV5 : ID3DTX
 
     public List<byte[]> GetPixelData()
     {
-        return mPixelData;
+        return mPixelData.Select(x => x.pixelData).ToList();
     }
 
     public string GetDebugInfo()
@@ -358,13 +369,11 @@ public class D3DTX_LV5 : ID3DTX
         d3dtxInfo += "mbEncrypted = " + mbEncrypted + Environment.NewLine;
         d3dtxInfo += "mDetailMapBrightness = " + mDetailMapBrightness + Environment.NewLine;
         d3dtxInfo += "mNormalMapFmt = " + mNormalMapFmt + Environment.NewLine;
-        d3dtxInfo += "mTextureDataSize = " + mTextureDataSize + Environment.NewLine;
 
-        // if (mbHasTextureData.mbTelltaleBoolean)
-        // {
-        //     d3dtxInfo += "mDDSHeader: " + Environment.NewLine + mDDSHeader.ToString() + Environment.NewLine;
-        //     d3dtxInfo += "mPixelData Count = " + mPixelData[0].Length + Environment.NewLine;
-        // }
+        for (int i = 0; i < mPixelData.Count; i++)
+        {
+            d3dtxInfo += "mPixelData[" + i + "] = " + mPixelData[i].ToString() + Environment.NewLine;
+        }
 
         d3dtxInfo += "|||||||||||||||||||||||||||||||||||||||";
 

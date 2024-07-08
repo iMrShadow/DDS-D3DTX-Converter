@@ -401,7 +401,7 @@ public class D3DTX_V8 : ID3DTX
     {
         mWidth = metadata.Width;
         mHeight = metadata.Height;
-        mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormatFromDXGI((DXGIFormat)metadata.Format, mSurfaceFormat);
+        mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format, mSurfaceFormat);
         mNumMipLevels = metadata.MipLevels > 0 ? metadata.MipLevels : 1;
         mDepth = metadata.Depth;
         mArraySize = metadata.ArraySize;

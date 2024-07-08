@@ -49,13 +49,13 @@ public partial class D3DTXMetadata
 
     public uint Width { get; set; }
 
-    public uint Height { get; set; }
+    public uint Height { get; set; } = 1;
 
-    public uint Depth { get; set; }
+    public uint Depth { get; set; } = 1;
 
-    public uint ArraySize { get; set; }
+    public uint ArraySize { get; set; } = 1;
 
-    public uint MipLevels { get; set; }
+    public uint MipLevels { get; set; } = 1;
 
     public T3SurfaceFormat Format { get; set; } = T3SurfaceFormat.eSurface_Unknown;
 

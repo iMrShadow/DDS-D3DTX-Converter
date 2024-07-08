@@ -359,6 +359,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         {
             D3DTXMetadata metadata = new D3DTXMetadata()
             {
+                TextureName = mName,
                 Width = mWidth,
                 Height = mHeight,
                 D3DFormat = mD3DFormat,
@@ -411,11 +412,10 @@ namespace TelltaleTextureTool.TelltaleD3DTX
             d3dtxInfo += "mUVOffset = " + mUVOffset + Environment.NewLine;
             d3dtxInfo += "mUVScale = " + mUVScale + Environment.NewLine;
             d3dtxInfo += "mUnknown = " + mUnknown + Environment.NewLine;
-            d3dtxInfo += "mTextureDataSize = " + mTextureDataSize + Environment.NewLine;
 
-            if (mbHasTextureData.mbTelltaleBoolean)
+            for (int i = 0; i < mPixelData.Count; i++)
             {
-                d3dtxInfo += "mPixelData Count = " + mPixelData[0].Length + Environment.NewLine;
+                d3dtxInfo += "mPixelData[" + i + "] = " + mPixelData[i].ToString() + Environment.NewLine;
             }
 
             d3dtxInfo += "|||||||||||||||||||||||||||||||||||||||";

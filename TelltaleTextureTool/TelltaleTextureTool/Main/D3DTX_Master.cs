@@ -37,6 +37,7 @@ namespace TelltaleTextureTool.Main
         public struct D3DTX_JSON
         {
             public D3DTXVersion ConversionType;
+            public bool ContainsHeader;
         }
 
         /// <summary>
@@ -279,11 +280,6 @@ namespace TelltaleTextureTool.Main
             throw new Exception("This D3DTX version is not supported. Please report this issue to the author!");
         }
 
-        public object GetD3DTXObject()
-        {
-            return d3dtxObject;
-        }
-
         /// <summary>
         /// Writes a final .d3dtx file to disk
         /// </summary>
@@ -398,7 +394,7 @@ namespace TelltaleTextureTool.Main
 
         public void WriteD3DTXJSON(string fileName, string destinationDirectory)
         {
-            if (GetD3DTXObject() == null)
+            if (d3dtxObject == null)
             {
                 return;
             }
@@ -412,10 +408,11 @@ namespace TelltaleTextureTool.Main
 
             D3DTX_JSON conversionTypeObject = new()
             {
-                ConversionType = d3dtxVersion
+                ConversionType = d3dtxVersion,
+                ContainsHeader = HasDDSHeader()
             };
 
-            List<object> jsonObjects = [conversionTypeObject, GetMetaObject(), GetD3DTXObject()];
+            List<object> jsonObjects = [conversionTypeObject, metaHeaderObject, d3dtxObject];
             //serialize the data and write it to the configuration file
             serializer.Formatting = Formatting.Indented;
             serializer.Serialize(file, jsonObjects);
@@ -506,9 +503,24 @@ namespace TelltaleTextureTool.Main
             return (int)d3dtxVersion < 3;
         }
 
-        public bool IsMbin()
+        public bool HasDDSHeader()
         {
-            return metaVersion == MetaVersion.MBIN;
+            if (d3dtxVersion > D3DTXVersion.DEFAULT)
+            {
+                return false;
+            }
+
+            foreach (var region in GetPixelData())
+            {
+                byte[] header = region.Take(128).ToArray();
+
+                if (header[0] == 0x44 && header[1] == 0x44 && header[2] == 0x53 && header[3] == 0x20)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public string GetStringFormat()
@@ -537,7 +549,7 @@ namespace TelltaleTextureTool.Main
         /// <returns></returns>
         public string GetChannelCount()
         {
-            return DDS_DirectXTexNet.GetChannelCount(DDS_HELPER.GetDXGIFromTelltaleSurfaceFormat(d3dtxMetadata.Format)).ToString();
+            return DDS_DirectXTexNet.GetChannelCount(DDS_HELPER.GetDXGIFormat(d3dtxMetadata.Format)).ToString();
         }
 
         public int GetRegionCount()
@@ -553,11 +565,6 @@ namespace TelltaleTextureTool.Main
         public bool HasMipMaps()
         {
             return d3dtxMetadata.MipLevels > 1;
-        }
-
-        public List<byte[]> GetLegacyPixelData()
-        {
-            return d3dtxObject.GetPixelData();
         }
 
         public List<byte[]> GetPixelData()
@@ -628,14 +635,14 @@ namespace TelltaleTextureTool.Main
             {
                 Console.WriteLine("Decoding PS4 texture data...");
 
-                pixelData = PSTextureDecoder.DecodePS4(pixelData, DDS_HELPER.GetDXGIFromTelltaleSurfaceFormat(surfaceFormat), width, height);
+                pixelData = PSTextureDecoder.DecodePS4(pixelData, DDS_HELPER.GetDXGIFormat(surfaceFormat), width, height);
             }
 
             else if (platformType == T3PlatformType.ePlatform_PS3 || platformType == T3PlatformType.ePlatform_WiiU)
             {
                 Console.WriteLine("Decoding PS3 texture data...");
 
-                pixelData = PSTextureDecoder.DecodePS3(pixelData, DDS_HELPER.GetDXGIFromTelltaleSurfaceFormat(surfaceFormat), width, height);
+                pixelData = PSTextureDecoder.DecodePS3(pixelData, DDS_HELPER.GetDXGIFormat(surfaceFormat), width, height);
             }
 
             else if (platformType == T3PlatformType.ePlatform_Xbox || platformType == T3PlatformType.ePlatform_XBOne)
@@ -762,7 +769,7 @@ namespace TelltaleTextureTool.Main
         public string GetDDSHeaderInfo()
         {
             string info = "";
-            foreach (var region in GetLegacyPixelData())
+            foreach (var region in GetPixelData())
             {
                 // if (ByteFunctions.Ge)
                 // {
