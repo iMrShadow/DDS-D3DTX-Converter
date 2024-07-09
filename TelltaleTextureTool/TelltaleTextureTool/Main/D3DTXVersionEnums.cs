@@ -1,6 +1,6 @@
 namespace TelltaleTextureTool.Main;
 
-// L stands for Legacy, V stands for Version
+// L stands for Legacy, V stands for Version, C stands for Console 
 public enum D3DTXVersion
 {
     V9 = 9,
@@ -24,6 +24,18 @@ public enum D3DTXVersion
     LV9 = -9,
     LV10 = -10,
     LV11 = -11,
+
+    CLV1 = -20,
+    CLV2 = -21,
+    CLV3 = -22,
+    CLV4 = -23,
+    CLV5 = -24,
+    CLV6 = -25,
+    CLV7 = -26,
+    CLV8 = -27,
+    CLV9 = -28,
+    CLV10 = -29,
+    CLV11 = -30,
 
     // Such a bad practice to use negative numbers for versioning, but I had to use it as a level.
     Unknown = -100

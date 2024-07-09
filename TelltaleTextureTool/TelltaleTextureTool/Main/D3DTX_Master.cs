@@ -180,6 +180,17 @@ namespace TelltaleTextureTool.Main
                     D3DTXVersion.LV9 => new D3DTX_LV9(),
                     D3DTXVersion.LV10 => new D3DTX_LV10(),
                     D3DTXVersion.LV11 => new D3DTX_LV11(),
+                    D3DTXVersion.CLV1 => new D3DTX_CLV1(),
+                    D3DTXVersion.CLV2 => new D3DTX_CLV2(),
+                    D3DTXVersion.CLV3 => new D3DTX_CLV3(),
+                    D3DTXVersion.CLV4 => new D3DTX_CLV4(),
+                    D3DTXVersion.CLV5 => new D3DTX_CLV5(),
+                    D3DTXVersion.CLV6 => new D3DTX_CLV6(),
+                    D3DTXVersion.CLV7 => new D3DTX_CLV7(),
+                    D3DTXVersion.CLV8 => new D3DTX_CLV8(),
+                    D3DTXVersion.CLV9 => new D3DTX_CLV9(),
+                    D3DTXVersion.CLV10 => new D3DTX_CLV10(),
+                    D3DTXVersion.CLV11 => new D3DTX_CLV11(),
                     _ => throw new ArgumentException($"Unsupported D3DTX version: {version}")
                 };
             }
@@ -254,7 +265,12 @@ namespace TelltaleTextureTool.Main
                 D3DTXVersion.LV5, D3DTXVersion.LV6,
                 D3DTXVersion.LV7, D3DTXVersion.LV8,
                 D3DTXVersion.LV9, D3DTXVersion.LV10,
-                D3DTXVersion.LV11];
+                D3DTXVersion.LV11, D3DTXVersion.CLV1,
+                D3DTXVersion.CLV2, D3DTXVersion.CLV3,
+                D3DTXVersion.CLV4, D3DTXVersion.CLV5,
+                D3DTXVersion.CLV6, D3DTXVersion.CLV7,
+                D3DTXVersion.CLV8, D3DTXVersion.CLV9,
+                D3DTXVersion.CLV10, D3DTXVersion.CLV11];
 
             foreach (var version in legacyD3DTXVersion)
             {
