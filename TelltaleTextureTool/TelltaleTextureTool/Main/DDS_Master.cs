@@ -59,7 +59,7 @@ namespace TelltaleTextureTool.Main
                 Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
             };
 
-            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat))
+            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) || D3DTX_Master.IsPlatformIncompatibleWithDDS(platformType))
             {
                 metadata.MipLevels = 1;
             }
