@@ -8,8 +8,8 @@ using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.DirectX.Enums;
 using TelltaleTextureTool.ImageProcessing;
 using TelltaleTextureTool.Main;
-using TelltaleTextureTool.Texconv;
-using TelltaleTextureTool.TexconvOptions;
+// using TelltaleTextureTool.Texconv;
+// using TelltaleTextureTool.TexconvOptions;
 using TelltaleTextureTool.Utilities;
 using Hexa.NET.DirectXTex;
 
@@ -290,54 +290,54 @@ public class Converter_CLI
             // Parse the .json file as a d3dtx
             d3dtxFile.ReadD3DTXJSON(textureFilePath_JSON);
 
-            MasterOptions options = new()
-            {
-                outputDirectory = new() { directory = destinationDirectory },
-                outputOverwrite = new(),
-                outputFileType = new() { fileType = TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.dds }
-            };
+            // MasterOptions options = new()
+            // {
+            //     outputDirectory = new() { directory = destinationDirectory },
+            //     outputOverwrite = new(),
+            //     outputFileType = new() { fileType = TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.dds }
+            // };
 
-            if (d3dtxFile.HasMipMaps() == false)
-                options.outputMipMaps = new() { remove = true };
+            // if (d3dtxFile.HasMipMaps() == false)
+            //     options.outputMipMaps = new() { remove = true };
 
-            switch (d3dtxFile.d3dtxMetadata.TextureType)
-            {
-                case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxSingleChannelSDFDetailMap:
-                    options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
+            // switch (d3dtxFile.d3dtxMetadata.TextureType)
+            // {
+            //     case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxSingleChannelSDFDetailMap:
+            //         options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                    break;
-                case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxBumpmap:
-                case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalMap:
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         break;
+            //     case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxBumpmap:
+            //     case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalMap:
 
-                    options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
-                    options.outputTreatTypelessAsUNORM = new();
+            //         options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
+            //         options.outputTreatTypelessAsUNORM = new();
 
-                    if (fixes_generic_to_dds)
-                        options.outputSwizzle = new() { mask = "abgr" };
+            //         if (fixes_generic_to_dds)
+            //             options.outputSwizzle = new() { mask = "abgr" };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                    break;
-                case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalXYMap:
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         break;
+            //     case TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalXYMap:
 
-                    options.outputFormat = new() { format = DXGIFormat.BC5_UNORM };
-                    //options.outputSRGB = new() { srgbMode = TexconvEnums.TexconvEnumSrgb.srgbo };
-                    options.outputTreatTypelessAsUNORM = new();
+            //         options.outputFormat = new() { format = DXGIFormat.BC5_UNORM };
+            //         //options.outputSRGB = new() { srgbMode = TexconvEnums.TexconvEnumSrgb.srgbo };
+            //         options.outputTreatTypelessAsUNORM = new();
 
-                    if (fixes_generic_to_dds)
-                        options.outputSwizzle = new() { mask = "rg00" };
+            //         if (fixes_generic_to_dds)
+            //             options.outputSwizzle = new() { mask = "rg00" };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                    break;
-                default:
-                    if (ImageUtilities.IsImageOpaque(sourceFilePath))
-                        options.outputFormat = new() { format = DXGIFormat.BC1_UNORM };
-                    else
-                        options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         break;
+            //     default:
+            //         if (ImageUtilities.IsImageOpaque(sourceFilePath))
+            //             options.outputFormat = new() { format = DXGIFormat.BC1_UNORM };
+            //         else
+            //             options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                    break;
-            }
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         break;
+            // }
         }
         // If we didn't find a json file, we're screwed!
         else
@@ -376,8 +376,6 @@ public class Converter_CLI
         string? textureFileDirectory = Path.GetDirectoryName(sourceFilePath);
         string textureFileNameOnly = Path.GetFileNameWithoutExtension(sourceFilePath);
 
-        TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes fileType =
-            GetEnumFileType(newFileType);
 
         // Create the names of the following files
         string textureFileNameWithJson = textureFileNameOnly + Main_Shared.jsonExtension;
@@ -399,50 +397,44 @@ public class Converter_CLI
             // Get the d3dtx texture type
             TelltaleTextureTool.TelltaleEnums.T3TextureType d3dtxTextureType = d3dtxFile.d3dtxMetadata.TextureType;
 
-            if (d3dtxTextureType == TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxBumpmap ||
-                d3dtxTextureType == TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalMap)
-            {
-                MasterOptions options = new()
-                {
-                    outputDirectory = new() { directory = destinationDirectory },
-                    outputOverwrite = new(),
-                    outputFileType = new() { fileType = fileType }
-                };
+            // if (d3dtxTextureType == TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxBumpmap ||
+            //     d3dtxTextureType == TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalMap)
+            // {
+            //     MasterOptions options = new()
+            //     {
+            //         outputDirectory = new() { directory = destinationDirectory },
+            //         outputOverwrite = new(),
+            //         outputFileType = new() { fileType = fileType }
+            //     };
 
-                if (fixesDdsToGeneric)
-                    options.outputSwizzle = new() { mask = "abgr" };
+            //     if (fixesDdsToGeneric)
+            //         options.outputSwizzle = new() { mask = "abgr" };
 
-                await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-            }
-            else if (d3dtxTextureType == TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalXYMap)
-            {
-                if (fixesDdsToGeneric)
-                    NormalMapProcessing.FromDDS_NormalMapReconstructZ(sourceFilePath, outputTextureFilePath);
-                else
-                    NormalMapConvert.ConvertNormalMapToOthers(sourceFilePath, newFileType);
-            }
-            else
-            {
-                MasterOptions options = new()
-                {
-                    outputDirectory = new() { directory = destinationDirectory },
-                    outputOverwrite = new(),
-                    outputFileType = new() { fileType = fileType }
-                };
-                await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-            }
+            //     await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            // }
+            // else if (d3dtxTextureType == TelltaleTextureTool.TelltaleEnums.T3TextureType.eTxNormalXYMap)
+            // {
+            //     if (fixesDdsToGeneric)
+            //         NormalMapProcessing.FromDDS_NormalMapReconstructZ(sourceFilePath, outputTextureFilePath);
+            //     else
+            //         NormalMapConvert.ConvertNormalMapToOthers(sourceFilePath, newFileType);
+            // }
+            // else
+            // {
+            //     MasterOptions options = new()
+            //     {
+            //         outputDirectory = new() { directory = destinationDirectory },
+            //         outputOverwrite = new(),
+            //         outputFileType = new() { fileType = fileType }
+            //     };
+            //     await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            // }
         }
         // If we didn't find a json file, we're screwed!
         else
         {
-            MasterOptions options = new()
-            {
-                outputDirectory = new() { directory = destinationDirectory },
-                outputOverwrite = new(),
-                outputFileType = new() { fileType = fileType }
-            };
-
-            await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+    
+           
             throw new FileNotFoundException(
                 "No .json file was found for the file.\nDefaulting to classic conversion.");
         }
@@ -455,25 +447,5 @@ public class Converter_CLI
     }
 
 
-    /// <summary>
-    /// Helper function for the converter. Gets the Texconv enum from the provided extension.
-    /// </summary>
-    private static TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes GetEnumFileType(string extension)
-    {
-        if (string.IsNullOrEmpty(extension))
-        {
-            throw new ArgumentNullException("File type cannot be null.");
-        }
 
-        return extension switch
-        {
-            "bmp" => TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.bmp,
-            "png" => TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.png,
-            "jpg" => TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.jpg,
-            "jpeg" => TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.jpeg,
-            "tif" => TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.tif,
-            "tiff" => TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.tiff,
-            _ => throw new Exception("File type " + extension + " is not supported."),
-        };
-    }
 }
