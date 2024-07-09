@@ -4,8 +4,6 @@ using System.IO;
 using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.ImageProcessing;
 using TelltaleTextureTool.Main;
-using TelltaleTextureTool.Texconv;
-using TelltaleTextureTool.TexconvOptions;
 using TelltaleTextureTool.Utilities;
 using System.Threading;
 using System.Linq;
@@ -37,7 +35,6 @@ public static class Converter
             _ => throw new InvalidEnumArgumentException("Invalid texture type."),
         };
     }
-
 
     /// <param name="texPath"></param>
     /// <param name="resultPath"></param>
@@ -135,14 +132,14 @@ public static class Converter
             switch (newTextureType)
             {
                 case TextureType.D3DTX:
-                    ConvertTextureFromD3DtxToDds(sourcePath, resultPath, conversionType);
+                    ConvertTextureFromDdsToD3Dtx(sourcePath, resultPath);
                     break;
                 case TextureType.PNG:
                 case TextureType.JPEG:
                 case TextureType.BMP:
                 case TextureType.TIFF:
                 case TextureType.TGA:
-                    await ConvertTextureFromDdsToOthersAsync(sourcePath, resultPath, newTextureType, true);
+                    ConvertTextureFromDdsToOthers(sourcePath, resultPath, newTextureType, true);
                     break;
                 default:
                     throw new Exception("Invalid file type.");
@@ -178,7 +175,7 @@ public static class Converter
             switch (newTextureType)
             {
                 case TextureType.DDS:
-                    await ConvertTextureFileFromOthersToDdsAsync(sourcePath, resultPath, true); break;
+                    ConvertTextureFileFromOthersToDds(sourcePath, resultPath, true); break;
                 default:
                     throw new Exception("Invalid file type.");
             }
@@ -206,11 +203,10 @@ public static class Converter
         D3DTX_Master d3dtxFile = new();
         d3dtxFile.ReadD3DTXFile(sourceFilePath, conversionType);
 
-        KTX2_Master ktx2File = new();
-        //   ktx2File.InitializeTextureHeader(d3dtxFile);
+        KTX2_Master ktx2File = new(d3dtxFile);
 
         // Write the dds file to disk
-        // ktx2File.WriteD3DTXAsKTX2(d3dtxFile, destinationDirectory);
+        ktx2File.WriteD3DTXAsKTX2(d3dtxFile, destinationDirectory);
 
         // Write the d3dtx data into a file
         d3dtxFile.WriteD3DTXJSON(Path.GetFileNameWithoutExtension(d3dtxFile.FilePath), destinationDirectory);
@@ -287,7 +283,7 @@ public static class Converter
             DDS_DirectXTexNet.GetDDSInformation(sourceFilePath, out D3DTXMetadata metadata, out ImageSection[] sections, flags);
 
             // Modify the d3dtx file using our dds data
-            d3dtxMaster.ModifyD3DTX(metadata, sections); //ISSUE HERE WITH DXT5 AND MIP MAPS WITH UPSCALED TEXTURES // Edit: This may not be an issue anymore
+            d3dtxMaster.ModifyD3DTX(metadata, sections);
 
             // Write our final d3dtx file to disk
             d3dtxMaster.WriteFinalD3DTX(textureResultPathD3Dtx);
@@ -304,7 +300,7 @@ public static class Converter
     /// </summary>
     /// <param name="sourceFilePath"></param>
     /// <param name="destinationDirectory"></param>
-    public static async Task ConvertTextureFileFromOthersToDdsAsync(string sourceFilePath, string destinationDirectory,
+    public static void ConvertTextureFileFromOthersToDds(string sourceFilePath, string destinationDirectory,
         bool fixes_generic_to_dds)
     {
         if (string.IsNullOrEmpty(sourceFilePath) || string.IsNullOrEmpty(destinationDirectory))
@@ -333,57 +329,57 @@ public static class Converter
             // Parse the .json file as a d3dtx
             d3dtxFile.ReadD3DTXJSON(textureFilePath_JSON);
 
-            MasterOptions options = new()
-            {
-                outputDirectory = new() { directory = destinationDirectory },
-                outputOverwrite = new(),
-                outputFileType = new() { fileType = TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.dds }
-            };
+            // MasterOptions options = new()
+            // {
+            //     outputDirectory = new() { directory = destinationDirectory },
+            //     outputOverwrite = new(),
+            //     outputFileType = new() { fileType = TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.dds }
+            // };
 
-            if (d3dtxFile.HasMipMaps() == false)
-                options.outputMipMaps = new() { remove = true };
+            // if (d3dtxFile.HasMipMaps() == false)
+            //     options.outputMipMaps = new() { remove = true };
 
-            switch (d3dtxFile.d3dtxMetadata.TextureType)
-            {
-                case T3TextureType.eTxSingleChannelSDFDetailMap:
-                    options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
+            // switch (d3dtxFile.d3dtxMetadata.TextureType)
+            // {
+            //     case T3TextureType.eTxSingleChannelSDFDetailMap:
+            //         options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
 
-                    //   DirectXTex.LoadFromWICFile(sourceFilePath).SaveToDDSFile(Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(sourceFilePath) + Main_Shared.ddsExtension), DirectXTex.DDSFlags.ForceDX10Ext);
-                    //   DirectXTex.SaveToWICFile(DirectXTex.LoadFromDDSFile(sourceFilePath), WICCodecs.WIC_CODEC_PNG, Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(sourceFilePath) + Main_Shared.pngExtension));
-                    break;
-                case T3TextureType.eTxBumpmap:
-                case T3TextureType.eTxNormalMap:
+            //         //   DirectXTex.LoadFromWICFile(sourceFilePath).SaveToDDSFile(Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(sourceFilePath) + Main_Shared.ddsExtension), DirectXTex.DDSFlags.ForceDX10Ext);
+            //         //   DirectXTex.SaveToWICFile(DirectXTex.LoadFromDDSFile(sourceFilePath), WICCodecs.WIC_CODEC_PNG, Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(sourceFilePath) + Main_Shared.pngExtension));
+            //         break;
+            //     case T3TextureType.eTxBumpmap:
+            //     case T3TextureType.eTxNormalMap:
 
-                    options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
-                    options.outputTreatTypelessAsUNORM = new();
+            //         options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
+            //         options.outputTreatTypelessAsUNORM = new();
 
-                    if (fixes_generic_to_dds)
-                        options.outputSwizzle = new() { mask = "abgr" };
+            //         if (fixes_generic_to_dds)
+            //             options.outputSwizzle = new() { mask = "abgr" };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                    break;
-                case T3TextureType.eTxNormalXYMap:
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         break;
+            //     case T3TextureType.eTxNormalXYMap:
 
-                    options.outputFormat = new() { format = DXGIFormat.BC5_UNORM };
-                    //options.outputSRGB = new() { srgbMode = TexconvEnums.TexconvEnumSrgb.srgbo };
-                    options.outputTreatTypelessAsUNORM = new();
+            //         options.outputFormat = new() { format = DXGIFormat.BC5_UNORM };
+            //         //options.outputSRGB = new() { srgbMode = TexconvEnums.TexconvEnumSrgb.srgbo };
+            //         options.outputTreatTypelessAsUNORM = new();
 
-                    if (fixes_generic_to_dds)
-                        options.outputSwizzle = new() { mask = "rg00" };
+            //         if (fixes_generic_to_dds)
+            //             options.outputSwizzle = new() { mask = "rg00" };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                    break;
-                default:
-                    if (ImageUtilities.IsImageOpaque(sourceFilePath))
-                        options.outputFormat = new() { format = DXGIFormat.BC1_UNORM };
-                    else
-                        options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         break;
+            //     default:
+            //         if (ImageUtilities.IsImageOpaque(sourceFilePath))
+            //             options.outputFormat = new() { format = DXGIFormat.BC1_UNORM };
+            //         else
+            //             options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
 
-                    await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                    break;
-            }
+            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            //         break;
+            // }
         }
         // If we didn't find a json file, we're screwed!
         else
@@ -407,7 +403,7 @@ public static class Converter
     /// <param name="destinationDirectory"></param>
     /// <param name="newFileType"></param>
     /// <param name="fixesDdsToGeneric"></param>
-    public static async Task ConvertTextureFromDdsToOthersAsync(string? sourceFilePath, string destinationDirectory,
+    public static void ConvertTextureFromDdsToOthers(string? sourceFilePath, string destinationDirectory,
         TextureType newTextureType, bool fixesDdsToGeneric)
     {
         // Null safety validation of inputs.
@@ -419,9 +415,6 @@ public static class Converter
         // Deconstruct the source file path
         string? textureFileDirectory = Path.GetDirectoryName(sourceFilePath);
         string textureFileNameOnly = Path.GetFileNameWithoutExtension(sourceFilePath);
-
-        TexconvEnums.TexconvEnumFileTypes newFileType =
-            GetEnumFileType(newTextureType);
 
         // Create the names of the following files
         string textureFileNameWithJson = textureFileNameOnly + Main_Shared.jsonExtension;
@@ -440,54 +433,27 @@ public static class Converter
             // Parse the .json file as a d3dtx
             d3dtxFile.ReadD3DTXJSON(textureFilePathJson);
 
-            //TODO Update to DirectXTexNet
-
             // Get the d3dtx texture type
             T3TextureType d3dtxTextureType = d3dtxFile.d3dtxMetadata.TextureType;
 
-            MasterOptions options = new()
-            {
-                outputDirectory = new() { directory = destinationDirectory },
-                outputOverwrite = new(),
-                outputFileType = new() { fileType = newFileType }
-            };
-
             //ConvertOptions
-
-            if (d3dtxTextureType == T3TextureType.eTxBumpmap ||
-                d3dtxTextureType == T3TextureType.eTxNormalMap)
+            if (d3dtxTextureType == T3TextureType.eTxBumpmap || d3dtxTextureType == T3TextureType.eTxNormalMap)
             {
-
-
-              //  await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-                DDS_DirectXTexNet.SaveNormalMapToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.SWIZZLE_ABGR);
+                DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.SWIZZLE_ABGR);
             }
             else if (d3dtxTextureType == T3TextureType.eTxNormalXYMap)
             {
-                // options.outputReconstructZ = new();
-
-                DDS_DirectXTexNet.SaveNormalMapToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.RESTORE_Z);
-
-                // if (fixesDdsToGeneric)
-                //     NormalMapProcessing.FromDDS_NormalMapReconstructZ(sourceFilePath, outputTextureFilePath);
-                // else
-                //     NormalMapConvert.ConvertNormalMapToOthers(sourceFilePath, GetExtension(newTextureType)[0]);
+                DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.RESTORE_Z);
             }
             else
             {
-                await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+                DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.DEFAULT);
             }
         }
-        // If we didn't find a json file, we're screwed!
+        // If we didn't find a JSON file, use default conversion.
         else
         {
-            MasterOptions options = new()
-            {
-                outputDirectory = new() { directory = destinationDirectory },
-                outputOverwrite = new(),
-                outputFileType = new() { fileType = newFileType }
-            };
-            await TexconvApp.RunTexconvAsync(sourceFilePath, options);
+            DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.DEFAULT);
             throw new FileNotFoundException(
                 "No .json file was found for the file.\nDefaulting to classic conversion.");
         }
@@ -497,28 +463,5 @@ public static class Converter
         {
             throw new FileNotFoundException("Conversion failed. Output file was not created.");
         }
-    }
-
-
-    /// <summary>
-    /// Helper function for the converter. Gets the Texconv enum from the provided extension.
-    /// </summary>
-    private static TexconvEnums.TexconvEnumFileTypes GetEnumFileType(TextureType extension)
-    {
-        if (extension == TextureType.Unknown)
-        {
-            throw new ArgumentNullException("File type cannot be null.");
-        }
-
-        return extension switch
-        {
-            TextureType.DDS => TexconvEnums.TexconvEnumFileTypes.dds,
-            TextureType.BMP => TexconvEnums.TexconvEnumFileTypes.bmp,
-            TextureType.PNG => TexconvEnums.TexconvEnumFileTypes.png,
-            TextureType.JPEG => TexconvEnums.TexconvEnumFileTypes.jpeg,
-            TextureType.TIFF => TexconvEnums.TexconvEnumFileTypes.tiff,
-            TextureType.TGA => TexconvEnums.TexconvEnumFileTypes.tga,
-            _ => throw new Exception("File type " + extension + " is not supported."),
-        };
     }
 }
