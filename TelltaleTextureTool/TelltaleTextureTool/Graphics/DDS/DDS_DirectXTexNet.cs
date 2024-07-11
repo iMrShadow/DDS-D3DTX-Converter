@@ -58,9 +58,9 @@ public unsafe static partial class DDS_DirectXTexNet
     {
         DXGIFormat dxgiFormat = (DXGIFormat)ddsMetadata.Format;
 
-        uint channelCount = (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((int)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((int)dxgiFormat)));
+        uint channelCount = (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((uint)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((uint)dxgiFormat)));
 
-        string hasAlpha = DirectXTex.HasAlpha((int)dxgiFormat) ? "True" : "False";
+        string hasAlpha = DirectXTex.HasAlpha((uint)dxgiFormat) ? "True" : "False";
 
         ImageProperties properties = new()
         {
@@ -89,7 +89,7 @@ public unsafe static partial class DDS_DirectXTexNet
         nuint rowPitch;
         nuint slicePitch;
 
-        DirectXTex.ComputePitch((int)dxgiFormat, width, height, (ulong*)&rowPitch, (ulong*)&slicePitch, CPFlags.None);
+        DirectXTex.ComputePitch((uint)dxgiFormat, width, height, (ulong*)&rowPitch, (ulong*)&slicePitch, CPFlags.None);
         return (uint)rowPitch;
     }
 
@@ -98,7 +98,7 @@ public unsafe static partial class DDS_DirectXTexNet
     /// </summary>
     /// <param name="dxgiFormat">The Direct3D10/DXGI format</param>
     /// <returns>The channel count.</returns>
-    public static uint GetChannelCount(DXGIFormat dxgiFormat) => (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((int)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((int)dxgiFormat)));
+    public static uint GetChannelCount(DXGIFormat dxgiFormat) => (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((uint)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((uint)dxgiFormat)));
 
     /// <summary>
     /// Returns a DirectXTexNet DDS image from a byte array.
@@ -178,7 +178,7 @@ public unsafe static partial class DDS_DirectXTexNet
             ArraySize = (uint)metadata.ArraySize,
             MipLevels = (uint)metadata.MipLevels,
             Format = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format),
-            SurfaceGamma = DirectXTex.IsSRGB((int)metadata.Format) ? TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_sRGB : TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_Linear,
+            SurfaceGamma = DirectXTex.IsSRGB((uint)metadata.Format) ? TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_sRGB : TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_Linear,
             D3DFormat = DDS_HELPER.GetD3DFORMAT((DXGIFormat)metadata.Format, metadata),
             Dimension = DDS_HELPER.GetDimensionFromDDS(metadata),
         };
@@ -315,7 +315,10 @@ public unsafe static partial class DDS_DirectXTexNet
                 RowPitch = (nuint)images[i].RowPitch,
                 Pixels = pixels
             });
+        }
 
+        for (int i = 0; i < sections.Count; i++)
+        {
             Console.WriteLine($"Image {i} - Width: {sections[i].Width}, Height: {sections[i].Height}, Format: {sections[i].Format}, SlicePitch: {sections[i].SlicePitch}, RowPitch: {sections[i].RowPitch}");
             Console.WriteLine($"Image {i} - Pixels: {sections[i].Pixels.Length}");
         }
@@ -382,7 +385,7 @@ public unsafe static partial class DDS_DirectXTexNet
     /// <returns>True, if it is SRGB. Otherwise - false.</returns>
     public static bool IsSRGB(DXGIFormat dxgiFormat)
     {
-        return DirectXTex.IsSRGB((int)dxgiFormat);
+        return DirectXTex.IsSRGB((uint)dxgiFormat);
     }
 
     /// <summary>
@@ -503,16 +506,20 @@ public unsafe static partial class DDS_DirectXTexNet
 
         HResult result = 0;
 
-        if (DirectXTex.IsCompressed(texMetadata.Format))
+        if (DirectXTex.IsValid(texMetadata.Format))
         {
-            result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), (int)DXGIFormat.R8G8B8A8_UNORM, rawImage);
+            if (DirectXTex.IsCompressed(texMetadata.Format))
+            {
+                result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), (int)DXGIFormat.R8G8B8A8_UNORM, rawImage);
+            }
+            else
+            {
+                Rect rect = new() { X = 0, Y = 0, W = texMetadata.Width, H = texMetadata.Height };
+                DirectXTex.Initialize(rawImage, image.GetMetadata(), CPFlags.None);
+                result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0), rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
+            }
         }
-        else
-        {
-            Rect rect = new() { X = 0, Y = 0, W = texMetadata.Width, H = texMetadata.Height };
-            DirectXTex.Initialize(rawImage, image.GetMetadata(), CPFlags.None);
-            result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0), rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
-        }
+
         image.Release();
         result.ThrowIf();
 

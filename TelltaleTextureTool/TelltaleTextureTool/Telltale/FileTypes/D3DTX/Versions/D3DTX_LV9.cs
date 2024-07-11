@@ -19,15 +19,6 @@ using System.Linq;
  * Also, Telltale uses Hungarian Notation for variable naming.
 */
 
-/* - D3DTX Old Unknown Version games
- * Telltale Texas Hold'em  (UNTESTED)
- * Bone: Out from Boneville  (UNTESTED)
- * CSI: 3 Dimensions of Murder  (UNTESTED)
- * Bone: The Great Cow Race  (UNTESTED)
- * Sam & Max Save the World  (UNTESTED)
- * CSI: Hard Evidence  (UNTESTED)
-*/
-
 /* - D3DTX Legacy Version 9 games
  * Sam & Max Beyond Time and Space (TESTED)
 */
@@ -201,6 +192,8 @@ public class D3DTX_LV9 : ID3DTX
         writer.Write((int)mWiiTextureFormat); //mWiiTextureFormat [4 bytes]
         ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean); //mbAlphaHDR [1 byte]
         ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); //mbEncrypted [1 byte]
+        ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean); //mbUsedAsBumpmap [1 byte]
+        ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean); //mbUsedAsDetailMap [1 byte]
         writer.Write(mDetailMapBrightness); //mDetailMapBrightness [4 bytes]
 
         for (int i = 0; i < mPixelData.Count; i++) //DDS file including header [mTextureDataSize bytes]
@@ -259,11 +252,11 @@ public class D3DTX_LV9 : ID3DTX
                 continue;
             }
 
-          if (reader.BaseStream.Position == reader.BaseStream.Length)
-        {
-          PrintConsole();
-          throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
-        }
+         if (mTextureDataSize > reader.BaseStream.Length - reader.BaseStream.Position || reader.BaseStream.Position == reader.BaseStream.Length)
+            {
+                PrintConsole();
+                throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
+            }
 
         reader.BaseStream.Position -= 4;
 

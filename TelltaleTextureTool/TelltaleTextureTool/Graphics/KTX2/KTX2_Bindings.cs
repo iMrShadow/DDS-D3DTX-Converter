@@ -44,7 +44,7 @@ public static class KTX2_Bindings
         nuint rowPitch;
         nuint slicePitch;
 
-        DirectXTex.ComputePitch((int)dxgiFormat, width, height, (ulong*)&rowPitch, (ulong*)&slicePitch, CPFlags.None);
+        DirectXTex.ComputePitch((uint)dxgiFormat, width, height, (ulong*)&rowPitch, (ulong*)&slicePitch, CPFlags.None);
         return (uint)rowPitch;
     }
 
@@ -53,7 +53,7 @@ public static class KTX2_Bindings
     /// </summary>
     /// <param name="dxgiFormat">The Direct3D10/DXGI format</param>
     /// <returns>The channel count.</returns>
-    public static uint GetChannelCount(DXGIFormat dxgiFormat) => (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((int)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((int)dxgiFormat)));
+    public static uint GetChannelCount(DXGIFormat dxgiFormat) => (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((uint)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((uint)dxgiFormat)));
 
     /// <summary>
     /// Returns a DirectXTexNet DDS image from a byte array.
@@ -302,7 +302,7 @@ public static class KTX2_Bindings
     /// <returns>True, if it is SRGB. Otherwise - false.</returns>
     public static bool IsSRGB(DXGIFormat dxgiFormat)
     {
-        return DirectXTex.IsSRGB((int)dxgiFormat);
+        return DirectXTex.IsSRGB((uint)dxgiFormat);
     }
 
     /// <summary>

@@ -6,16 +6,16 @@ public static class PSTextureDecoder
 {
     public static byte[] DecodePS4(byte[] pixelData, DXGIFormat format, int width, int height)
     {
-        int blockSize = DirectXTex.IsCompressed((int)format) ? 4 : 1; //CORRECT
+        int blockSize = DirectXTex.IsCompressed((uint)format) ? 4 : 1; //CORRECT
 
-        int count = (int)(DirectXTex.BitsPerPixel((int)format) * 2); //CORRECT
+        int count = (int)(DirectXTex.BitsPerPixel((uint)format) * 2); //CORRECT
 
         if (blockSize == 1) //CORRECT
         {
-            count = (int)(DirectXTex.BitsPerPixel((int)format) / 8);
+            count = (int)(DirectXTex.BitsPerPixel((uint)format) / 8);
         }
 
-        long length = width * height * (int)DirectXTex.BitsPerPixel((int)format) / 8; //CORRECT
+        long length = width * height * (int)DirectXTex.BitsPerPixel((uint)format) / 8; //CORRECT
 
         byte[] destinationArray = new byte[length * 2L];
         byte[] buffer = new byte[0x10];
@@ -86,11 +86,11 @@ public static class PSTextureDecoder
     public static byte[] DecodePS3(byte[] pixelData, DXGIFormat format, int width, int height)
     {
 
-        if (!DirectXTex.IsCompressed((int)format))
+        if (!DirectXTex.IsCompressed((uint)format))
         {
-            int count = (int)(DirectXTex.BitsPerPixel((int)format) / 8);
+            int count = (int)(DirectXTex.BitsPerPixel((uint)format) / 8);
 
-            long length = width * height * (int)DirectXTex.BitsPerPixel((int)format) / 8; //CORRECT
+            long length = width * height * (int)DirectXTex.BitsPerPixel((uint)format) / 8; //CORRECT
 
             byte[] destinationArray = new byte[length * 4L];
             byte[] buffer = new byte[16];

@@ -262,11 +262,12 @@ public class D3DTX_LV6 : ID3DTX
                 continue;
             }
 
-           if (reader.BaseStream.Position == reader.BaseStream.Length)
-        {
-          PrintConsole();
-          throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
-        }
+           if (mTextureDataSize > reader.BaseStream.Length - reader.BaseStream.Position || reader.BaseStream.Position == reader.BaseStream.Length)
+            {
+                PrintConsole();
+                throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
+            }
+
 
         reader.BaseStream.Position -= 4;
 
@@ -354,6 +355,7 @@ public class D3DTX_LV6 : ID3DTX
         d3dtxInfo += "mbIsWrapU = " + mbIsWrapU + Environment.NewLine;
         d3dtxInfo += "mbIsWrapV = " + mbIsWrapV + Environment.NewLine;
         d3dtxInfo += "mbIsFiltered = " + mbIsFiltered + Environment.NewLine;
+        d3dtxInfo += "mbEmbedMipMaps = " + mbEmbedMipMaps + Environment.NewLine;
         d3dtxInfo += "mNumMipLevels = " + mNumMipLevels + Environment.NewLine;
         d3dtxInfo += "mD3DFormat = " + mD3DFormat + Environment.NewLine;
         d3dtxInfo += "mWidth = " + mWidth + Environment.NewLine;

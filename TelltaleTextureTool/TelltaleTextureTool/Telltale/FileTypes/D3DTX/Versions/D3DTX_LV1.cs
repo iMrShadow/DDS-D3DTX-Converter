@@ -308,7 +308,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
           continue;
         }
 
-        if (reader.BaseStream.Position == reader.BaseStream.Length)
+        if (mTextureDataSize > reader.BaseStream.Length - reader.BaseStream.Position || reader.BaseStream.Position == reader.BaseStream.Length)
         {
           PrintConsole();
           throw new Exception("Invalid DDS Header! The texture's header is corrupted!");

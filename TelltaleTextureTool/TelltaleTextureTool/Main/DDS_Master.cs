@@ -6,7 +6,6 @@ using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.TelltaleEnums;
 using System.Linq;
 using Hexa.NET.DirectXTex;
-using Silk.NET.DXGI;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 
 namespace TelltaleTextureTool.Main
@@ -55,7 +54,7 @@ namespace TelltaleTextureTool.Main
                 ArraySize = d3dtxMetadata.ArraySize,
                 Depth = d3dtxMetadata.Depth,
                 MipLevels = d3dtxMetadata.MipLevels,
-                Format = d3dtx.IsLegacyD3DTX() ? (int)DDS_HELPER.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (int)DDS_HELPER.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
+                Format = d3dtx.IsLegacyD3DTX() ? (uint)DDS_HELPER.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (uint)DDS_HELPER.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
                 Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
             };
 
@@ -152,7 +151,6 @@ namespace TelltaleTextureTool.Main
         public byte[] GetData(D3DTX_Master d3dtx)
         {
             Console.WriteLine("Getting data for: " + d3dtx.FilePath);
-
 
             // If the D3DTX exists, return the pixel data.
             if (d3dtx.d3dtxObject == null)

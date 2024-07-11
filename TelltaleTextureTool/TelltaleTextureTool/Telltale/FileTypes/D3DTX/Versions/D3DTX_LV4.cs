@@ -24,6 +24,7 @@ using System.Linq;
  * Tales of Monkey Island (TESTED)
  * CSI: Deadly Intent (TESTED)
  * Sam & Max: The Devil's Playhouse (TESTED)
+ * Sam & Max Save the World (2007, could be updated) (UNTESTED)
 */
 
 namespace TelltaleTextureTool.TelltaleD3DTX;
@@ -268,7 +269,7 @@ public class D3DTX_LV4 : ID3DTX
                 continue;
             }
 
-            if (reader.BaseStream.Position == reader.BaseStream.Length)
+            if (mTextureDataSize > reader.BaseStream.Length - reader.BaseStream.Position || reader.BaseStream.Position == reader.BaseStream.Length)
             {
                 PrintConsole();
                 throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
@@ -279,18 +280,19 @@ public class D3DTX_LV4 : ID3DTX
             mPixelData = [];
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
-        {
-          int magic = reader.ReadInt32();
-          if (magic == 8 || magic == mName.Length + 8)
-          {
-            isValid = false;
-            reader.BaseStream.Position -= 4;
-            break;
-          }
+            {
+                int magic = reader.ReadInt32();
+                if (magic == 8 || magic == mName.Length + 8)
+                {
+                    isValid = false;
+                    reader.BaseStream.Position -= 4;
+                    break;
+                }
 
-          TelltalePixelData telltalePixelData = new(reader);
-          mPixelData.Add(telltalePixelData);
-        }
+                reader.BaseStream.Position -= 4;
+                TelltalePixelData telltalePixelData = new(reader);
+                mPixelData.Add(telltalePixelData);
+            }
             read = false;
         }
 

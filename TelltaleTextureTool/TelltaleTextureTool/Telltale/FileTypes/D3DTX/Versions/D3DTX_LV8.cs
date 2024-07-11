@@ -116,11 +116,6 @@ public class D3DTX_LV8 : ID3DTX
     public TelltaleBoolean mbWiiForceUncompressed { get; set; }
 
     /// <summary>
-    /// [4 bytes] The type of the texture. No enums were found, need more analyzing. Could be texture layout too.
-    /// </summary>
-    public uint mType { get; set; } //mTextureDataFormats?
-
-    /// <summary>
     /// [4 bytes] The texture data format. No enums were found, need more analyzing. Could be a flag.
     /// </summary>
     public uint mTextureDataFormats { get; set; }
@@ -129,6 +124,11 @@ public class D3DTX_LV8 : ID3DTX
     /// [4 bytes] The texture data size (tpl?). 
     /// </summary>
     public uint mTplTextureDataSize { get; set; }
+
+    /// <summary>
+    /// [4 bytes] The JPEG texture data size? (There were some screenshots of the game in the ttarch archives)
+    /// </summary>
+    public uint mJPEGTextureDataSize { get; set; }
 
     /// <summary>
     /// [4 bytes] An enum, defines what kind of alpha the texture will have.
@@ -141,14 +141,14 @@ public class D3DTX_LV8 : ID3DTX
     public WiiTextureFormat mWiiTextureFormat { get; set; }
 
     /// <summary>
-    /// [1 byte] Whether or not the texture has alpha HDR?
-    /// </summary>
-    public TelltaleBoolean mbAlphaHDR { get; set; }
-
-    /// <summary>
     /// [1 byte] Whether or not the texture encrypted.
     /// </summary>
     public TelltaleBoolean mbEncrypted { get; set; }
+
+    /// <summary>
+    /// [1 byte] Whether or not the texture has alpha HDR?
+    /// </summary>
+    public TelltaleBoolean mbAlphaHDR { get; set; }
 
     /// <summary>
     /// [1 byte] Whether or not the texture has alpha HDR?
@@ -191,15 +191,15 @@ public class D3DTX_LV8 : ID3DTX
         writer.Write(mWiiForceWidth); //mWiiForceWidth [4 bytes]
         writer.Write(mWiiForceHeight); //mWiiForceHeight [4 bytes]
         ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); //mbWiiForceUncompressed [1 byte]
-        writer.Write(mType); //mTextureDataFormats [4 bytes]
         writer.Write(mTextureDataFormats); //mTextureDataFormats [4 bytes]
         writer.Write(mTplTextureDataSize); //mTplTextureDataSize [4 bytes]
+        writer.Write(mJPEGTextureDataSize); //mJPEGTextureDataSize [4 bytes]
         writer.Write((int)mAlphaMode); //mAlphaMode [4 bytes]
         writer.Write((int)mWiiTextureFormat); //mWiiTextureFormat [4 bytes]
         ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean); //mbAlphaHDR [1 byte]
+        ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); //mbEncrypted [1 byte]
         ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean); //mbUsedAsBumpmap [1 byte]
         ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean); //mbUsedAsDetailMap [1 byte]
-        ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); //mbEncrypted [1 byte]
         writer.Write(mDetailMapBrightness); //mDetailMapBrightness [4 bytes]
 
         for (int i = 0; i < mPixelData.Count; i++) //DDS file including header [mTextureDataSize bytes]
@@ -234,17 +234,44 @@ public class D3DTX_LV8 : ID3DTX
             mWiiForceWidth = reader.ReadUInt32();
             mWiiForceHeight = reader.ReadUInt32();
             mbWiiForceUncompressed = new TelltaleBoolean(reader);
-            mType = reader.ReadUInt32(); //???
             mTextureDataFormats = reader.ReadUInt32();
             mTplTextureDataSize = reader.ReadUInt32();
+            mJPEGTextureDataSize = reader.ReadUInt32();
             mAlphaMode = (T3TextureAlphaMode)reader.ReadInt32();
 
             mWiiTextureFormat = (WiiTextureFormat)reader.ReadInt32();
             mbAlphaHDR = new TelltaleBoolean(reader);
-            mbEncrypted = new TelltaleBoolean(reader);
             mbUsedAsBumpmap = new TelltaleBoolean(reader);
             mbUsedAsDetailMap = new TelltaleBoolean(reader);
+            mbEncrypted = new TelltaleBoolean(reader);
             mDetailMapBrightness = reader.ReadSingle();
+
+            Console.WriteLine("mName_BlockSize = " + mName_BlockSize);
+            Console.WriteLine("mName = " + mName);
+            Console.WriteLine("mImportName_BlockSize = " + mImportName_BlockSize);
+            Console.WriteLine("mImportName = " + mImportName);
+            Console.WriteLine("mbHasTextureData = " + mbHasTextureData);
+            Console.WriteLine("mbIsMipMapped = " + mbIsMipMapped);
+            Console.WriteLine("mbIsWrapU = " + mbIsWrapU);
+            Console.WriteLine("mbIsWrapV = " + mbIsWrapV);
+            Console.WriteLine("mbIsFiltered = " + mbIsFiltered);
+            Console.WriteLine("mbEmbedMipMaps = " + mbEmbedMipMaps);
+            Console.WriteLine("mNumMipLevels = " + mNumMipLevels);
+            Console.WriteLine("mD3DFormat = " + mD3DFormat);
+            Console.WriteLine("mWidth = " + mWidth);
+            Console.WriteLine("mHeight = " + mHeight);
+            Console.WriteLine("mWiiForceWidth = " + mWiiForceWidth);
+            Console.WriteLine("mWiiForceHeight = " + mWiiForceHeight);
+            Console.WriteLine("mbWiiForceUncompressed = " + mbWiiForceUncompressed);
+            Console.WriteLine("mTextureDataFormats = " + mTextureDataFormats);
+            Console.WriteLine("mTplTextureDataSize = " + mTplTextureDataSize);
+            Console.WriteLine("mAlphaMode = " + Enum.GetName(typeof(T3TextureAlphaMode), (int)mAlphaMode) + " (" + mAlphaMode + ")");
+            Console.WriteLine("mWiiTextureFormat = " + mWiiTextureFormat);
+            Console.WriteLine("mbAlphaHDR = " + mbAlphaHDR);
+            Console.WriteLine("mbUsedAsBumpmap = " + mbUsedAsBumpmap);
+            Console.WriteLine("mbUsedAsDetailMap = " + mbUsedAsDetailMap);
+            Console.WriteLine("mbEncrypted = " + mbEncrypted);
+            Console.WriteLine("mDetailMapBrightness = " + mDetailMapBrightness);
 
             if (!mbHasTextureData.mbTelltaleBoolean)
             {
@@ -259,32 +286,32 @@ public class D3DTX_LV8 : ID3DTX
                 continue;
             }
 
-          if (reader.BaseStream.Position == reader.BaseStream.Length)
-        {
-          PrintConsole();
-          throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
-        }
+            if (mTextureDataSize > reader.BaseStream.Length - reader.BaseStream.Position || reader.BaseStream.Position == reader.BaseStream.Length)
+            {
+                PrintConsole();
+                throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
+            }
 
-        reader.BaseStream.Position -= 4;
-
-        mPixelData = [];
-
-        while (reader.BaseStream.Position < reader.BaseStream.Length)
-        {
-          int magic = reader.ReadInt32();
-          if (magic == 8 || magic == mName.Length + 8)
-          {
-            isValid = false;
             reader.BaseStream.Position -= 4;
-            break;
-          }
 
-          reader.BaseStream.Position -= 4;
-          TelltalePixelData telltalePixelData = new(reader);
-          mPixelData.Add(telltalePixelData);
-        }
+            mPixelData = [];
 
-        read = false;
+            while (reader.BaseStream.Position < reader.BaseStream.Length)
+            {
+                int magic = reader.ReadInt32();
+                if (magic == 8 || magic == mName.Length + 8)
+                {
+                    isValid = false;
+                    reader.BaseStream.Position -= 4;
+                    break;
+                }
+
+                reader.BaseStream.Position -= 4;
+                TelltalePixelData telltalePixelData = new(reader);
+                mPixelData.Add(telltalePixelData);
+            }
+
+            read = false;
         }
 
         if (printDebug)
@@ -318,7 +345,7 @@ public class D3DTX_LV8 : ID3DTX
 
     public D3DTXMetadata GetD3DTXMetadata()
     {
-        D3DTXMetadata metadata = new()
+        D3DTXMetadata metadata = new D3DTXMetadata()
         {
             TextureName = mName,
             Width = mWidth,
@@ -351,6 +378,7 @@ public class D3DTX_LV8 : ID3DTX
         d3dtxInfo += "mbIsWrapU = " + mbIsWrapU + Environment.NewLine;
         d3dtxInfo += "mbIsWrapV = " + mbIsWrapV + Environment.NewLine;
         d3dtxInfo += "mbIsFiltered = " + mbIsFiltered + Environment.NewLine;
+        d3dtxInfo += "mbEmbedMipMaps = " + mbEmbedMipMaps + Environment.NewLine;
         d3dtxInfo += "mNumMipLevels = " + mNumMipLevels + Environment.NewLine;
         d3dtxInfo += "mD3DFormat = " + mD3DFormat + Environment.NewLine;
         d3dtxInfo += "mWidth = " + mWidth + Environment.NewLine;
@@ -358,9 +386,9 @@ public class D3DTX_LV8 : ID3DTX
         d3dtxInfo += "mWiiForceWidth = " + mWiiForceWidth + Environment.NewLine;
         d3dtxInfo += "mWiiForceHeight = " + mWiiForceHeight + Environment.NewLine;
         d3dtxInfo += "mbWiiForceUncompressed = " + mbWiiForceUncompressed + Environment.NewLine;
-        d3dtxInfo += "mType = " + mType + Environment.NewLine;
         d3dtxInfo += "mTextureDataFormats = " + mTextureDataFormats + Environment.NewLine;
         d3dtxInfo += "mTplTextureDataSize = " + mTplTextureDataSize + Environment.NewLine;
+        d3dtxInfo += "mJPEGTextureDataSize = " + mJPEGTextureDataSize + Environment.NewLine;
         d3dtxInfo += "mAlphaMode = " + Enum.GetName(typeof(T3TextureAlphaMode), (int)mAlphaMode) + " (" + mAlphaMode + ")" + Environment.NewLine;
         d3dtxInfo += "mWiiTextureFormat = " + mWiiTextureFormat + Environment.NewLine;
         d3dtxInfo += "mbAlphaHDR = " + mbAlphaHDR + Environment.NewLine;

@@ -274,11 +274,12 @@ public class D3DTX_LV3 : ID3DTX
                 continue;
             }
 
-           if (reader.BaseStream.Position == reader.BaseStream.Length)
-        {
-          PrintConsole();
-          throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
-        }
+           if (mTextureDataSize > reader.BaseStream.Length - reader.BaseStream.Position || reader.BaseStream.Position == reader.BaseStream.Length)
+            {
+                PrintConsole();
+                throw new Exception("Invalid DDS Header! The texture's header is corrupted!");
+            }
+
 
         reader.BaseStream.Position -= 4;
 

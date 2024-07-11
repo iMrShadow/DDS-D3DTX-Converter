@@ -8,7 +8,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
-using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Svg.Skia;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,7 +19,6 @@ using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using IImage = Avalonia.Media.IImage;
 using TelltaleTextureTool.DirectX;
-using Hexa.NET.DirectXTex;
 
 namespace TelltaleTextureTool.ViewModels;
 
@@ -116,7 +114,6 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private ObservableCollection<FormatItemViewModel> _formatsList;
     [ObservableProperty] private ObservableCollection<FormatItemViewModel> _versionConvertOptionsList;
     [ObservableProperty] private bool _comboBoxStatus;
-
     [ObservableProperty] private bool _versionConvertComboBoxStatus;
     [ObservableProperty] private bool _saveButtonStatus;
     [ObservableProperty] private bool _deleteButtonStatus;
@@ -133,7 +130,6 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string? _directoryPath;
     [ObservableProperty] private bool _returnDirectoryButtonStatus;
     [ObservableProperty] private bool _refreshDirectoryButtonStatus;
-
     [ObservableProperty] private bool _chooseOutputDirectoryCheckboxStatus;
     [ObservableProperty] private ObservableCollection<WorkingDirectoryFile>? _workingDirectoryFiles;
 

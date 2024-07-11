@@ -24,6 +24,9 @@ public enum D3DTXVersion
     LV9 = -9,
     LV10 = -10,
     LV11 = -11,
+    LV12 = -12,
+    LV13 = -13,
+    LV14 = -14,
 
     CLV1 = -20,
     CLV2 = -21,
@@ -36,6 +39,9 @@ public enum D3DTXVersion
     CLV9 = -28,
     CLV10 = -29,
     CLV11 = -30,
+    CLV12 = -31,
+    CLV13 = -32,
+    CLV14 = -33,
 
     // Such a bad practice to use negative numbers for versioning, but I had to use it as a level.
     Unknown = -100

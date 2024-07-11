@@ -180,6 +180,7 @@ namespace TelltaleTextureTool.Main
                     D3DTXVersion.LV9 => new D3DTX_LV9(),
                     D3DTXVersion.LV10 => new D3DTX_LV10(),
                     D3DTXVersion.LV11 => new D3DTX_LV11(),
+                    D3DTXVersion.LV12 => new D3DTX_LV12(),
                     D3DTXVersion.CLV1 => new D3DTX_CLV1(),
                     D3DTXVersion.CLV2 => new D3DTX_CLV2(),
                     D3DTXVersion.CLV3 => new D3DTX_CLV3(),
@@ -191,6 +192,7 @@ namespace TelltaleTextureTool.Main
                     D3DTXVersion.CLV9 => new D3DTX_CLV9(),
                     D3DTXVersion.CLV10 => new D3DTX_CLV10(),
                     D3DTXVersion.CLV11 => new D3DTX_CLV11(),
+                    D3DTXVersion.CLV12 => new D3DTX_CLV12(),
                     _ => throw new ArgumentException($"Unsupported D3DTX version: {version}")
                 };
             }
@@ -217,6 +219,19 @@ namespace TelltaleTextureTool.Main
                     D3DTXVersion.LV9 => jsonObject.ToObject<D3DTX_LV9>(),
                     D3DTXVersion.LV10 => jsonObject.ToObject<D3DTX_LV10>(),
                     D3DTXVersion.LV11 => jsonObject.ToObject<D3DTX_LV11>(),
+                    D3DTXVersion.LV12 => jsonObject.ToObject<D3DTX_LV12>(),
+                    D3DTXVersion.CLV1 => jsonObject.ToObject<D3DTX_CLV1>(),
+                    D3DTXVersion.CLV2 => jsonObject.ToObject<D3DTX_CLV2>(),
+                    D3DTXVersion.CLV3 => jsonObject.ToObject<D3DTX_CLV3>(),
+                    D3DTXVersion.CLV4 => jsonObject.ToObject<D3DTX_CLV4>(),
+                    D3DTXVersion.CLV5 => jsonObject.ToObject<D3DTX_CLV5>(),
+                    D3DTXVersion.CLV6 => jsonObject.ToObject<D3DTX_CLV6>(),
+                    D3DTXVersion.CLV7 => jsonObject.ToObject<D3DTX_CLV7>(),
+                    D3DTXVersion.CLV8 => jsonObject.ToObject<D3DTX_CLV8>(),
+                    D3DTXVersion.CLV9 => jsonObject.ToObject<D3DTX_CLV9>(),
+                    D3DTXVersion.CLV10 => jsonObject.ToObject<D3DTX_CLV10>(),
+                    D3DTXVersion.CLV11 => jsonObject.ToObject<D3DTX_CLV11>(),
+                    D3DTXVersion.CLV12 => jsonObject.ToObject<D3DTX_CLV12>(),
                     _ => throw new ArgumentException($"Unsupported D3DTX version: {version}")
                 };
             }
@@ -265,12 +280,14 @@ namespace TelltaleTextureTool.Main
                 D3DTXVersion.LV5, D3DTXVersion.LV6,
                 D3DTXVersion.LV7, D3DTXVersion.LV8,
                 D3DTXVersion.LV9, D3DTXVersion.LV10,
-                D3DTXVersion.LV11, D3DTXVersion.CLV1,
+                D3DTXVersion.LV11, D3DTXVersion.LV12,
+                D3DTXVersion.CLV1,
                 D3DTXVersion.CLV2, D3DTXVersion.CLV3,
                 D3DTXVersion.CLV4, D3DTXVersion.CLV5,
                 D3DTXVersion.CLV6, D3DTXVersion.CLV7,
                 D3DTXVersion.CLV8, D3DTXVersion.CLV9,
-                D3DTXVersion.CLV10, D3DTXVersion.CLV11];
+                D3DTXVersion.CLV10, D3DTXVersion.CLV11,
+                D3DTXVersion.CLV12];
 
             foreach (var version in legacyD3DTXVersion)
             {
@@ -436,32 +453,27 @@ namespace TelltaleTextureTool.Main
 
         public void ModifyD3DTX(D3DTXMetadata metadata, ImageSection[] sections)
         {
-            if (IsLegacyD3DTX())
-            {
-                //Generate a DDS header
-                // var dataArray = DDS_DirectXTexNet.GetDDSByteArray(image, DDSFlags.ForceDx9Legacy);
-                // d3dtxObject.ModifyD3DTX(metadata, dataArray);
-            }
             d3dtxMetadata = metadata;
 
-            // var meta = DDS_DirectXTexNet.GetDDSMetaData(image);
-            // if (d3dtxL1 != null)
-            // {
-            //     
-            // }
-            // else if (d3dtxL2 != null)
-            // {
-            //     var dataArray = DDS_DirectXTexNet.GetDDSByteArray(image, DDSFlags.ForceDx9Legacy);
-            //     d3dtxL2.ModifyD3DTX(meta, dataArray);
-            // }
+            if (IsLegacyD3DTX())
+            {
+                if (!HasDDSHeader())
+                {
+                    sections = sections.Skip(1).ToArray();
+                }
 
-            // If they are not legacy version, stable sort the image sections by size. (Smallest to Largest)
-            // var sections = DDS_DirectXTexNet.GetDDSImageSections(sections);
-            IEnumerable<ImageSection> newSections = sections;
-            newSections = sections.OrderBy(section => section.Pixels.Length);
+                d3dtxObject.ModifyD3DTX(metadata, sections.ToArray()); //ISSUE HERE WITH DXT5 AND MIP MAPS WITH UPSCALED TEXTURES
+            }
+            else
+            {
+                // If they are not legacy version, stable sort the image sections by size. (Smallest to Largest)
 
-            d3dtxObject.ModifyD3DTX(metadata, newSections.ToArray()); //ISSUE HERE WITH DXT5 AND MIP MAPS WITH UPSCALED TEXTURES
-            metaHeaderObject.SetMetaSectionChunkSizes(d3dtxObject.GetHeaderByteSize(), 0, ByteFunctions.GetByteArrayListElementsCount(d3dtxObject.GetPixelData()));
+                IEnumerable<ImageSection> newSections = sections;
+                newSections = sections.OrderBy(section => section.Pixels.Length);
+
+                d3dtxObject.ModifyD3DTX(metadata, newSections.ToArray()); //ISSUE HERE WITH DXT5 AND MIP MAPS WITH UPSCALED TEXTURES
+                metaHeaderObject.SetMetaSectionChunkSizes(d3dtxObject.GetHeaderByteSize(), 0, ByteFunctions.GetByteArrayListElementsCount(d3dtxObject.GetPixelData()));
+            }
         }
 
         /// <summary>

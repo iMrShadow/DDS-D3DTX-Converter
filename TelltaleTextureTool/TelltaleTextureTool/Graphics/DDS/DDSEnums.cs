@@ -107,7 +107,7 @@ public enum D3DFormat
     FORCE_DWORD = 0x7fffffff
 }
 
-public enum DXGIFormat
+public enum DXGIFormat : uint
 {
     UNKNOWN = 0,
     R32G32B32A32_TYPELESS = 1,

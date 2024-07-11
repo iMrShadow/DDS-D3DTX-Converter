@@ -16,7 +16,6 @@ namespace TelltaleTextureTool.Main
     /// </summary>
     public class KTX_Master
     {
-        public DDS dds;
         public List<byte[]> textureData;
 
         /// <summary>

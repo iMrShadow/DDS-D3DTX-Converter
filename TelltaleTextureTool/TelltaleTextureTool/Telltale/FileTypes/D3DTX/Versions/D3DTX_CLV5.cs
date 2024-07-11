@@ -359,6 +359,7 @@ public class D3DTX_CLV5 : ID3DTX
         d3dtxInfo += "mbIsWrapU = " + mbIsWrapU + Environment.NewLine;
         d3dtxInfo += "mbIsWrapV = " + mbIsWrapV + Environment.NewLine;
         d3dtxInfo += "mbIsFiltered = " + mbIsFiltered + Environment.NewLine;
+        d3dtxInfo += "mbEmbedMipMaps = " + mbEmbedMipMaps + Environment.NewLine;
         d3dtxInfo += "mNumMipLevels = " + mNumMipLevels + Environment.NewLine;
         d3dtxInfo += "mD3DFormat = " + mD3DFormat + Environment.NewLine;
         d3dtxInfo += "mWidth = " + mWidth + Environment.NewLine;
