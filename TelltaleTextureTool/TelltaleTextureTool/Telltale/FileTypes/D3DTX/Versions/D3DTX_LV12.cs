@@ -21,7 +21,7 @@ using System.Linq;
 
 /* - D3DTX Old Unknown Version games
  
- 
+ SAM AND MAX SEASON 1 OG USES MBIN
  
 */
 

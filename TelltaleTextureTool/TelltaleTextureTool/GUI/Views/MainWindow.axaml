@@ -4,13 +4,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:TelltaleTextureTool.Views"
         mc:Ignorable="d"
-        d:DesignWidth="1230"
-        d:DesignHeight="700"
         x:Class="TelltaleTextureTool.Views.MainWindow"
         Icon="/Assets/main_icon.ico"
         Title="Telltale Texture Tool"
         Height="700"
-        Width="1270"
+        Width="1570"
         MinWidth="600"
         MinHeight="250">
     <views:MainView />

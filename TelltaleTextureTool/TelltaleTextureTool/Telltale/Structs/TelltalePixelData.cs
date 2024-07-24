@@ -13,6 +13,13 @@ public struct TelltalePixelData
         pixelData = reader.ReadBytes((int)length);
     }
 
+    public TelltalePixelData(BinaryReader reader, int skip)
+    {
+        length = reader.ReadUInt32();
+        reader.BaseStream.Position += skip;
+        pixelData = reader.ReadBytes((int)length - skip);
+    }
+
     public void WriteBinaryData(BinaryWriter writer)
     {
         writer.Write(length);

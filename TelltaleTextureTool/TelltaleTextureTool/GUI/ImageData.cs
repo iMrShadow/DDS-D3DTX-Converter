@@ -62,25 +62,34 @@ public class ImageData
 
     private void GetImageDataFromOthers(string filePath, out Bitmap bitmap, out ImageProperties imageProperties)
     {
-        bitmap = new Bitmap(filePath);
-
-        var imageInfo = SixLabors.ImageSharp.Image.Identify(filePath);
-        var image = SixLabors.ImageSharp.Image.Load<Rgba32>(filePath);
-
-        bool hasAlpha = ImageUtilities.IsImageOpaque(image);
-        string hasAlphaString = hasAlpha ? "True" : "False";
-
-        imageProperties = new ImageProperties()
+          // Load the image using SkiaSharp
+    using (var skBitmap = SKBitmap.Decode(filePath))
         {
-            Name = Path.GetFileNameWithoutExtension(filePath),
-            Extension = Path.GetExtension(filePath),
-            CompressionType = imageInfo.Metadata.DecodedImageFormat.Name,
-            ChannelCount = (imageInfo.PixelType.BitsPerPixel / 8).ToString(),
-            Height = imageInfo.Height.ToString(),
-            Width = imageInfo.Width.ToString(),
-            HasAlpha = hasAlphaString,
-            MipMapCount = "N/A"
-        };
+            // Create a memory stream to hold the image data
+            using (var ms = new MemoryStream())
+            {
+                // Encode the SKBitmap to a PNG and write to the memory stream
+                skBitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
+                ms.Seek(0, SeekOrigin.Begin); // Rewind the stream to the beginning
+
+                // Create an Avalonia Bitmap from the memory stream
+                bitmap = new Bitmap(ms);
+            }
+
+            string hasAlphaString = skBitmap.Info.IsOpaque ? "True" : "False";
+
+            imageProperties = new ImageProperties()
+            {
+                Name = Path.GetFileNameWithoutExtension(filePath),
+                Extension = Path.GetExtension(filePath),
+                SurfaceFormat = skBitmap.ColorType.ToString(), 
+                ChannelCount = (skBitmap.BytesPerPixel*8).ToString(),
+                Height = skBitmap.Height.ToString(),
+                Width = skBitmap.Width.ToString(),
+                HasAlpha = hasAlphaString,
+                MipMapCount = "N/A" // SkiaSharp does not provide mipmap count directly
+            };
+        }
     }
 
     private void GetImageDataFromD3DTX(string filePath, D3DTXVersion d3DTXVersion, out Bitmap bitmap, out ImageProperties imageProperties)
@@ -94,7 +103,7 @@ public class ImageData
         imageProperties = new ImageProperties()
         {
             Name = metadata.TextureName,
-            CompressionType = d3dtx.GetStringFormat(),
+            SurfaceFormat = d3dtx.GetStringFormat(),
             Width = metadata.Width.ToString(),
             Height = metadata.Height.ToString(),
             HasAlpha = d3dtx.GetHasAlpha(),
@@ -131,7 +140,7 @@ public class ImageData
         {
             Name = Path.GetFileNameWithoutExtension(filePath),
             Extension = Path.GetExtension(filePath),
-            CompressionType = imageInfo.Metadata.DecodedImageFormat.Name,
+            SurfaceFormat = imageInfo.Metadata.DecodedImageFormat.Name,
             ChannelCount = (imageInfo.PixelType.BitsPerPixel / 8).ToString(),
             Height = imageInfo.Height.ToString(),
             Width = imageInfo.Width.ToString(),
@@ -147,7 +156,7 @@ public class ImageData
         imageProperties = new ImageProperties()
         {
             Name = "",
-            CompressionType = "",
+            SurfaceFormat = "",
             ChannelCount = "",
             Height = "",
             Width = "",
@@ -303,7 +312,6 @@ public class ImageData
                 throw new ArgumentException($"Skia unable to interpret pfim format: {image.Format}");
         }
 
-
         // Converts the data into writeableBitmap. (TODO Insert a link to the code)
         var imageInfo = new SKImageInfo(image.Width, image.Height, colorType);
         var handle = GCHandle.Alloc(newData, GCHandleType.Pinned);
@@ -339,7 +347,7 @@ public class ImageData
             Extension = ".ktx2",
             Height = texture.BaseHeight.ToString(),
             Width = texture.BaseWidth.ToString(),
-            CompressionType = texture.VkFormat.ToString(),
+            SurfaceFormat = texture.VkFormat.ToString(),
             HasAlpha = KTX2_HELPER.HasAlpha(texture.VkFormat) ? "True" : "False",
             //ChannelCount = Helper.GetDataFormatDescriptor(texture.VkFormat).DescriptorBlockSize.ToString(),
             MipMapCount = texture.NumLevels.ToString()
@@ -351,7 +359,7 @@ public class ImageData
         return new ImageProperties()
         {
             Name = "",
-            CompressionType = "",
+            SurfaceFormat = "",
             ChannelCount = "",
             Height = "",
             Width = "",

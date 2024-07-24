@@ -111,12 +111,12 @@ namespace TelltaleTextureTool.ImageProcessing
         {
             return fileType switch
             {
-                ".jpeg" => new JpegEncoder(),
-                ".jpg" => new JpegEncoder(),
-                ".png" => new PngEncoder(),
+                ".jpeg" => new JpegEncoder(), // Supported
+                ".jpg" => new JpegEncoder(), // Supported
+                ".png" => new PngEncoder(), // Supported
                 ".tif" => new TiffEncoder(),
                 ".tiff" => new TiffEncoder(),
-                ".bmp" => new BmpEncoder(),
+                ".bmp" => new BmpEncoder(), // Supported
                 ".tga" => new TgaEncoder(), // For the future
                 _ => throw new ArgumentException("File type is not valid!")
             };

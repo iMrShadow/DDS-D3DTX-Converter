@@ -68,7 +68,7 @@ public unsafe static partial class DDS_DirectXTexNet
             Extension = ".dds",
             Height = ddsMetadata.Height.ToString(),
             Width = ddsMetadata.Width.ToString(),
-            CompressionType = dxgiFormat.ToString(),
+            SurfaceFormat = dxgiFormat.ToString(),
             HasAlpha = hasAlpha,
             ChannelCount = channelCount.ToString(),
             MipMapCount = ddsMetadata.MipLevels.ToString()

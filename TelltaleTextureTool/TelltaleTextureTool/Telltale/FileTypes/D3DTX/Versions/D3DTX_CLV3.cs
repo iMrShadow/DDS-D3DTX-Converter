@@ -302,7 +302,7 @@ public class D3DTX_CLV3 : ID3DTX
                 }
 
                 reader.BaseStream.Position -= 4;
-                TelltalePixelData telltalePixelData = new(reader);
+                TelltalePixelData telltalePixelData = new(reader, 128);
                 mPixelData.Add(telltalePixelData);
             }
 

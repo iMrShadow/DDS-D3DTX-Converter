@@ -85,6 +85,21 @@ public partial class MainViewModel : ViewModelBase
         new FormatItemViewModel { Name = "Legacy Version 9", ItemStatus = true},
         new FormatItemViewModel { Name = "Legacy Version 10", ItemStatus = true},
         new FormatItemViewModel { Name = "Legacy Version 11", ItemStatus = true},
+        new FormatItemViewModel { Name = "Legacy Version 12", ItemStatus = true},
+        new FormatItemViewModel { Name = "Legacy Version 13", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 1", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 2", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 3", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 4", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 5", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 6", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 7", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 8", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 9", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 10", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 11", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 12", ItemStatus = true},
+        new FormatItemViewModel { Name = "Console Legacy Version 13", ItemStatus = true},
     ];
 
     private readonly List<string> _allTypes = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".d3dtx", ".dds", ".ktx", ".ktx2", ".tga"];
@@ -177,6 +192,7 @@ public partial class MainViewModel : ViewModelBase
     #region MAIN MENU BUTTONS ACTIONS
 
     // Open Directory Command
+    [RelayCommand]
     public async Task OpenDirectoryButton_Click()
     {
         try
@@ -202,7 +218,8 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public async void SaveFileButton_Click()
+    [RelayCommand]
+    public async Task SaveFileButton_Click()
     {
         try
         {
@@ -244,7 +261,8 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public async void AddFilesButton_Click()
+    [RelayCommand]
+    public async Task AddFilesButton_Click()
     {
         try
         {
@@ -287,6 +305,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Delete Command
+    [RelayCommand]
     public async Task DeleteFileButton_Click()
     {
         var workingDirectoryFile =
@@ -330,6 +349,7 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
     public void HelpButton_Click()
     {
         mainManager.OpenAppHelp();
@@ -352,7 +372,8 @@ public partial class MainViewModel : ViewModelBase
 
     #region CONTEXT MENU ACTIONS
 
-    public async void ContextMenuAddFilesCommand()
+    [RelayCommand]
+    public async Task ContextMenuAddFilesCommand()
     {
         try
         {
@@ -396,7 +417,8 @@ public partial class MainViewModel : ViewModelBase
         await UpdateUiAsync();
     }
 
-    public async void ContextMenuOpenFileCommand()
+    [RelayCommand]
+    public async Task ContextMenuOpenFileCommand()
     {
         try
         {
@@ -419,7 +441,8 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public async void ContextMenuOpenFolderCommand()
+    [RelayCommand]
+    public async Task ContextMenuOpenFolderCommand()
     {
         try
         {
@@ -620,6 +643,21 @@ public partial class MainViewModel : ViewModelBase
             "Legacy Version 9" => D3DTXVersion.LV9,
             "Legacy Version 10" => D3DTXVersion.LV10,
             "Legacy Version 11" => D3DTXVersion.LV11,
+            "Legacy Version 12" => D3DTXVersion.LV12,
+            "Legacy Version 13" => D3DTXVersion.LV13,
+            "Console Legacy Version 1" => D3DTXVersion.CLV1,
+            "Console Legacy Version 2" => D3DTXVersion.CLV2,
+            "Console Legacy Version 3" => D3DTXVersion.CLV3,
+            "Console Legacy Version 4" => D3DTXVersion.CLV4,
+            "Console Legacy Version 5" => D3DTXVersion.CLV5,
+            "Console Legacy Version 6" => D3DTXVersion.CLV6,
+            "Console Legacy Version 7" => D3DTXVersion.CLV7,
+            "Console Legacy Version 8" => D3DTXVersion.CLV8,
+            "Console Legacy Version 9" => D3DTXVersion.CLV9,
+            "Console Legacy Version 10" => D3DTXVersion.CLV10,
+            "Console Legacy Version 11" => D3DTXVersion.CLV11,
+            "Console Legacy Version 12" => D3DTXVersion.CLV12,
+            "Console Legacy Version 13" => D3DTXVersion.CLV13,
             _ => D3DTXVersion.DEFAULT
         };
     }
@@ -718,6 +756,7 @@ public partial class MainViewModel : ViewModelBase
 
     #region SMALL MENU BUTTON ACTIONS
 
+    [RelayCommand]
     public async Task ReturnDirectory_Click()
     {
         try
@@ -737,6 +776,7 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
     public async Task ContextMenuRefreshDirectoryCommand()
     {
         await RefreshDirectoryButton_Click();

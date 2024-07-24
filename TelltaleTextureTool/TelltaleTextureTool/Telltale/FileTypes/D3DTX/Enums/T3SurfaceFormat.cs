@@ -141,7 +141,7 @@ public enum T3SurfaceFormat
 
     #endregion
 
-    #region Texture Compression Formats
+    #region S3TC Formats
 
     // Equivalent to DXGI_FORMAT_BC1_UNORM or Direct3D9 D3DFMT_DXT1
     // In Telltale Tool it is named eSurface_DXT1
@@ -179,21 +179,9 @@ public enum T3SurfaceFormat
     // Equivalent to DXGI_FORMAT_BC7_UNORM
     eSurface_BC7 = 0x47,
 
-    // The following formats are used for iOS/Android platforms only, which are not supported:
-    // PVRTC2
-    // PVRTC4
-    // PVRTC2a
-    // PVRTC4a
-    // ATC_RGB 
-    // ATC_RGB1A 
-    // ATC_RGBA 
-    // ETC1_RGB
-    // ETC2_RGB  
-    // ETC2_RGB1A 
-    // ETC2_RGBA 
-    // ETC2_R
-    // ETC2_RG
-    // ATSC_RGBA_4x4 
+    #endregion
+
+    #region Mobile Formats
 
     // PVRTC1 2bpp RGB
     eSurface_PVRTC2 = 0x50, //50h
@@ -206,9 +194,9 @@ public enum T3SurfaceFormat
 
     // PVRTC 1 or 2 4bpp RGBA
     eSurface_PVRTC4a = 0x53, //53h
-    eSurface_ATC_RGB = 0x60, //60h
-    eSurface_ATC_RGB1A = 0x61, //61h
-    eSurface_ATC_RGBA = 0x62, //62h
+    eSurface_ATC_RGB = 0x60, //60h ATC
+    eSurface_ATC_RGB1A = 0x61, //61h ATC Explicit Alpha
+    eSurface_ATC_RGBA = 0x62, //62h ATC Interpolated Alpha
     eSurface_ETC1_RGB = 0x70, //70h
 
     // VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK = 148,
@@ -223,8 +211,6 @@ public enum T3SurfaceFormat
     eSurface_ETC2_R = 0x74, //74h
     // ETC2 EAC RG11
     eSurface_ETC2_RG = 0x75, //75h
-
-    // Presumably eSurface_ETC2_RGBM exists, but it is not used. 
 
     eSurface_ATSC_RGBA_4x4 = 0x80, //80h
 

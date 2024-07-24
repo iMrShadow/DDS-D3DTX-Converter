@@ -339,7 +339,7 @@ public class D3DTX_CLV2 : ID3DTX
                 }
 
                 reader.BaseStream.Position -= 4;
-                TelltalePixelData telltalePixelData = new(reader);
+                TelltalePixelData telltalePixelData = new(reader, 128);
                 mPixelData.Add(telltalePixelData);
             }
 
@@ -399,7 +399,7 @@ public class D3DTX_CLV2 : ID3DTX
     {
         string d3dtxInfo = "";
 
-        d3dtxInfo += "||||||||||| D3DTX Legacy Version 2 Header |||||||||||" + Environment.NewLine;
+        d3dtxInfo += "||||||||||| D3DTX Console Legacy Version 2 Header |||||||||||" + Environment.NewLine;
         d3dtxInfo += "mSamplerState_BlockSize = " + mSamplerState_BlockSize + Environment.NewLine;
         d3dtxInfo += "mSamplerState = " + mSamplerState.ToString() + Environment.NewLine;
         d3dtxInfo += "mName_BlockSize = " + mName_BlockSize + Environment.NewLine;
@@ -442,8 +442,7 @@ public class D3DTX_CLV2 : ID3DTX
 
         return d3dtxInfo;
     }
-
-
+    
     public void PrintConsole()
     {
         Console.WriteLine(GetDebugInfo());

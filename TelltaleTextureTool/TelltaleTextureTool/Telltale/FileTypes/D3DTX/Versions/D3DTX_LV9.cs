@@ -20,6 +20,7 @@ using System.Linq;
 */
 
 /* - D3DTX Legacy Version 9 games
+ * Telltale Texas Hold'em  (UNTESTED)
  * Sam & Max Beyond Time and Space (TESTED)
 */
 

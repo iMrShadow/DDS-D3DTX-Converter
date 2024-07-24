@@ -254,7 +254,7 @@ public static partial class DDS_HELPER
             _ => DXGIFormat.R8G8B8A8_UNORM, // Choose R8G8B8A8 if the format is not specified. (Raw data)
         };
 
-        if (platformType == T3PlatformType.ePlatform_iPhone)
+        if (platformType == T3PlatformType.ePlatform_iPhone || platformType == T3PlatformType.ePlatform_Android)
         {
             dxgiFormat = GetDXGIFormatWithSwappedChannels(dxgiFormat);
         }

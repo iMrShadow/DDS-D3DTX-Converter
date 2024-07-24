@@ -14,6 +14,9 @@ using Pvrtc;
 using Decoders;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 using TelltaleTextureTool.Telltale.Meta;
+using LibWindPop.Utils.Graphics.Texture.Coder;
+using LibWindPop.Utils.Graphics.Bitmap;
+using LibWindPop.Utils.Graphics.Texture;
 
 namespace TelltaleTextureTool.Main
 {
@@ -319,7 +322,7 @@ namespace TelltaleTextureTool.Main
         /// <param name="destinationPath"></param>
         public void WriteFinalD3DTX(string destinationPath)
         {
-            using BinaryWriter writer = new(File.OpenWrite(destinationPath));
+            using BinaryWriter writer = new(File.Create(destinationPath));
 
             metaHeaderObject.WriteToBinary(writer);
             d3dtxObject.WriteToBinary(writer);
@@ -685,8 +688,12 @@ namespace TelltaleTextureTool.Main
 
         public byte[] DecodePixelDataByFormat(byte[] pixelData, T3SurfaceFormat surfaceFormat, int width, int height, T3PlatformType platformType)
         {
+            IPitchableTextureCoder coder = null;
+
             if (surfaceFormat == T3SurfaceFormat.eSurface_PVRTC4 || surfaceFormat == T3SurfaceFormat.eSurface_PVRTC4a)
             {
+                // coder = new RGBA_PVRTCI_2BPP_UByte();
+
                 PvrtcDecoder pvrtcDecoder = new PvrtcDecoder();
                 pixelData = pvrtcDecoder.DecompressPVRTC(pixelData, width, height, false);
             }
@@ -697,13 +704,65 @@ namespace TelltaleTextureTool.Main
             }
             else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB)
             {
-                AtcDecoder atcDecoder = new AtcDecoder();
-                pixelData = atcDecoder.DecompressAtcRgb4(pixelData, width, height);
+                coder = new RGB_ATC_UByte();
+                //  AtcDecoder atcDecoder = new AtcDecoder();
+                //  pixelData = atcDecoder.DecompressAtcRgb4(pixelData, width, height);
+                // int bytesRead = AssetRipper.TextureDecoder.Atc.AtcDecoder.DecompressAtcRgb4(pixelData, width, height, out byte[] decodedData);
+                //  pixelData = decodedData;
             }
-            else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGBA || surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB1A)
+            else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGBA)
             {
-                AtcDecoder atcDecoder = new AtcDecoder();
-                pixelData = atcDecoder.DecompressAtcRgba8(pixelData, width, height);
+                coder = new RGBA_ATC_Interpolated_UByte();
+                //  AtcDecoder atcDecoder = new AtcDecoder();
+                //  int bytesRead = AssetRipper.TextureDecoder.Atc.AtcDecoder.DecompressAtcRgba8(pixelData, width, height, out byte[] decodedData);
+                // pixelData = atcDecoder.DecompressAtcRgba8(pixelData, width, height);
+                //  pixelData = decodedData;
+            }
+            else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB1A)
+            {
+                coder = new RGBA_ATC_Explicit_UByte();
+            }
+
+            using (NativeBitmap bitmap = new NativeBitmap(width, height))
+            {
+                RefBitmap refBitmap = bitmap.AsRefBitmap();
+                //RefBitmap refBitmap1 = new RefBitmap(refBitmap, 0, 0, width, height);
+                ReadOnlySpan<byte> dataSpan = pixelData.AsSpan();
+                byte[] newPixelData = new byte[refBitmap.Area * 4];
+
+                if (coder != null)
+                {
+                    coder.Decode(dataSpan, width, height, refBitmap);
+                    int j = 0;
+
+                    if (T3SurfaceFormat.eSurface_ATC_RGB1A != surfaceFormat)
+                    {
+                        for (int i = 0; i < refBitmap.Area; i++)
+                        {
+                            newPixelData[j] = refBitmap.Data[i].Red;
+                            newPixelData[j + 1] = refBitmap.Data[i].Green;
+                            newPixelData[j + 2] = refBitmap.Data[i].Blue;
+                            newPixelData[j + 3] = refBitmap.Data[i].Alpha;
+
+                            j += 4;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < refBitmap.Area; i++)
+                        {
+                            newPixelData[j] = refBitmap.Data[i].Alpha;
+                            newPixelData[j + 1] = refBitmap.Data[i].Red;
+                            newPixelData[j + 2] = refBitmap.Data[i].Green;
+                            newPixelData[j + 3] = refBitmap.Data[i].Blue;
+
+                            j += 4;
+                        }
+                    }
+
+
+                    pixelData = newPixelData;
+                }
             }
 
             return pixelData;
