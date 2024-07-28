@@ -70,8 +70,17 @@ namespace TelltaleTextureTool.Main
                 ktx2TextureInfo.NumLevels = 1;
                 ktx2TextureInfo.GenerateMipmaps = 0;
             }
+            ktx2TextureInfo.GenerateMipmaps = 0;
+            Ktx2.ErrorCode err = Ktx2.Create(ktx2TextureInfo, Ktx2.TextureCreateStorage.NoStorage, out texture);
 
-            Ktx2.ErrorCode err = Ktx2.Create(ktx2TextureInfo, Ktx2.TextureCreateStorage.AllocStorage, out texture);
+            List<byte[]> textureData = d3dtx.GetPixelData();
+
+            byte[] pixelData = textureData.SelectMany(x => x).ToArray();
+
+            fixed (byte* pData = pixelData)
+            {
+                texture->PData = pData;
+            }
 
             if (err != Ktx2.ErrorCode.Success)
             {
@@ -98,25 +107,29 @@ namespace TelltaleTextureTool.Main
 
             T3SurfaceFormat surfaceFormat = metadata.Format;
 
-            List<byte[]> textureData = d3dtx.GetPixelData();
+            //             List<byte[]> textureData = d3dtx.GetPixelData();
 
-            textureData.Reverse();
+            //             byte[] pixelData = textureData.SelectMany(x => x).ToArray();
 
-            for (int i = 0; i < ktx2TextureInfo.NumLevels; i++)
-            {
-                for (int j = 0; j < ktx2TextureInfo.NumLayers; j++)
-                {
-                    for (int k = 0; k < ktx2TextureInfo.NumFaces; k++)
-                    {
-                        Ktx2.ErrorCode err = Ktx2.SetImageFromMemory(texture, (uint)i, (uint)j, (uint)k, textureData[i + j + k][0], (nuint)textureData[i + j + k].Length);
+            // texture.p
 
-                        if (err != Ktx2.ErrorCode.Success)
-                        {
-                            throw new Exception("Failed to set image from memory.");
-                        }
-                    }
-                }
-            }
+            // textureData.Reverse();
+
+            // for (int i = 0; i < ktx2TextureInfo.NumLevels; i++)
+            // {
+            //     for (int j = 0; j < ktx2TextureInfo.NumLayers; j++)
+            //     {
+            //         for (int k = 0; k < ktx2TextureInfo.NumFaces; k++)
+            //         {
+            //             Ktx2.ErrorCode err = Ktx2.SetImageFromMemory(texture, (uint)i, (uint)j, (uint)k, textureData[i + j + k][0], (nuint)textureData[i + j + k].Length);
+
+            //             if (err != Ktx2.ErrorCode.Success)
+            //             {
+            //                 throw new Exception("Failed to set image from memory.");
+            //             }
+            //         }
+            //     }
+            // }
         }
 
         /// <summary>

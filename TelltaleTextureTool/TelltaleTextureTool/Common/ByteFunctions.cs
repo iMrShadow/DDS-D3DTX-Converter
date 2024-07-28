@@ -43,6 +43,25 @@ public static class ByteFunctions
         return value;
     }
 
+    public static string ReadNullTerminatedString(BinaryReader reader)
+    {
+        StringBuilder sb = new();
+
+        // If files names longer than 256 characters exist, then I woudld be impressed.
+        for (int i = 0; i < 256; i++)
+        {
+            char c = reader.ReadChar();
+            if (c != '\0')
+            {
+                break;
+            }
+
+            sb.Append(c);
+        }
+
+        return sb.ToString();
+    }
+
     public static string ReadFixedString(BinaryReader reader, int length)
     {
         string value = "";

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,18 +8,19 @@ namespace TelltaleTextureTool;
 
 public class WorkingDirectoryFile : IEquatable<WorkingDirectoryFile>
 {
-    public string? FileName { get; set; }
-    public string? FileType { get; set; }
-    public DateTime FileLastWrite { get; set; }
-    public string? FilePath { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FileType { get; set; }= string.Empty;
+    public DateTime FileLastWrite { get; set; } = DateTime.MinValue;
+    public string FilePath { get; set; } = string.Empty;
 
-    public bool Equals(WorkingDirectoryFile? other)
+    public bool Equals(WorkingDirectoryFile other)
     {
         return FileName == other.FileName &&
                  FileType == other.FileType &&
                  FilePath == other.FilePath;
     }
 }
+
 
 public class WorkingDirectory
 {

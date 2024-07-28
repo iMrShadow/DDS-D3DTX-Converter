@@ -120,14 +120,12 @@ public partial class MainViewModel : ViewModelBase
 
     #region UI PROPERTIES
 
-    [ObservableProperty] private WorkingDirectoryFile? _dataGridSelectedItem;
-
     [ObservableProperty] private ImageProperties _imageProperties;
     [ObservableProperty] private FormatItemViewModel _selectedFormat;
 
     [ObservableProperty] private FormatItemViewModel _selectedVersionConvertOption;
-    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _formatsList;
-    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _versionConvertOptionsList;
+    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _formatsList = [];
+    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _versionConvertOptionsList = [];
     [ObservableProperty] private bool _comboBoxStatus;
     [ObservableProperty] private bool _versionConvertComboBoxStatus;
     [ObservableProperty] private bool _saveButtonStatus;
@@ -141,31 +139,30 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private int _selectedLegacyTitleIndex;
     [ObservableProperty] private string? _imageNamePreview;
     [ObservableProperty] private IImage? _imagePreview;
-    [ObservableProperty] private string? _fileText;
-    [ObservableProperty] private string? _directoryPath;
+    [ObservableProperty] private string _fileText = string.Empty;
+    [ObservableProperty] private string _directoryPath = string.Empty;
     [ObservableProperty] private bool _returnDirectoryButtonStatus;
     [ObservableProperty] private bool _refreshDirectoryButtonStatus;
     [ObservableProperty] private bool _chooseOutputDirectoryCheckboxStatus;
-    [ObservableProperty] private ObservableCollection<WorkingDirectoryFile>? _workingDirectoryFiles;
+    [ObservableProperty] private string _debugInfo = string.Empty;
+
+    [ObservableProperty][NotifyCanExecuteChangedFor("PreviewImageCommand")] private uint _mipValue;
+    [ObservableProperty][NotifyCanExecuteChangedFor("PreviewImageCommand")] private uint _faceValue;
+    [ObservableProperty] private uint _maxMipCount;
+    [ObservableProperty] private uint _maxFaceCount;
+    [ObservableProperty] private ObservableCollection<WorkingDirectoryFile> _workingDirectoryFiles = [];
+
+    [ObservableProperty] private ImageData _imageData;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor("ResetPanAndZoomCommand")]
+    private WorkingDirectoryFile _dataGridSelectedItem = new();
+
 
     public class FormatItemViewModel
     {
         public string? Name { get; set; }
         public bool ItemStatus { get; set; }
-    }
-
-    public WorkingDirectoryFile? DataGrid_SelectedItem
-    {
-        get => _dataGridSelectedItem;
-        set
-        {
-            if (_dataGridSelectedItem != value)
-            {
-                _dataGridSelectedItem = value;
-                PreviewImage();
-                ResetPanAndZoomCommand.Execute(null);
-            }
-        }
     }
 
     public RelayCommand ResetPanAndZoomCommand { get; internal set; }
@@ -185,7 +182,6 @@ public partial class MainViewModel : ViewModelBase
             Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
         };
         VersionConvertOptionsList = _versionConvertOptions;
-        WorkingDirectoryFiles = new ObservableCollection<WorkingDirectoryFile>();
         SelectedVersionConvertOption = VersionConvertOptionsList[0];
     }
 
@@ -207,7 +203,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 ReturnDirectoryButtonStatus = true;
                 RefreshDirectoryButtonStatus = true;
-                DataGrid_SelectedItem = null;
+                DataGridSelectedItem = null;
 
                 await UpdateUiAsync();
             }
@@ -223,11 +219,11 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            if (DataGrid_SelectedItem is not null)
+            if (DataGridSelectedItem is not null)
             {
                 var topLevel = GetMainWindow();
 
-                if (Directory.Exists(DataGrid_SelectedItem.FilePath))
+                if (Directory.Exists(DataGridSelectedItem.FilePath))
                 {
                     throw new Exception("Cannot save a directory.");
                 }
@@ -236,17 +232,17 @@ public partial class MainViewModel : ViewModelBase
                 var storageFile = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
                 {
                     Title = "Save File",
-                    SuggestedFileName = DataGrid_SelectedItem.FileName,
+                    SuggestedFileName = DataGridSelectedItem.FileName,
                     ShowOverwritePrompt = true,
-                    DefaultExtension = DataGrid_SelectedItem.FileType is null ? "bin" : DataGrid_SelectedItem.FileType.Substring(1)
+                    DefaultExtension = DataGridSelectedItem.FileType is null ? "bin" : DataGridSelectedItem.FileType.Substring(1)
                 });
 
                 if (storageFile is not null)
                 {
                     var destinationFilePath = storageFile.Path.AbsolutePath;
 
-                    if (File.Exists(DataGrid_SelectedItem.FilePath))
-                        File.Copy(DataGrid_SelectedItem.FilePath, destinationFilePath, true);
+                    if (File.Exists(DataGridSelectedItem.FilePath))
+                        File.Copy(DataGridSelectedItem.FilePath, destinationFilePath, true);
                 }
             }
         }
@@ -309,7 +305,7 @@ public partial class MainViewModel : ViewModelBase
     public async Task DeleteFileButton_Click()
     {
         var workingDirectoryFile =
-            DataGrid_SelectedItem;
+            DataGridSelectedItem;
 
         var textureFilePath = workingDirectoryFile.FilePath;
 
@@ -343,7 +339,7 @@ public partial class MainViewModel : ViewModelBase
         }
         finally
         {
-            DataGrid_SelectedItem = null;
+            DataGridSelectedItem = null;
             await SafeRefreshDirectoryAsync();
             await UpdateUiAsync();
         }
@@ -422,11 +418,11 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            if (DataGrid_SelectedItem == null)
+            if (DataGridSelectedItem == null)
                 return;
 
             var workingDirectoryFile =
-                DataGrid_SelectedItem;
+                DataGridSelectedItem;
 
             var filePath = workingDirectoryFile.FilePath;
 
@@ -447,11 +443,11 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             // if there is no valid item selected, don't continue
-            if (DataGrid_SelectedItem == null)
+            if (DataGridSelectedItem == null)
                 return;
 
             // get our selected file object from the working directory
-            var workingDirectoryFile = DataGrid_SelectedItem;
+            var workingDirectoryFile = DataGridSelectedItem;
             if (!Directory.Exists(workingDirectoryFile.FilePath))
                 throw new DirectoryNotFoundException("Directory not found.");
 
@@ -475,17 +471,17 @@ public partial class MainViewModel : ViewModelBase
         {
             if (DirectoryPath == null) return;
 
-            if (DataGrid_SelectedItem == null)
+            if (DataGridSelectedItem == null)
             {
                 if (Directory.Exists(DirectoryPath))
                     await OpenFileExplorer(DirectoryPath);
             }
             else
             {
-                if (File.Exists(DataGrid_SelectedItem.FilePath))
-                    await OpenFileExplorer(DataGrid_SelectedItem.FilePath);
-                else if (Directory.Exists(DataGrid_SelectedItem.FilePath))
-                    await OpenFileExplorer(DataGrid_SelectedItem.FilePath);
+                if (File.Exists(DataGridSelectedItem.FilePath))
+                    await OpenFileExplorer(DataGridSelectedItem.FilePath);
+                else if (Directory.Exists(DataGridSelectedItem.FilePath))
+                    await OpenFileExplorer(DataGridSelectedItem.FilePath);
             }
         }
         catch (Exception ex)
@@ -534,10 +530,10 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            if (DataGrid_SelectedItem == null) return;
+            if (DataGridSelectedItem == null) return;
 
             var workingDirectoryFile =
-                DataGrid_SelectedItem;
+                DataGridSelectedItem;
 
             string? textureFilePath = workingDirectoryFile.FilePath;
 
@@ -586,7 +582,7 @@ public partial class MainViewModel : ViewModelBase
             }
             else
             {
-                oldTextureType = GetTextureTypeFromExtension(DataGrid_SelectedItem.FileType);
+                oldTextureType = GetTextureTypeFromExtension(DataGridSelectedItem.FileType);
                 newTextureType = GetTextureTypeFromItem(SelectedFormat.Name);
                 Console.WriteLine("Old Texture Type: " + oldTextureType);
                 Console.WriteLine("New Texture Type: " + newTextureType);
@@ -676,15 +672,12 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            if (DataGrid_SelectedItem == null) return;
+            if (DataGridSelectedItem == null) return;
 
             var workingDirectoryFile =
-                DataGrid_SelectedItem;
+                DataGridSelectedItem;
 
             string? textureFilePath = workingDirectoryFile.FilePath;
-
-            if (!File.Exists(textureFilePath))
-                throw new DirectoryNotFoundException("File was not found.");
 
             string debugInfo = string.Empty;
 
@@ -701,12 +694,12 @@ public partial class MainViewModel : ViewModelBase
             {
                 debugInfo = DDS_DirectXTexNet.GetDDSDebugInfo(textureFilePath);
             }
+            else
+            {
+                debugInfo = string.Empty;
+            }
 
-            var messageBox = MessageBoxes.GetDebugInformationBox(debugInfo);
-
-            var mainWindow = GetMainWindow();
-            var result = await MessageBoxManager.GetMessageBoxStandard(messageBox)
-                    .ShowWindowDialogAsync(mainWindow);
+            DebugInfo = debugInfo;
         }
         catch (Exception ex)
         {
@@ -853,11 +846,11 @@ public partial class MainViewModel : ViewModelBase
             if (source is null) return;
             if (source is Border)
             {
-                if (DataGrid_SelectedItem == null)
+                if (DataGridSelectedItem == null)
                     return;
 
                 var workingDirectoryFile =
-                    DataGrid_SelectedItem;
+                    DataGridSelectedItem;
 
                 var filePath = workingDirectoryFile.FilePath;
 
@@ -891,9 +884,9 @@ public partial class MainViewModel : ViewModelBase
 
     private void UpdateUIElementsAsync()
     {
-        if (DataGrid_SelectedItem != null)
+        if (DataGridSelectedItem != null)
         {
-            var workingDirectoryFile = DataGrid_SelectedItem;
+            var workingDirectoryFile = DataGridSelectedItem;
             var path = workingDirectoryFile.FilePath;
             var extension = Path.GetExtension(path).ToLowerInvariant();
 
@@ -945,27 +938,37 @@ public partial class MainViewModel : ViewModelBase
         ImageNamePreview = string.Empty;
     }
 
-    private async Task PreviewImage()
+    [RelayCommand]
+    public async Task UpdateUIElementsOnItemChange()
+    {
+        await PreviewImage();
+        ResetPanAndZoomCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    public async Task PreviewImage()
     {
         try
         {
             UpdateUIElementsAsync();
 
-            if (DataGrid_SelectedItem == null)
+            if (DataGridSelectedItem == null)
                 return;
 
-            var workingDirectoryFile = DataGrid_SelectedItem;
+            var workingDirectoryFile = DataGridSelectedItem;
             var filePath = workingDirectoryFile.FilePath;
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
 
             ImageNamePreview = workingDirectoryFile.FileName + workingDirectoryFile.FileType;
 
-
             TextureType textureType = TextureType.Unknown;
             if (extension != string.Empty)
                 textureType = GetTextureTypeFromItem(extension.ToUpperInvariant().Remove(0, 1));
 
-            ImageData imageData = new(filePath, textureType, GetD3DTXConversionType());
+            ImageData imageData = new(filePath, textureType, GetD3DTXConversionType(),MipValue,FaceValue);
+            
+            MaxMipCount =  imageData.MaxMip;
+            MaxFaceCount =  imageData.MaxFace;
 
             ImageProperties = imageData.ImageProperties;
 
@@ -981,6 +984,7 @@ public partial class MainViewModel : ViewModelBase
                 ImagePreview = imageData.ImageBitmap;
             }
 
+            await DebugButton_Click();
         }
         catch (Exception ex)
         {

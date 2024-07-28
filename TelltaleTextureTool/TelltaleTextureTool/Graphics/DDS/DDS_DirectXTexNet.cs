@@ -84,7 +84,7 @@ public unsafe static partial class DDS_DirectXTexNet
     /// <param name="width">The width of the DDS image.</param>
     /// <param name="height">(Optional) The height of the DDS image. If not provided, it defaults to 0.</param>
     /// <returns>The pitch.</returns>
-    public static uint ComputePitch(DXGIFormat dxgiFormat, nuint width, nuint height = 1)
+    public static uint ComputePitch(DXGIFormat dxgiFormat, ulong width, ulong height = 1)
     {
         nuint rowPitch;
         nuint slicePitch;
@@ -217,6 +217,7 @@ public unsafe static partial class DDS_DirectXTexNet
 
         return textureData;
     }
+
 
     public static UnmanagedMemoryStream GetUnmanagedMemoryStreamFromMemory(byte[] array)
     {
@@ -658,5 +659,143 @@ public unsafe static partial class DDS_DirectXTexNet
         {
             outPixels[j] = inPixels[j];
         }
+    }
+}
+
+
+public unsafe partial class DDS
+{
+    public ScratchImage Image { get; set; }
+    public TexMetadata Metadata { get; set; }
+
+    public DXGIFormat PreviewFormat { get; set; }
+    public ulong PreviewWidth { get; set; }
+    public ulong PreviewHeight { get; set; }
+    private uint PreviewMip { get; set; } = 0;
+
+    public DDS(string filePath, DDSFlags flags = DDSFlags.None)
+    {
+        Initialize(ByteFunctions.LoadTexture(filePath), flags);
+    }
+
+    public DDS(byte[] data, DDSFlags flags = DDSFlags.None)
+    {
+        Initialize(data, flags);
+    }
+
+    private void Initialize(byte[] ddsData, DDSFlags flags = DDSFlags.None)
+    {
+        Image = DirectXTex.CreateScratchImage();
+        Span<byte> src = ddsData;
+        Blob blob = DirectXTex.CreateBlob();
+        TexMetadata meta = new TexMetadata();
+
+        fixed (byte* srcPtr = src)
+        {
+            DirectXTex.LoadFromDDSMemory(srcPtr, (nuint)src.Length, flags, &meta, Image);
+        }
+
+        Console.WriteLine(DDS_DirectXTexNet.GetDDSDebugInfo(meta));
+        Metadata = meta;
+
+        blob.Release();
+
+    }
+
+    public void LoadDDS(string filePath, DDSFlags flags = DDSFlags.None)
+    {
+        DDS_DirectXTexNet.GetDDSImage(filePath, out ScratchImage Image, out TexMetadata Metadata, flags);
+    }
+
+    public string GetDDSDebugInfo()
+    {
+        return DDS_DirectXTexNet.GetDDSDebugInfo(Metadata);
+    }
+
+    public void ConvertToRGBA()
+    {
+        uint format = (uint)(DirectXTex.IsSRGB(Metadata.Format) ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM);
+
+        ScratchImage destImage = DirectXTex.CreateScratchImage();
+
+        if (DirectXTex.IsCompressed(Metadata.Format))
+        {
+            DirectXTex.Decompress2(Image.GetImages(), Image.GetImageCount(), Image.GetMetadata(), format, destImage);
+        }
+        else
+        {
+            DirectXTex.Convert2(Image.GetImages(), Image.GetImageCount(), Image.GetMetadata(), format, TexFilterFlags.Default, 0.5f, destImage);
+        }
+
+        Image.Release();
+        Image = destImage;
+    }
+
+    public byte[] GetSectionPixelData(uint mip, uint face)
+    {
+        if (Metadata.Format != (uint)DXGIFormat.R8G8B8A8_UNORM_SRGB
+            || Metadata.Format != (uint)DXGIFormat.R8G8B8A8_UNORM)
+        {
+            ConvertToRGBA();
+        }
+
+        uint slice = 0;
+
+        // Swap slice and face if it's a 3D texture, because they don't have faces.
+        if (Metadata.Dimension == TexDimension.Texture3D)
+        {
+            slice = face;
+            face = 0;
+        }
+
+        var image = DirectXTex.GetImage(Image, (ulong)mip, (ulong)face, (ulong)slice);
+
+        PreviewFormat = (DXGIFormat)image.Format;
+        PreviewWidth = image.Width;
+        PreviewHeight = image.Height;
+        PreviewMip = mip;
+
+        byte[] pixels = new byte[image.SlicePitch];
+
+        Marshal.Copy((nint)image.Pixels, pixels, 0, pixels.Length);
+
+        return pixels;
+    }
+
+    public void GetData(uint mip, uint face, out ulong width, out ulong height, out ulong pitch, out ulong length, out byte[] pixels)
+    {
+        pixels = GetSectionPixelData(mip, face);
+        width = PreviewWidth;
+        height = PreviewHeight;
+        pitch = DDS_DirectXTexNet.ComputePitch(PreviewFormat, PreviewWidth, PreviewHeight);
+        length = width * height * (DirectXTex.BitsPerPixel((uint)PreviewFormat) / 8);
+    }
+
+    public void GetBounds(out uint mip, out uint face)
+    {
+        mip = (uint)Metadata.MipLevels - 1;
+
+        if (Metadata.IsVolumemap())
+        {
+            uint mipDiff = (uint)(Metadata.MipLevels - PreviewMip);
+            uint depth = (uint)Metadata.Depth;
+
+            while (mipDiff > 0)
+            {
+                depth = Math.Max(1, depth / 2);
+                mipDiff--;
+            }
+
+            face = depth - 1;
+        }
+        else
+        {
+            face = (uint)Metadata.ArraySize - 1;
+        }
+    }
+
+    ~DDS()
+    {
+        Image.Release();
     }
 }

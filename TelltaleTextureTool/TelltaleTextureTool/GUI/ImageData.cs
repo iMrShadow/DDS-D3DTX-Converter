@@ -13,7 +13,6 @@ using SkiaSharp;
 using System.Runtime.InteropServices;
 using Avalonia.Platform;
 using Avalonia;
-using Hexa.NET.DirectXTex;
 
 namespace TelltaleTextureTool;
 
@@ -21,34 +20,66 @@ public class ImageData
 {
     public ImageProperties ImageProperties { get; set; }
     public Bitmap ImageBitmap { get; set; }
+    public DDS DDSImage { get; set; }
 
-    public ImageData(string filePath, TextureType textureType, D3DTXVersion d3DTXVersion = D3DTXVersion.DEFAULT)
+    private uint Mip { get; set; }
+    private uint Face { get; set; }
+
+    public uint MaxMip { get; set; }
+    public uint MaxFace { get; set; }
+
+    private string CurrentFilePath { get; set; }
+    private TextureType CurrentTextureType { get; set; }
+    private D3DTXVersion CurrentD3DTXVersion { get; set; }
+
+
+    public ImageData(string filePath, TextureType textureType, D3DTXVersion d3DTXVersion = D3DTXVersion.DEFAULT, uint mip = 0, uint face = 0)
     {
-        GetImageData(filePath, textureType, out Bitmap imageBitmap, out ImageProperties imageProperties, d3DTXVersion);
+        Mip = mip;
+        Face = face;
+        CurrentFilePath = filePath;
+        CurrentTextureType = textureType;
+        CurrentD3DTXVersion = d3DTXVersion;
+
+        GetImageData(out Bitmap imageBitmap, out ImageProperties imageProperties);
 
         ImageBitmap = imageBitmap;
         ImageProperties = imageProperties;
     }
 
-    private void GetImageData(string filePath, TextureType textureType, out Bitmap bitmap, out ImageProperties imageProperties, D3DTXVersion d3DTXVersion = D3DTXVersion.DEFAULT)
+    public void SetImageData(string filePath, TextureType textureType, D3DTXVersion d3DTXVersion = D3DTXVersion.DEFAULT, uint mip = 0, uint face = 0)
     {
-        switch (textureType)
+        Mip = mip;
+        Face = face;
+        CurrentFilePath = filePath;
+        CurrentTextureType = textureType;
+        CurrentD3DTXVersion = d3DTXVersion;
+
+        GetImageData(out Bitmap imageBitmap, out ImageProperties imageProperties);
+
+        ImageBitmap = imageBitmap;
+        ImageProperties = imageProperties;
+    }
+
+    private void GetImageData(out Bitmap bitmap, out ImageProperties imageProperties)
+    {
+        switch (CurrentTextureType)
         {
             case TextureType.BMP:
             case TextureType.PNG:
             case TextureType.TGA:
             case TextureType.JPEG:
-                GetImageDataFromOthers(filePath, out bitmap, out imageProperties);
+                GetImageDataFromOthers(out bitmap, out imageProperties);
                 break;
             case TextureType.TIFF:
-                GetImageDataFromTIFF(filePath, out bitmap, out imageProperties);
+                GetImageDataFromTIFF(out bitmap, out imageProperties);
                 break;
             case TextureType.DDS:
-                GetImageDataFromDDS(filePath, out bitmap, out imageProperties);
+                GetImageDataFromDDS(out bitmap, out imageProperties);
                 break;
 
             case TextureType.D3DTX:
-                GetImageDataFromD3DTX(filePath, d3DTXVersion, out bitmap, out imageProperties);
+                GetImageDataFromD3DTX(CurrentD3DTXVersion, out bitmap, out imageProperties);
                 break;
             case TextureType.KTX:
             case TextureType.KTX2:
@@ -60,42 +91,10 @@ public class ImageData
         }
     }
 
-    private void GetImageDataFromOthers(string filePath, out Bitmap bitmap, out ImageProperties imageProperties)
-    {
-          // Load the image using SkiaSharp
-    using (var skBitmap = SKBitmap.Decode(filePath))
-        {
-            // Create a memory stream to hold the image data
-            using (var ms = new MemoryStream())
-            {
-                // Encode the SKBitmap to a PNG and write to the memory stream
-                skBitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
-                ms.Seek(0, SeekOrigin.Begin); // Rewind the stream to the beginning
-
-                // Create an Avalonia Bitmap from the memory stream
-                bitmap = new Bitmap(ms);
-            }
-
-            string hasAlphaString = skBitmap.Info.IsOpaque ? "True" : "False";
-
-            imageProperties = new ImageProperties()
-            {
-                Name = Path.GetFileNameWithoutExtension(filePath),
-                Extension = Path.GetExtension(filePath),
-                SurfaceFormat = skBitmap.ColorType.ToString(), 
-                ChannelCount = (skBitmap.BytesPerPixel*8).ToString(),
-                Height = skBitmap.Height.ToString(),
-                Width = skBitmap.Width.ToString(),
-                HasAlpha = hasAlphaString,
-                MipMapCount = "N/A" // SkiaSharp does not provide mipmap count directly
-            };
-        }
-    }
-
-    private void GetImageDataFromD3DTX(string filePath, D3DTXVersion d3DTXVersion, out Bitmap bitmap, out ImageProperties imageProperties)
+    private void GetImageDataFromD3DTX(D3DTXVersion d3DTXVersion, out Bitmap bitmap, out ImageProperties imageProperties)
     {
         var d3dtx = new D3DTX_Master();
-        d3dtx.ReadD3DTXFile(filePath, d3DTXVersion);
+        d3dtx.ReadD3DTXFile(CurrentFilePath, d3DTXVersion);
 
         // Initialize image properties
         D3DTXMetadata metadata = d3dtx.GetMetadata();
@@ -115,109 +114,24 @@ public class ImageData
         DDS_Master ddsFile = new(d3dtx);
         var array = ddsFile.GetData(d3dtx);
 
-        bitmap = ConvertDdsToBitmap(array);
+        DDSImage = new DDS(array);
+
+        bitmap = ConvertDdsToBitmap(Mip, Face);
     }
 
-    private void GetImageDataFromDDS(string filePath, out Bitmap bitmap, out ImageProperties imageProperties)
+    private void GetImageDataFromDDS(out Bitmap bitmap, out ImageProperties imageProperties)
     {
-        DDS_DirectXTexNet.GetImageData(ByteFunctions.LoadTexture(filePath), out MemoryStream memoryStream, out TexMetadata ddsMetadata);
+        // if (filePath != currentFilePath)
+        // {
 
-        bitmap = new Bitmap(memoryStream);
-        imageProperties = DDS_DirectXTexNet.GetDDSProperties(filePath, ddsMetadata);
-    }
+        //     currentFilePath = filePath;
+        // }
 
-    private void GetImageDataFromTIFF(string filePath, out Bitmap bitmap, out ImageProperties imageProperties)
-    {
-        bitmap = ConvertTiffToBitmap(filePath);
+        DDSImage = new DDS(CurrentFilePath);
 
-        var imageInfo = SixLabors.ImageSharp.Image.Identify(filePath);
-        var image = SixLabors.ImageSharp.Image.Load<Rgba32>(filePath);
+        bitmap = ConvertDdsToBitmap(Mip, Face);
 
-        bool hasAlpha = ImageUtilities.IsImageOpaque(image);
-        string hasAlphaString = hasAlpha ? "True" : "False";
-
-        imageProperties = new ImageProperties()
-        {
-            Name = Path.GetFileNameWithoutExtension(filePath),
-            Extension = Path.GetExtension(filePath),
-            SurfaceFormat = imageInfo.Metadata.DecodedImageFormat.Name,
-            ChannelCount = (imageInfo.PixelType.BitsPerPixel / 8).ToString(),
-            Height = imageInfo.Height.ToString(),
-            Width = imageInfo.Width.ToString(),
-            HasAlpha = hasAlphaString,
-            MipMapCount = "N/A"
-        };
-    }
-
-    private void GetImageDataFromInvalid(out Bitmap? bitmap, out ImageProperties imageProperties)
-    {
-        bitmap = null;
-
-        imageProperties = new ImageProperties()
-        {
-            Name = "",
-            SurfaceFormat = "",
-            ChannelCount = "",
-            Height = "",
-            Width = "",
-            MipMapCount = "",
-            HasAlpha = ""
-        };
-    }
-
-    /// <summary>
-    /// Converts .tiff to a bitmap. This is only used in the image preview. 
-    /// </summary>
-    /// <param name="filePath"></param>
-    /// <returns></returns>
-    private Bitmap ConvertTiffToBitmap(string filePath)
-    {
-        byte[] fileBytes = File.ReadAllBytes(filePath);
-        Stream tiffStream = new MemoryStream(fileBytes);
-        // open a TIFF stored in the stream
-        using var tifImg = Tiff.ClientOpen("in-memory", "r", tiffStream, new TiffStream());
-        // read the dimensions
-        var width = tifImg.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
-        var height = tifImg.GetField(TiffTag.IMAGELENGTH)[0].ToInt();
-
-        //Experimentation, ignore this
-        //var smth = tifImg.GetField(TiffTag.COMPRESSION)[0].ToInt();
-
-        // create the bitmap
-        var bitmap = new SKBitmap();
-        var info = new SKImageInfo(width, height, SKImageInfo.PlatformColorType, SKAlphaType.Premul,
-            SKColorSpace.CreateSrgb());
-
-        // create the buffer that will hold the pixels
-        var raster = new int[width * height];
-
-        // get a pointer to the buffer, and give it to the bitmap
-        var ptr = GCHandle.Alloc(raster, GCHandleType.Pinned);
-        bitmap.InstallPixels(info, ptr.AddrOfPinnedObject(), info.RowBytes);
-
-
-        // read the image into the memory buffer
-        if (!tifImg.ReadRGBAImageOriented(width, height, raster,
-                BitMiracle.LibTiff.Classic.Orientation.TOPLEFT))
-        {
-            // not a valid TIF image.
-            return null;
-        }
-
-        // swap the red and blue because SkiaSharp may differ from the tiff
-        if (SKImageInfo.PlatformColorType == SKColorType.Bgra8888)
-        {
-            SKSwizzle.SwapRedBlue(ptr.AddrOfPinnedObject(), raster.Length);
-        }
-
-        var writeableBitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96),
-            PixelFormat.Bgra8888);
-
-        using var lockedBitmap = writeableBitmap.Lock();
-        // Copy the SKBitmap pixel data to the Avalonia WriteableBitmap
-        Marshal.Copy(bitmap.Bytes, 0, lockedBitmap.Address, bitmap.Bytes.Length);
-
-        return writeableBitmap;
+        imageProperties = DDS_DirectXTexNet.GetDDSProperties(CurrentFilePath, DDSImage.Metadata);
     }
 
     /// <summary>
@@ -225,11 +139,34 @@ public class ImageData
     /// </summary>
     /// <param name="ddsImage">The dds image from DirectXTexNet.</param>
     /// <returns>The png bitmap from .dds.</returns>
-    private static Bitmap ConvertDdsToBitmap(byte[] ddsData)
+    private Bitmap ConvertDdsToBitmap(uint mip, uint face)
     {
-        using var image = Pfimage.FromStream(DDS_DirectXTexNet.GetUnmanagedMemoryStreamFromMemory(ddsData));
+        DDSImage.GetData(mip, face, out ulong width, out ulong height, out ulong pitch, out ulong length, out byte[] pixelData);
+        DDSImage.GetBounds(out uint maxMip, out uint maxFace);
 
-        return GetDDSBitmap(image);
+        MaxMip = maxMip;
+        MaxFace = maxFace;
+        
+        // Converts the data into writeableBitmap. (TODO Insert a link to the code)
+        var imageInfo = new SKImageInfo((int)width, (int)height, SKColorType.Bgra8888);
+        var handle = GCHandle.Alloc(pixelData, GCHandleType.Pinned);
+        var ptr = Marshal.UnsafeAddrOfPinnedArrayElement(pixelData, 0);
+        using var data = SKData.Create(ptr, (int)length, (_, _) => handle.Free());
+        using var skImage = SKImage.FromPixels(imageInfo, data, (int)pitch);
+        using var bitmap = SKBitmap.FromImage(skImage);
+
+        // Create a memory stream to hold the PNG data
+        var memoryStream = new MemoryStream();
+
+        // Encode the bitmap to PNG and write it to the memory stream
+        var wstream = new SKManagedWStream(memoryStream);
+
+        var success = bitmap.Encode(wstream, SKEncodedImageFormat.Png, 95);
+        Console.WriteLine(success ? "Image converted successfully" : "Image conversion failed");
+
+        memoryStream.Position = 0;
+
+        return new Bitmap(memoryStream);
     }
 
     private static Bitmap GetDDSBitmap(IImage image)
@@ -333,6 +270,133 @@ public class ImageData
 
         return new Bitmap(memoryStream);
     }
+
+    private void GetImageDataFromOthers(out Bitmap bitmap, out ImageProperties imageProperties)
+    {
+        // Load the image using SkiaSharp
+        using (var skBitmap = SKBitmap.Decode(CurrentFilePath))
+        {
+            // Create a memory stream to hold the image data
+            using (var ms = new MemoryStream())
+            {
+                // Encode the SKBitmap to a PNG and write to the memory stream
+                skBitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
+                ms.Seek(0, SeekOrigin.Begin); // Rewind the stream to the beginning
+
+                // Create an Avalonia Bitmap from the memory stream
+                bitmap = new Bitmap(ms);
+            }
+
+            string hasAlphaString = skBitmap.Info.IsOpaque ? "False" : "True";
+
+            imageProperties = new ImageProperties()
+            {
+                Name = Path.GetFileNameWithoutExtension(CurrentFilePath),
+                Extension = Path.GetExtension(CurrentFilePath),
+                SurfaceFormat = skBitmap.ColorType.ToString(),
+                ChannelCount = (skBitmap.BytesPerPixel * 8).ToString(),
+                Height = skBitmap.Height.ToString(),
+                Width = skBitmap.Width.ToString(),
+                HasAlpha = hasAlphaString,
+                MipMapCount = "N/A" // SkiaSharp does not provide mipmap count directly
+            };
+        }
+    }
+
+    private void GetImageDataFromTIFF(out Bitmap bitmap, out ImageProperties imageProperties)
+    {
+        bitmap = ConvertTiffToBitmap();
+
+        var imageInfo = SixLabors.ImageSharp.Image.Identify(CurrentFilePath);
+        var image = SixLabors.ImageSharp.Image.Load<Rgba32>(CurrentFilePath);
+
+        bool hasAlpha = ImageUtilities.IsImageOpaque(image);
+        string hasAlphaString = hasAlpha ? "True" : "False";
+
+        imageProperties = new ImageProperties()
+        {
+            Name = Path.GetFileNameWithoutExtension(CurrentFilePath),
+            Extension = Path.GetExtension(CurrentFilePath),
+            SurfaceFormat = imageInfo.Metadata.DecodedImageFormat.Name,
+            ChannelCount = (imageInfo.PixelType.BitsPerPixel / 8).ToString(),
+            Height = imageInfo.Height.ToString(),
+            Width = imageInfo.Width.ToString(),
+            HasAlpha = hasAlphaString,
+            MipMapCount = "N/A"
+        };
+    }
+
+    private void GetImageDataFromInvalid(out Bitmap? bitmap, out ImageProperties imageProperties)
+    {
+        bitmap = null;
+
+        imageProperties = new ImageProperties()
+        {
+            Name = "",
+            SurfaceFormat = "",
+            ChannelCount = "",
+            Height = "",
+            Width = "",
+            MipMapCount = "",
+            HasAlpha = ""
+        };
+    }
+
+    /// <summary>
+    /// Converts .tiff to a bitmap. This is only used in the image preview. 
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    private Bitmap ConvertTiffToBitmap()
+    {
+        byte[] fileBytes = File.ReadAllBytes(CurrentFilePath);
+        Stream tiffStream = new MemoryStream(fileBytes);
+        // open a TIFF stored in the stream
+        using var tifImg = Tiff.ClientOpen("in-memory", "r", tiffStream, new TiffStream());
+        // read the dimensions
+        var width = tifImg.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
+        var height = tifImg.GetField(TiffTag.IMAGELENGTH)[0].ToInt();
+
+        //Experimentation, ignore this
+        //var smth = tifImg.GetField(TiffTag.COMPRESSION)[0].ToInt();
+
+        // create the bitmap
+        var bitmap = new SKBitmap();
+        var info = new SKImageInfo(width, height, SKImageInfo.PlatformColorType, SKAlphaType.Premul,
+            SKColorSpace.CreateSrgb());
+
+        // create the buffer that will hold the pixels
+        var raster = new int[width * height];
+
+        // get a pointer to the buffer, and give it to the bitmap
+        var ptr = GCHandle.Alloc(raster, GCHandleType.Pinned);
+        bitmap.InstallPixels(info, ptr.AddrOfPinnedObject(), info.RowBytes);
+
+
+        // read the image into the memory buffer
+        if (!tifImg.ReadRGBAImageOriented(width, height, raster,
+                BitMiracle.LibTiff.Classic.Orientation.TOPLEFT))
+        {
+            // not a valid TIF image.
+            return null;
+        }
+
+        // swap the red and blue because SkiaSharp may differ from the tiff
+        if (SKImageInfo.PlatformColorType == SKColorType.Bgra8888)
+        {
+            SKSwizzle.SwapRedBlue(ptr.AddrOfPinnedObject(), raster.Length);
+        }
+
+        var writeableBitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96),
+            PixelFormat.Bgra8888);
+
+        using var lockedBitmap = writeableBitmap.Lock();
+        // Copy the SKBitmap pixel data to the Avalonia WriteableBitmap
+        Marshal.Copy(bitmap.Bytes, 0, lockedBitmap.Address, bitmap.Bytes.Length);
+
+        return writeableBitmap;
+    }
+
     /// <summary>
     /// Gets the properties of the selected .dds file
     /// </summary>

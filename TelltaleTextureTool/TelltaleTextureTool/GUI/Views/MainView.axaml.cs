@@ -56,4 +56,24 @@ public partial class MainView : UserControl
           
         }
     }
+
+    private void PreviewImageCommand(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+    {
+    }
+
+    private void Binding_1(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+    {
+    }
+
+    private void PreviewImageCommand_1(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+    {
+    }
+
+    private void Binding(object? sender, Avalonia.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+    }
+
+    private void PreviewImageCommand_1(object? sender, Avalonia.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+    }
 }

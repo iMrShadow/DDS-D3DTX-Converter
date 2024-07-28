@@ -222,19 +222,25 @@
                     <DataGrid Name="TextureDirectoryFilesDataGrid"
                               Margin="10,80,10,5"
                               ItemsSource="{Binding WorkingDirectoryFiles}"
-                              SelectedItem="{Binding DataGrid_SelectedItem}"
+                              SelectedItem="{Binding DataGridSelectedItem}"
                               BorderThickness="1"
                               BorderBrush="Black"
                               CanUserResizeColumns="True"
                               IsReadOnly="true"
                               Background="{DynamicResource PanelSplitterColor}">
                         <i:Interaction.Behaviors>
-                            <ia:EventTriggerBehavior EventName="DoubleTapped"
+							<ia:EventTriggerBehavior EventName="DoubleTapped"
                                                      SourceObject="TextureDirectoryFilesDataGrid">
-                                <ia:CallMethodAction TargetObject="{Binding}"
+								<ia:CallMethodAction TargetObject="{Binding}"
                                                      MethodName="RowDoubleTappedCommand" />
-                            </ia:EventTriggerBehavior>
-                        </i:Interaction.Behaviors>
+							</ia:EventTriggerBehavior>
+
+							<ia:EventTriggerBehavior EventName="SelectionChanged"
+                                                    >
+								<ia:CallMethodAction TargetObject="{Binding}"
+                                                     MethodName="UpdateUIElementsOnItemChange" />
+							</ia:EventTriggerBehavior>
+						</i:Interaction.Behaviors>
                         <DataGrid.Resources>
                             <DataTemplate x:Key="HeaderTemplate">
                                 <TextBlock Text="{Binding}"
@@ -409,15 +415,88 @@
                                     <StackPanel Orientation="Horizontal" />
                                 </StackPanel>
                             </Expander>
-                            <Expander Header="Advanced Options"
+
+							<Expander Header="Advanced Options"
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Stretch"
-                                      Background="{DynamicResource MainPanelColor}" />
-                            <Expander Header="Debug Information"
+                                      Background="{DynamicResource MainPanelColor}"
+									  IsExpanded="True">
+								
+								<StackPanel Margin="0,0,10,10" Spacing="4">
+									<Label
+										   Content="Generate Mipmaps"
+										   VerticalAlignment="Top"
+										   HorizontalAlignment="Left"
+										   VerticalContentAlignment="Center"
+										   Height="30"/>
+
+									<Grid>
+										<StackPanel Orientation="Horizontal">
+											<Label
+										   Content="Game:"
+										   VerticalAlignment="Top"
+										   HorizontalAlignment="Left"
+										   VerticalContentAlignment="Center"
+										   Height="30"/>
+
+											<ComboBox
+											  ItemsSource="{Binding FormatsList}"
+											  SelectedItem="{Binding SelectedFormat}"
+											  SelectedIndex="{Binding SelectedConvertOptionsComboBoxIndex}"
+											  HorizontalAlignment="Left"
+											  VerticalAlignment="Top"
+											  Width="160"
+											  Height="30"
+											  IsEnabled="{Binding ComboBoxStatus}"
+											  ToolTip.Tip="Games List">
+												<ComboBox.ItemTemplate>
+													<DataTemplate>
+														<TextBlock Text="{Binding Name}"
+																   IsEnabled="{Binding ItemStatus}" />
+													</DataTemplate>
+												</ComboBox.ItemTemplate>
+											</ComboBox>
+										</StackPanel>
+									</Grid>
+
+									<StackPanel Margin="">
+										<TextBlock Margin="0 10 0 5">Editing</TextBlock>
+										<RadioButton GroupName="First Group"
+												   Content="Default"/>
+										<RadioButton GroupName="First Group"
+												  Content="RGBA -> ABGR"/>
+										<RadioButton GroupName="First Group"
+												  Content="RGB -> BGR"/>
+										<RadioButton GroupName="First Group"
+												  Content="RG -> GR"/>
+										<RadioButton GroupName="First Group"
+												  Content="Restore Z"/>
+										<RadioButton GroupName="First Group"
+												  Content="Remove Z"/>
+									</StackPanel>
+								
+									<Button 
+											Content="Apply"
+											VerticalAlignment="Top"
+											HorizontalAlignment="Left"
+											HorizontalContentAlignment="Center"
+											Width="91"
+											Command="{Binding ConvertButton_Click}"
+											IsEnabled="{Binding ConvertButtonStatus}"
+											ToolTip.Tip="Convert the file into the desired format." />
+								</StackPanel>
+
+							</Expander>
+
+							<Expander Header="Debug Information"
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Stretch"
-                                      Background="{DynamicResource MainPanelColor}" />
-                            <StackPanel Margin="10,10,10,10">
+                                      Background="{DynamicResource MainPanelColor}">
+								<TextBox  Background="{DynamicResource PanelSplitterColor}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Text="{Binding DebugInfo}" IsReadOnly="True">
+									
+								</TextBox>
+							</Expander>
+                            <StackPanel Margin="10,10,10,10" Spacing="4">
                                 <Label Name="ConvertOptionsLabel"
                                        Content="Convert Options:"
                                        VerticalAlignment="Top"
@@ -442,19 +521,10 @@
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                <Button Name="DebugButton"
-                                        Content="Debug Info"
-                                        VerticalAlignment="Top"
-                                        HorizontalAlignment="Left"
-                                        HorizontalContentAlignment="Center"
-                                        Width="120"
-                                        Height="30"
-                                        Command="{Binding DebugButton_Click}"
-                                        IsEnabled="{Binding DebugButtonStatus}"
-                                        ToolTip.Tip="Show the image information. Supports only DDS and D3DTX files." />
+                                
                                 <Label Name="LegacyOptionsLabel"
                                        Content="Conversion Type:"
-                                       VerticalAlignment="Bottom"
+                                       VerticalAlignment="Top"
                                        HorizontalAlignment="Left"
                                        VerticalContentAlignment="Center"
                                        Height="30"
@@ -519,11 +589,24 @@
                                    VerticalAlignment="Center" />
                             <Grid Margin="5,0,0,0"
                                   MinWidth="150">
-                                <Slider x:Name="mipSlider"
+								<Slider x:Name="MipSlider"
                                         VerticalAlignment="Center"
                                         MinWidth="100"
-                                        MaxWidth="150" />
-                                <Label Content="{Binding #mipSlider.Value, StringFormat='Mip: {0}'}"
+                                        MaxWidth="150"
+                                        Minimum="0"
+										Maximum="{Binding MaxMipCount}"
+                                        Value="{Binding MipValue} "
+										IsSnapToTickEnabled="True"
+										TickFrequency="1">
+
+									<i:Interaction.Behaviors>
+										<ia:EventTriggerBehavior EventName="ValueChanged" SourceObject="MipSlider">
+											<ia:InvokeCommandAction   Command="{Binding PreviewImage}"/>
+										</ia:EventTriggerBehavior>
+									</i:Interaction.Behaviors>
+									
+								</Slider>
+                                <Label Content="{Binding MipValue, StringFormat='Mip: {0}'}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"
@@ -531,11 +614,24 @@
                             </Grid>
                             <Grid Margin="5,0,0,0"
                                   MinWidth="150">
-                                <Slider x:Name="faceSlider"
+								<Slider x:Name="FaceSlider"
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Stretch"
-                                        MaxWidth="150" />
-                                <Label Content="{Binding #faceSlider.Value, StringFormat='Face/Slice: {0}'}"
+                                        Minimum="0"
+                                        MaxWidth="150"
+										Maximum="{Binding MaxFaceCount}"
+                                        Value="{Binding FaceValue} "
+										IsSnapToTickEnabled="True"
+										TickFrequency="1">
+
+									<i:Interaction.Behaviors>
+										<ia:EventTriggerBehavior EventName="ValueChanged" SourceObject="FaceSlider">
+											<ia:InvokeCommandAction  Command="{Binding PreviewImage}"/>
+										</ia:EventTriggerBehavior>
+									</i:Interaction.Behaviors>
+
+								</Slider>
+                                <Label Content="{Binding FaceValue, StringFormat='Face/Slice: {0}'}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"
@@ -547,7 +643,7 @@
                                       HorizontalScrollBarVisibility="Auto"
                                       Margin="10">
                             <paz:ZoomBorder Name="ZoomBorder1"
-                                            ZoomSpeed="1.5"
+                                            ZoomSpeed="1.4"
                                             EnableConstrains="False"
                                             BorderBrush="Black"
                                             BorderThickness="1"
@@ -574,7 +670,7 @@
                                            Source="{Binding ImagePreview}"
                                            Stretch="Uniform"
                                            HorizontalAlignment="Stretch"
-                                           VerticalAlignment="Stretch" />
+                                           VerticalAlignment="Stretch" Margin="10"/>
                                 </Border>
                             </paz:ZoomBorder>
                         </ScrollViewer>
