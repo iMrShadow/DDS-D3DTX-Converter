@@ -54,7 +54,7 @@ namespace TelltaleTextureTool.Main
                 ArraySize = d3dtxMetadata.ArraySize,
                 Depth = d3dtxMetadata.Depth,
                 MipLevels = d3dtxMetadata.MipLevels,
-                Format = d3dtx.IsLegacyD3DTX() ? (uint)DDS_HELPER.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (uint)DDS_HELPER.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
+                Format = d3dtx.IsLegacyD3DTX() ? (int)DDS_HELPER.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (int)DDS_HELPER.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
                 Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
             };
 
@@ -63,7 +63,7 @@ namespace TelltaleTextureTool.Main
                 metadata.MipLevels = 1;
             }
 
-            image.Initialize(metadata, CPFlags.None);
+            image.Initialize(ref metadata, CPFlags.None);
 
             header = DDS_DirectXTexNet.GetDDSHeaderBytes(image);
 

@@ -126,7 +126,7 @@ public class ImageData
 
         //     currentFilePath = filePath;
         // }
-
+ Console.WriteLine("I AM IN DDSImage");
         DDSImage = new DDS(CurrentFilePath);
 
         bitmap = ConvertDdsToBitmap(Mip, Face);
@@ -141,14 +141,16 @@ public class ImageData
     /// <returns>The png bitmap from .dds.</returns>
     private Bitmap ConvertDdsToBitmap(uint mip, uint face)
     {
+        Console.WriteLine("I AM IN DDS TO BITMAP");
         DDSImage.GetData(mip, face, out ulong width, out ulong height, out ulong pitch, out ulong length, out byte[] pixelData);
+        Console.WriteLine("I AM IN DDS TO BITMAP GETDATA");
         DDSImage.GetBounds(out uint maxMip, out uint maxFace);
-
+        Console.WriteLine("I AM IN DDS TO BITMAP GetBounds");
         MaxMip = maxMip;
         MaxFace = maxFace;
         
         // Converts the data into writeableBitmap. (TODO Insert a link to the code)
-        var imageInfo = new SKImageInfo((int)width, (int)height, SKColorType.Bgra8888);
+        var imageInfo = new SKImageInfo((int)width, (int)height, SKColorType.Rgba8888);
         var handle = GCHandle.Alloc(pixelData, GCHandleType.Pinned);
         var ptr = Marshal.UnsafeAddrOfPinnedArrayElement(pixelData, 0);
         using var data = SKData.Create(ptr, (int)length, (_, _) => handle.Free());
@@ -397,26 +399,26 @@ public class ImageData
         return writeableBitmap;
     }
 
-    /// <summary>
-    /// Gets the properties of the selected .dds file
-    /// </summary>
-    /// <param name="ddsFilePath"></param>
-    private static ImageProperties GetKtx2Properties(string ddsFilePath)
-    {
-        Texture texture = KTX2_Bindings.GetKTX2Texture(ddsFilePath);
+    // /// <summary>
+    // /// Gets the properties of the selected .dds file
+    // /// </summary>
+    // /// <param name="ddsFilePath"></param>
+    // private static ImageProperties GetKtx2Properties(string ddsFilePath)
+    // {
+    //     Texture texture = KTX2_Bindings.GetKTX2Texture(ddsFilePath);
 
-        return new ImageProperties
-        {
-            Name = Path.GetFileNameWithoutExtension(ddsFilePath),
-            Extension = ".ktx2",
-            Height = texture.BaseHeight.ToString(),
-            Width = texture.BaseWidth.ToString(),
-            SurfaceFormat = texture.VkFormat.ToString(),
-            HasAlpha = KTX2_HELPER.HasAlpha(texture.VkFormat) ? "True" : "False",
-            //ChannelCount = Helper.GetDataFormatDescriptor(texture.VkFormat).DescriptorBlockSize.ToString(),
-            MipMapCount = texture.NumLevels.ToString()
-        };
-    }
+    //     return new ImageProperties
+    //     {
+    //         Name = Path.GetFileNameWithoutExtension(ddsFilePath),
+    //         Extension = ".ktx2",
+    //         Height = texture.BaseHeight.ToString(),
+    //         Width = texture.BaseWidth.ToString(),
+    //         SurfaceFormat = texture.VkFormat.ToString(),
+    //         HasAlpha = KTX2_HELPER.HasAlpha(texture.VkFormat) ? "True" : "False",
+    //         //ChannelCount = Helper.GetDataFormatDescriptor(texture.VkFormat).DescriptorBlockSize.ToString(),
+    //         MipMapCount = texture.NumLevels.ToString()
+    //     };
+    // }
 
     public static ImageProperties GetImagePropertiesFromInvalid()
     {

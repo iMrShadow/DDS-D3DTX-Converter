@@ -33,7 +33,27 @@
                         <Image Source="{SvgImage /Assets/open_folder_icon.svg}"
                                Width="32"
                                Height="32" />
-                        <TextBlock Text="Open"
+                        <TextBlock Text="Open Folder"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="12" />
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+             <MenuItem Name="MenuOpenTTArch"
+                      Command="{Binding OpenArchiveButton_Click}"
+                      Background="{DynamicResource ButtonColor}"
+                      ToolTip.Tip="Open Archive">
+                <MenuItem.Header>
+                    <!-- Open -->
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="3"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Center">
+                        <Image Source="{SvgImage /Assets/open_folder_icon.svg}"
+                               Width="32"
+                               Height="32" />
+                        <TextBlock Text="Open Archive"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
                                    FontSize="12" />
@@ -58,7 +78,6 @@
                                    FontSize="12" />
                     </StackPanel>
                 </MenuItem.Header>
-                <MenuItem Header="Exit" />
             </MenuItem>
             <MenuItem Background="{DynamicResource ButtonColor}"
                       ToolTip.Tip="Add files to workspace"
@@ -227,6 +246,7 @@
                               BorderBrush="Black"
                               CanUserResizeColumns="True"
                               IsReadOnly="true"
+                              
                               Background="{DynamicResource PanelSplitterColor}">
                         <i:Interaction.Behaviors>
 							<ia:EventTriggerBehavior EventName="DoubleTapped"

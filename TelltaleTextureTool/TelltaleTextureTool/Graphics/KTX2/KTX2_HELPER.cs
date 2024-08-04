@@ -54,18 +54,18 @@ public static partial class KTX2_HELPER
             VkFormat.R32Sfloat => T3SurfaceFormat.eSurface_R32F,
             VkFormat.R32G32Sfloat => T3SurfaceFormat.eSurface_RG32F,
             VkFormat.R32G32B32A32Uint => T3SurfaceFormat.eSurface_RGBA32,
-            VkFormat.BC1RgbaUnormBlock => T3SurfaceFormat.eSurface_BC1,
-            VkFormat.BC2UnormBlock => T3SurfaceFormat.eSurface_BC2,
-            VkFormat.BC3UnormBlock => T3SurfaceFormat.eSurface_BC3,
-            VkFormat.BC4UnormBlock => T3SurfaceFormat.eSurface_BC4,
-            VkFormat.BC5UnormBlock => T3SurfaceFormat.eSurface_BC5,
-            VkFormat.BC6HUfloatBlock => T3SurfaceFormat.eSurface_BC6,
-            VkFormat.BC7UnormBlock => T3SurfaceFormat.eSurface_BC7,
-            VkFormat.BC1RgbSrgbBlock => T3SurfaceFormat.eSurface_BC1,
-            VkFormat.BC1RgbaSrgbBlock => T3SurfaceFormat.eSurface_BC1,
-            VkFormat.BC2SrgbBlock => T3SurfaceFormat.eSurface_BC2,
-            VkFormat.BC3SrgbBlock => T3SurfaceFormat.eSurface_BC3,
-            VkFormat.BC7SrgbBlock => T3SurfaceFormat.eSurface_BC7,
+            // VkFormat.BC1RgbaUnormBlock => T3SurfaceFormat.eSurface_BC1,
+            // VkFormat.BC2UnormBlock => T3SurfaceFormat.eSurface_BC2,
+            // VkFormat.BC3UnormBlock => T3SurfaceFormat.eSurface_BC3,
+            // VkFormat.BC4UnormBlock => T3SurfaceFormat.eSurface_BC4,
+            // VkFormat.BC5UnormBlock => T3SurfaceFormat.eSurface_BC5,
+            // VkFormat.BC6HUfloatBlock => T3SurfaceFormat.eSurface_BC6,
+            // VkFormat.BC7UnormBlock => T3SurfaceFormat.eSurface_BC7,
+            // VkFormat.BC1RgbSrgbBlock => T3SurfaceFormat.eSurface_BC1,
+            // VkFormat.BC1RgbaSrgbBlock => T3SurfaceFormat.eSurface_BC1,
+            // VkFormat.BC2SrgbBlock => T3SurfaceFormat.eSurface_BC2,
+            // VkFormat.BC3SrgbBlock => T3SurfaceFormat.eSurface_BC3,
+            // VkFormat.BC7SrgbBlock => T3SurfaceFormat.eSurface_BC7,
 
             VkFormat.Astc4X4UnormBlock => T3SurfaceFormat.eSurface_ATSC_RGBA_4x4,
             VkFormat.Astc4X4SrgbBlock => T3SurfaceFormat.eSurface_ATSC_RGBA_4x4,
@@ -154,14 +154,14 @@ public static partial class KTX2_HELPER
             case VkFormat.R64G64B64A64Uint:
             case VkFormat.R64G64B64A64Sint:
             case VkFormat.R64G64B64A64Sfloat:
-            case VkFormat.BC1RgbaUnormBlock:
-            case VkFormat.BC1RgbaSrgbBlock:
-            case VkFormat.BC2UnormBlock:
-            case VkFormat.BC2SrgbBlock:
-            case VkFormat.BC3UnormBlock:
-            case VkFormat.BC3SrgbBlock:
-            case VkFormat.BC7UnormBlock:
-            case VkFormat.BC7SrgbBlock:
+            // case VkFormat.BC1RgbaUnormBlock:
+            // case VkFormat.BC1RgbaSrgbBlock:
+            // case VkFormat.BC2UnormBlock:
+            // case VkFormat.BC2SrgbBlock:
+            // case VkFormat.BC3UnormBlock:
+            // case VkFormat.BC3SrgbBlock:
+            // case VkFormat.BC7UnormBlock:
+            // case VkFormat.BC7SrgbBlock:
             case VkFormat.Etc2R8G8B8A1UnormBlock:
             case VkFormat.Etc2R8G8B8A1SrgbBlock:
             case VkFormat.Etc2R8G8B8A8UnormBlock:
@@ -376,22 +376,22 @@ public static partial class KTX2_HELPER
             T3SurfaceFormat.eSurface_Depth32F_Stencil8 => VkFormat.D32SfloatS8Uint,
             //--------------------Depth24F_Stencil8--------------------
             T3SurfaceFormat.eSurface_Depth24F_Stencil8 => VkFormat.D24UnormS8Uint,
-            //--------------------DXT1 / BC1--------------------
-            T3SurfaceFormat.eSurface_BC1 => alphaMode > 0 ? (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC1RgbaSrgbBlock : VkFormat.BC1RgbaUnormBlock) : (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC1RgbSrgbBlock : VkFormat.BC1RgbUnormBlock),
-            //--------------------DXT2 and DXT3 / BC2--------------------
-            T3SurfaceFormat.eSurface_BC2 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC2SrgbBlock : VkFormat.BC2UnormBlock,
-            //--------------------DXT4 and DXT5 / BC3--------------------
-            T3SurfaceFormat.eSurface_BC3 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC3SrgbBlock : VkFormat.BC3UnormBlock,
-            //--------------------ATI1 / BC4--------------------
-            T3SurfaceFormat.eSurface_BC4 => VkFormat.BC4UnormBlock,
-            //--------------------ATI2 / BC5--------------------
-            T3SurfaceFormat.eSurface_BC5 => VkFormat.BC5UnormBlock,
-            //--------------------BC6H--------------------
-            T3SurfaceFormat.eSurface_BC6 => VkFormat.BC6HUfloatBlock,
-            //--------------------BC7--------------------
-            T3SurfaceFormat.eSurface_BC7 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC7SrgbBlock : VkFormat.BC7UnormBlock,
-            //--------------------ATSC_RGBA_4x4--------------------
-            T3SurfaceFormat.eSurface_ATSC_RGBA_4x4 => VkFormat.Astc4X4UnormBlock,
+            // //--------------------DXT1 / BC1--------------------
+            // T3SurfaceFormat.eSurface_BC1 => alphaMode > 0 ? (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC1RgbaSrgbBlock : VkFormat.BC1RgbaUnormBlock) : (gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC1RgbSrgbBlock : VkFormat.BC1RgbUnormBlock),
+            // //--------------------DXT2 and DXT3 / BC2--------------------
+            // T3SurfaceFormat.eSurface_BC2 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC2SrgbBlock : VkFormat.BC2UnormBlock,
+            // //--------------------DXT4 and DXT5 / BC3--------------------
+            // T3SurfaceFormat.eSurface_BC3 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC3SrgbBlock : VkFormat.BC3UnormBlock,
+            // //--------------------ATI1 / BC4--------------------
+            // T3SurfaceFormat.eSurface_BC4 => VkFormat.BC4UnormBlock,
+            // //--------------------ATI2 / BC5--------------------
+            // T3SurfaceFormat.eSurface_BC5 => VkFormat.BC5UnormBlock,
+            // //--------------------BC6H--------------------
+            // T3SurfaceFormat.eSurface_BC6 => VkFormat.BC6HUfloatBlock,
+            // //--------------------BC7--------------------
+            // T3SurfaceFormat.eSurface_BC7 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.BC7SrgbBlock : VkFormat.BC7UnormBlock,
+            // //--------------------ATSC_RGBA_4x4--------------------
+            // T3SurfaceFormat.eSurface_ATSC_RGBA_4x4 => VkFormat.Astc4X4UnormBlock,
             //--------------------ETC2_RGB1A--------------------
             T3SurfaceFormat.eSurface_ETC2_RGB1A => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? VkFormat.Etc2R8G8B8A1SrgbBlock : VkFormat.Etc2R8G8B8A1UnormBlock,
             //--------------------ETC2_RGBA--------------------
@@ -431,10 +431,10 @@ public static partial class KTX2_HELPER
         VkFormat.R8G8B8Srgb => true,
         VkFormat.R8G8B8A8Srgb => true,
         VkFormat.B8G8R8A8Srgb => true,
-        VkFormat.BC1RgbaSrgbBlock => true,
-        VkFormat.BC2SrgbBlock => true,
-        VkFormat.BC3SrgbBlock => true,
-        VkFormat.BC7SrgbBlock => true,
+        // VkFormat.BC1RgbaSrgbBlock => true,
+        // VkFormat.BC2SrgbBlock => true,
+        // VkFormat.BC3SrgbBlock => true,
+        // VkFormat.BC7SrgbBlock => true,
         VkFormat.Etc2R8G8B8SrgbBlock => true,
         VkFormat.Etc2R8G8B8A1SrgbBlock => true,
         VkFormat.Etc2R8G8B8A8SrgbBlock => true,

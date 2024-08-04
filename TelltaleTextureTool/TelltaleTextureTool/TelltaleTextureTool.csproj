@@ -52,9 +52,9 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Include="Hexa.NET.DirectXTex.Standalone" Version="1.0.1" />
+    <PackageReference Include="Hexa.NET.DirectXTex.Standalone" Version="2.0.0" />
     <PackageReference Include="HyperText.Avalonia" Version="2.0.0" />
-    <PackageReference Include="Ktx2.NET" Version="1.0.3" />
+    <PackageReference Include="Ktx2.NET" Version="1.0.2" />
     <PackageReference Include="MessageBox.Avalonia" Version="3.1.5.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Pfim" Version="0.11.2" />

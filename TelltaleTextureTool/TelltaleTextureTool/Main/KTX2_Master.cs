@@ -16,7 +16,7 @@ namespace TelltaleTextureTool.Main
     /// </summary>
     public unsafe class KTX2_Master
     {
-        TextureCreateInfo ktx2TextureInfo;
+        //TextureCreateInfo ktx2TextureInfo;
         Texture* texture;
 
         public byte[] header = [];
@@ -51,41 +51,41 @@ namespace TelltaleTextureTool.Main
             T3PlatformType platformType = d3dtxMetadata.Platform;
             T3TextureAlphaMode alphaMode = d3dtxMetadata.AlphaMode;
 
-            ktx2TextureInfo = new()
-            {
-                BaseWidth = d3dtxMetadata.Width,
-                BaseHeight = d3dtxMetadata.Height,
-                BaseDepth = d3dtxMetadata.Depth,
-                NumLevels = d3dtxMetadata.MipLevels,
-                NumLayers = d3dtxMetadata.ArraySize,
-                NumFaces = (uint)(d3dtxMetadata.IsCubemap() ? 6 : 1),
-                NumDimensions = (uint)(d3dtxMetadata.IsVolumemap() ? 3 : 2),
-                IsArray = (byte)(d3dtxMetadata.IsArrayTexture() ? 1 : 0),
-                GenerateMipmaps = (byte)(d3dtxMetadata.MipLevels > 1 ? 1 : 0),
-                VkFormat = KTX2_HELPER.GetVkFormatFromTelltaleSurfaceFormat(surfaceFormat, surfaceGamma, platformType, alphaMode)
-            };
+            // ktx2TextureInfo = new()
+            // {
+            //     BaseWidth = d3dtxMetadata.Width,
+            //     BaseHeight = d3dtxMetadata.Height,
+            //     BaseDepth = d3dtxMetadata.Depth,
+            //     NumLevels = d3dtxMetadata.MipLevels,
+            //     NumLayers = d3dtxMetadata.ArraySize,
+            //     NumFaces = (uint)(d3dtxMetadata.IsCubemap() ? 6 : 1),
+            //     NumDimensions = (uint)(d3dtxMetadata.IsVolumemap() ? 3 : 2),
+            //     IsArray = (byte)(d3dtxMetadata.IsArrayTexture() ? 1 : 0),
+            //     GenerateMipmaps = (byte)(d3dtxMetadata.MipLevels > 1 ? 1 : 0),
+            //     VkFormat = KTX2_HELPER.GetVkFormatFromTelltaleSurfaceFormat(surfaceFormat, surfaceGamma, platformType, alphaMode)
+            // };
 
-            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat))
-            {
-                ktx2TextureInfo.NumLevels = 1;
-                ktx2TextureInfo.GenerateMipmaps = 0;
-            }
-            ktx2TextureInfo.GenerateMipmaps = 0;
-            Ktx2.ErrorCode err = Ktx2.Create(ktx2TextureInfo, Ktx2.TextureCreateStorage.NoStorage, out texture);
+            // if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat))
+            // {
+            //     ktx2TextureInfo.NumLevels = 1;
+            //     ktx2TextureInfo.GenerateMipmaps = 0;
+            // }
+            // ktx2TextureInfo.GenerateMipmaps = 0;
+            // Ktx2.ErrorCode err = Ktx2.Create(ktx2TextureInfo, Ktx2.TextureCreateStorage.NoStorage, out texture);
 
-            List<byte[]> textureData = d3dtx.GetPixelData();
+            // List<byte[]> textureData = d3dtx.GetPixelData();
 
-            byte[] pixelData = textureData.SelectMany(x => x).ToArray();
+            // byte[] pixelData = textureData.SelectMany(x => x).ToArray();
 
-            fixed (byte* pData = pixelData)
-            {
-                texture->PData = pData;
-            }
+            // fixed (byte* pData = pixelData)
+            // {
+            //     texture->PData = pData;
+            // }
 
-            if (err != Ktx2.ErrorCode.Success)
-            {
-                throw new Exception("Failed to create KTX2 texture.");
-            }
+            // if (err != Ktx2.ErrorCode.Success)
+            // {
+            //     throw new Exception("Failed to create KTX2 texture.");
+            // }
         }
 
         private void InitializeKTX2PixelData(D3DTX_Master d3dtx)

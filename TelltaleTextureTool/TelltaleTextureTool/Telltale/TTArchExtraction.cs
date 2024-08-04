@@ -1,134 +1,20 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.IO;
-//using System.Linq;
-//using System.Text;
-//using System.Threading.Tasks;
-//using TelltaleTextureTool.FileTypes;
+﻿// using System;
+// using System.Collections.Generic;
+// using System.IO;
+// using System.Linq;
+// using System.Text;
+// using System.Threading.Tasks;
+// using TelltaleTextureTool.FileTypes;
 
-//using System;
-//using System.IO;
-//using System.Linq;
-//using System.Text;
-//using zlib;
+// using System;
+// using System.IO;
+// using System.Linq;
+// using System.Text;
+// using zlib;
 
-//namespace TelltaleTextureTool.Telltale
-//{
+// namespace TelltaleTextureTool.Telltale
+// {
 
-//    struct File {
-//        string name;
-//        ulong offset; // unused at the moment
-//        ulong size;
-//        ulong name_crc;
-//    }
-
-//    struct FileHeader : ITelltaleSerializable
-//    {
-//        public ulong crcName; // CRC64 EMCA 182 format
-//        public ulong offset;  // How many bytes after the name table the file is located
-//        public uint size;
-//        public uint unkownBytes; // TODO: Figure what these are or just ask Lucas
-//        public ushort nameTableChunkIndex;
-//        public ushort nameTableOffset;
-
-//        public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
-//        {
-//    crcName = reader.ReadUInt64();
-//            offset = reader.ReadUInt64();
-//            size = reader.ReadUInt32();
-//            unkownBytes = reader.ReadUInt32();
-//            nameTableChunkIndex = reader.ReadUInt16();
-//            nameTableOffset = reader.ReadUInt16();
-//        }
-
-//        public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
-//        {
-//            writer.Write(crcName);
-//            writer.Write(offset);
-//            writer.Write(size);
-//            writer.Write(unkownBytes);
-//            writer.Write(nameTableChunkIndex);
-//            writer.Write(nameTableOffset);
-//        }
-//    };
-
-//    struct ArchiveHeader : ITelltaleSerializable
-//    {
-//        public uint version;
-//        public uint nameSize; // The size of the nameTable
-//        public uint fileCount;
-
-//        public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
-//        {
-//writer.Write(version);
-//            writer.Write(nameSize);
-//            writer.Write(fileCount);
-//        }
-
-//        public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
-//        {
-//version = reader.ReadUInt32();
-//            nameSize = reader.ReadUInt32();
-//            fileCount = reader.ReadUInt32();
-//        }
-//    };
-
-//    struct Archive : ITelltaleSerializable
-//    {
-//        ArchiveHeader header;
-//        List<FileHeader> entries;
-//        List<string> fileNames;
-//        MemoryStream fileData;
-
-//        public Archive() { }
-
-//        public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
-//        {
-//            header.ReadFromBinary(reader);
-
-//            entries = [];
-//            for (int i = 0; i < header.fileCount; i++)
-//            {
-//                entries.Add(new FileHeader());
-//                entries[i].ReadFromBinary(reader);
-//            }
-
-//            for (int i = 0; i < header.fileCount; i++)
-//            {
-//                fileNames.Add(ByteFunctions.ReadNullTerminatedString(reader));
-//            }
-
-//            fileData = new MemoryStream();
-
-//            for (int i = 0; i < header.fileCount; i++)
-//            {
-//                fileData.Write(reader.ReadBytes((int)entries[i].size), 0, (int)entries[i].size);
-//            }
-//        }
-
-//        public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
-//        {
-//            header.WriteToBinary(writer);
-//            for (int i = 0; i < entries.Count; i++)
-//            {
-//                entries[i].WriteToBinary(writer);
-//            }
-//        }
-//    };
-
-//    struct CompressedHeader
-//    {
-//        uint version;
-//        uint chunkDecompressedSize;
-//        uint chunkCount;
-//    };
-
-//    struct CompressedArchive
-//    {
-//        CompressedHeader header;
-//        List<ulong> chunkOffset;
-//        MemoryStream chunkData;
-//    };
 
 //    internal class TTArch
 //    {
@@ -964,4 +850,4 @@
 //            //}
 //        }
 //    }
-//}
+// }

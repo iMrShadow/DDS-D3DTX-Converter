@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 using System.Numerics;
 using HexaGen.Runtime;
+using AssetRipper.TextureDecoder.Rgb.Channels;
 
 namespace TelltaleTextureTool.DirectX;
 
@@ -58,9 +59,9 @@ public unsafe static partial class DDS_DirectXTexNet
     {
         DXGIFormat dxgiFormat = (DXGIFormat)ddsMetadata.Format;
 
-        uint channelCount = (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((uint)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((uint)dxgiFormat)));
+        uint channelCount = (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((int)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((int)dxgiFormat)));
 
-        string hasAlpha = DirectXTex.HasAlpha((uint)dxgiFormat) ? "True" : "False";
+        string hasAlpha = DirectXTex.HasAlpha((int)dxgiFormat) ? "True" : "False";
 
         ImageProperties properties = new()
         {
@@ -89,7 +90,7 @@ public unsafe static partial class DDS_DirectXTexNet
         nuint rowPitch;
         nuint slicePitch;
 
-        DirectXTex.ComputePitch((uint)dxgiFormat, width, height, (ulong*)&rowPitch, (ulong*)&slicePitch, CPFlags.None);
+        DirectXTex.ComputePitch((int)dxgiFormat, width, height, (ulong*)&rowPitch, (ulong*)&slicePitch, CPFlags.None);
         return (uint)rowPitch;
     }
 
@@ -98,7 +99,7 @@ public unsafe static partial class DDS_DirectXTexNet
     /// </summary>
     /// <param name="dxgiFormat">The Direct3D10/DXGI format</param>
     /// <returns>The channel count.</returns>
-    public static uint GetChannelCount(DXGIFormat dxgiFormat) => (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((uint)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((uint)dxgiFormat)));
+    public static uint GetChannelCount(DXGIFormat dxgiFormat) => (uint)Math.Ceiling((double)DirectXTex.BitsPerPixel((int)dxgiFormat) / Math.Max(1, DirectXTex.BitsPerColor((int)dxgiFormat)));
 
     /// <summary>
     /// Returns a DirectXTexNet DDS image from a byte array.
@@ -116,7 +117,7 @@ public unsafe static partial class DDS_DirectXTexNet
 
             // Obtain a pointer to the data
             IntPtr ptr = handle.AddrOfPinnedObject();
-            DirectXTex.LoadFromDDSMemory((void*)ptr, (nuint)array.Length, flags, &metadata, image);
+            DirectXTex.LoadFromDDSMemory((void*)ptr, (nuint)array.Length, flags, &metadata, ref image);
             return image;
         }
         finally
@@ -139,7 +140,8 @@ public unsafe static partial class DDS_DirectXTexNet
         {
             Console.WriteLine("Image count: " + image.GetImageCount());
             Console.WriteLine("Image format: " + image.GetMetadata().Format);
-            DirectXTex.SaveToDDSMemory2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), flags, blob);
+            TexMetadata metadata =  image.GetMetadata();
+            DirectXTex.SaveToDDSMemory2(image.GetImages(), image.GetImageCount(), ref metadata, flags, ref blob);
             // Create a byte array to hold the data
             Console.WriteLine(blob.GetBufferSize());
             Console.WriteLine((nint)blob.GetBufferPointer());
@@ -178,7 +180,7 @@ public unsafe static partial class DDS_DirectXTexNet
             ArraySize = (uint)metadata.ArraySize,
             MipLevels = (uint)metadata.MipLevels,
             Format = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format),
-            SurfaceGamma = DirectXTex.IsSRGB((uint)metadata.Format) ? TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_sRGB : TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_Linear,
+            SurfaceGamma = DirectXTex.IsSRGB((int)metadata.Format) ? TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_sRGB : TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_Linear,
             D3DFormat = DDS_HELPER.GetD3DFORMAT((DXGIFormat)metadata.Format, metadata),
             Dimension = DDS_HELPER.GetDimensionFromDDS(metadata),
         };
@@ -229,7 +231,7 @@ public unsafe static partial class DDS_DirectXTexNet
         TexMetadata metadata;
         fixed (byte* srcPtr = src)
         {
-            int i = DirectXTex.LoadFromDDSMemory(srcPtr, (nuint)src.Length, DDSFlags.None, &metadata, image);
+            int i = DirectXTex.LoadFromDDSMemory(srcPtr, (nuint)src.Length, DDSFlags.None, &metadata, ref image);
             Console.WriteLine(GetDDSDebugInfo(metadata));
         }
 
@@ -239,14 +241,15 @@ public unsafe static partial class DDS_DirectXTexNet
         }
 
         var ddsMainImage = image.GetImage(0, 0, 0);
-        bool isCompressed = DirectXTex.IsCompressed(ddsMainImage.Format);
+        bool isCompressed = DirectXTex.IsCompressed(ddsMainImage->Format);
 
         // If the image is compressed, decompress it to RGBA32. Otherwise, convert it to RGBA32.
         if (isCompressed)
         {
             ScratchImage image1 = DirectXTex.CreateScratchImage();
-            DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), (int)DXGIFormat.R8G8B8A8_UNORM, image1);
-            DirectXTex.SaveToDDSMemory(ddsMainImage, DDSFlags.None, blob);
+            TexMetadata metadata1 = image.GetMetadata();
+            DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), ref metadata1, (int)DXGIFormat.R8G8B8A8_UNORM, ref image1);
+            DirectXTex.SaveToDDSMemory(ddsMainImage, DDSFlags.None, ref blob);
 
             image1.Release();
         }
@@ -254,12 +257,12 @@ public unsafe static partial class DDS_DirectXTexNet
         {
             //  (TODO Insert a link to the code)
             ScratchImage image1 = DirectXTex.CreateScratchImage();
-            if (ddsMainImage.Format != (int)DXGIFormat.R8G8B8A8_UNORM)
+            if (ddsMainImage->Format != (int)DXGIFormat.R8G8B8A8_UNORM)
             {
-                DirectXTex.Convert(ddsMainImage, (int)DXGIFormat.R8G8B8A8_UNORM, TexFilterFlags.Default, 0.5f, image1);
-                DirectXTex.SaveToDDSMemory(image1.GetImage(0, 0, 0), DDSFlags.None, blob);
+                DirectXTex.Convert(ddsMainImage, (int)DXGIFormat.R8G8B8A8_UNORM, TexFilterFlags.Default, 0.5f, ref image1);
+                DirectXTex.SaveToDDSMemory(image1.GetImage(0, 0, 0), DDSFlags.None, ref blob);
             }
-            else DirectXTex.SaveToDDSMemory(ddsMainImage, DDSFlags.None, blob);
+            else DirectXTex.SaveToDDSMemory(ddsMainImage, DDSFlags.None, ref blob);
 
             image1.Release();
         }
@@ -330,7 +333,8 @@ public unsafe static partial class DDS_DirectXTexNet
     public static byte[] GetDDSHeaderBytes(ScratchImage image, DDSFlags flags = DDSFlags.None)
     {
         Blob blob = DirectXTex.CreateBlob();
-        DirectXTex.SaveToDDSMemory2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), flags, blob);
+        TexMetadata metadata = image.GetMetadata();
+        DirectXTex.SaveToDDSMemory2(image.GetImages(), image.GetImageCount(), ref metadata, flags, ref blob);
 
         blob.GetBufferPointer();
 
@@ -386,7 +390,7 @@ public unsafe static partial class DDS_DirectXTexNet
     /// <returns>True, if it is SRGB. Otherwise - false.</returns>
     public static bool IsSRGB(DXGIFormat dxgiFormat)
     {
-        return DirectXTex.IsSRGB((uint)dxgiFormat);
+        return DirectXTex.IsSRGB((int)dxgiFormat);
     }
 
     /// <summary>
@@ -433,15 +437,17 @@ public unsafe static partial class DDS_DirectXTexNet
         ScratchImage rawImage = DirectXTex.CreateScratchImage();
         HResult result = 0;
 
+ TexMetadata metadata1 = image.GetMetadata();
+
         if (DirectXTex.IsCompressed(metadata.Format))
         {
-            result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), (int)DXGIFormat.R8G8B8A8_UNORM, rawImage);
+            result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), ref metadata1, (int)DXGIFormat.R8G8B8A8_UNORM, ref rawImage);
         }
         else
         {
             Rect rect = new() { X = 0, Y = 0, W = metadata.Width, H = metadata.Height };
-            DirectXTex.Initialize(rawImage, image.GetMetadata(), CPFlags.None);
-            result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0), rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
+            DirectXTex.Initialize(rawImage, ref metadata1, CPFlags.None);
+            result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0), ref rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
         }
 
         result.ThrowIf();
@@ -467,11 +473,11 @@ public unsafe static partial class DDS_DirectXTexNet
 
         if (transformFunction != null)
         {
-            result = DirectXTex.TransformImage(rawImage.GetImage(0, 0, 0), transformFunction, finalImage);
+            result = DirectXTex.TransformImage(rawImage.GetImage(0, 0, 0), transformFunction,ref finalImage);
         }
         else
         {
-            result = DirectXTex.TransformImage(rawImage.GetImage(0, 0, 0), transformFunction, finalImage);
+            result = DirectXTex.TransformImage(rawImage.GetImage(0, 0, 0), transformFunction, ref finalImage);
         }
 
         result.ThrowIf();
@@ -482,11 +488,11 @@ public unsafe static partial class DDS_DirectXTexNet
 
         if (textureType == TextureType.TGA)
         {
-            result = DirectXTex.SaveToTGAMemory2(finalImage.GetImage(0, 0, 0), blob, &metadata);
+            result = DirectXTex.SaveToTGAMemory2(finalImage.GetImage(0, 0, 0), ref blob, ref metadata);
         }
         else
         {
-            result = DirectXTex.SaveToWICMemory(finalImage.GetImages()[0], WICFlags.None, DirectXTex.GetWICCodec(GetWicDecoder(textureType)), blob, null, default);
+            result = DirectXTex.SaveToWICMemory(ref finalImage.GetImages()[0], WICFlags.None, DirectXTex.GetWICCodec(GetWicDecoder(textureType)), ref blob, null, default);
         }
 
         var bytes = AsBytes(blob);
@@ -509,15 +515,16 @@ public unsafe static partial class DDS_DirectXTexNet
 
         if (DirectXTex.IsValid(texMetadata.Format))
         {
+            TexMetadata og = image.GetMetadata();
             if (DirectXTex.IsCompressed(texMetadata.Format))
             {
-                result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), (int)DXGIFormat.R8G8B8A8_UNORM, rawImage);
+                result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), ref og, (int)DXGIFormat.R8G8B8A8_UNORM, ref rawImage);
             }
             else
             {
                 Rect rect = new() { X = 0, Y = 0, W = texMetadata.Width, H = texMetadata.Height };
-                DirectXTex.Initialize(rawImage, image.GetMetadata(), CPFlags.None);
-                result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0), rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
+                DirectXTex.Initialize(rawImage,ref og, CPFlags.None);
+                result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0),ref rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
             }
         }
 
@@ -526,7 +533,7 @@ public unsafe static partial class DDS_DirectXTexNet
 
         Blob blob = DirectXTex.CreateBlob();
 
-        result = DirectXTex.SaveToWICMemory(rawImage.GetImages()[0], WICFlags.No16Bpp, DirectXTex.GetWICCodec(WICCodecs.CodecPng), blob, null, default);
+        result = DirectXTex.SaveToWICMemory(ref rawImage.GetImages()[0], WICFlags.No16Bpp, DirectXTex.GetWICCodec(WICCodecs.CodecPng), ref blob, null, default);
 
         Span<byte> dest = new(blob.GetBufferPointer(), (int)blob.GetBufferSize());
 
@@ -548,13 +555,14 @@ public unsafe static partial class DDS_DirectXTexNet
 
         if (DirectXTex.IsCompressed(metadata.Format))
         {
-            result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(), image.GetMetadata(), (int)DXGIFormat.R8G8B8A8_UNORM, rawImage);
+            TexMetadata og = image.GetMetadata();
+            result = DirectXTex.Decompress2(image.GetImages(), image.GetImageCount(),ref og, (int)DXGIFormat.R8G8B8A8_UNORM, ref rawImage);
         }
         else
         {
             Rect rect = new() { X = 0, Y = 0, W = metadata.Width, H = metadata.Height };
 
-            result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0), rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
+            result = DirectXTex.CopyRectangle(image.GetImage(0, 0, 0), ref rect, rawImage.GetImage(0, 0, 0), TexFilterFlags.Default, 0, 0);
         }
 
         result.ThrowIf();
@@ -580,7 +588,7 @@ public unsafe static partial class DDS_DirectXTexNet
 
         if (transformFunction != null)
         {
-            result = DirectXTex.TransformImage(rawImage.GetImage(0, 0, 0), transformFunction, finalImage);
+            result = DirectXTex.TransformImage(rawImage.GetImage(0, 0, 0), transformFunction, ref finalImage);
         }
 
         result.ThrowIf();
@@ -591,11 +599,11 @@ public unsafe static partial class DDS_DirectXTexNet
 
         if (textureType == TextureType.TGA)
         {
-            result = DirectXTex.SaveToTGAMemory2(finalImage.GetImage(0, 0, 0), blob, &metadata);
+            result = DirectXTex.SaveToTGAMemory2(finalImage.GetImage(0, 0, 0),ref blob, ref metadata);
         }
         else
         {
-            result = DirectXTex.SaveToWICMemory(finalImage.GetImages()[0], WICFlags.IgnoreSrgb, DirectXTex.GetWICCodec(GetWicDecoder(textureType)), blob, null, default);
+            result = DirectXTex.SaveToWICMemory(ref finalImage.GetImages()[0], WICFlags.IgnoreSrgb, DirectXTex.GetWICCodec(GetWicDecoder(textureType)), ref blob, null, default);
         }
 
         var bytes = AsBytes(blob);
@@ -675,7 +683,7 @@ public unsafe partial class DDS
 
     public DDS(string filePath, DDSFlags flags = DDSFlags.None)
     {
-        Initialize(ByteFunctions.LoadTexture(filePath), flags);
+       Initialize(ByteFunctions.LoadTexture(filePath), flags);
     }
 
     public DDS(byte[] data, DDSFlags flags = DDSFlags.None)
@@ -685,21 +693,22 @@ public unsafe partial class DDS
 
     private void Initialize(byte[] ddsData, DDSFlags flags = DDSFlags.None)
     {
-        Image = DirectXTex.CreateScratchImage();
+       ScratchImage Image = DirectXTex.CreateScratchImage();
         Span<byte> src = ddsData;
         Blob blob = DirectXTex.CreateBlob();
         TexMetadata meta = new TexMetadata();
 
         fixed (byte* srcPtr = src)
         {
-            DirectXTex.LoadFromDDSMemory(srcPtr, (nuint)src.Length, flags, &meta, Image);
+            DirectXTex.LoadFromDDSMemory(srcPtr, (nuint)src.Length, flags, ref meta, ref Image);
+             DirectXTex.GetMetadataFromDDSMemory(srcPtr, (nuint)src.Length, flags, ref meta);
         }
+        this.Image = Image;
 
         Console.WriteLine(DDS_DirectXTexNet.GetDDSDebugInfo(meta));
         Metadata = meta;
 
         blob.Release();
-
     }
 
     public void LoadDDS(string filePath, DDSFlags flags = DDSFlags.None)
@@ -714,21 +723,46 @@ public unsafe partial class DDS
 
     public void ConvertToRGBA()
     {
-        uint format = (uint)(DirectXTex.IsSRGB(Metadata.Format) ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM);
+        int format = (int)(DirectXTex.IsSRGB(Metadata.Format) ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM);
 
         ScratchImage destImage = DirectXTex.CreateScratchImage();
 
+        HResult result;
+        TexMetadata ogMeta = Image.GetMetadata();
+
         if (DirectXTex.IsCompressed(Metadata.Format))
         {
-            DirectXTex.Decompress2(Image.GetImages(), Image.GetImageCount(), Image.GetMetadata(), format, destImage);
+            result = DirectXTex.Decompress2(Image.GetImages(), Image.GetImageCount(),ref ogMeta, format, ref destImage);
+
+            Image.Release();
+            Image = destImage;
+        }
+        else if (Metadata.Format != (uint)DXGIFormat.R8G8B8A8_UNORM_SRGB && Metadata.Format != (uint)DXGIFormat.R8G8B8A8_UNORM)
+        {
+            result = DirectXTex.Convert2(Image.GetImages(), Image.GetImageCount(),ref ogMeta, format, TexFilterFlags.Default, 0.5f, ref destImage);
+
+            Image.Release();
+            Image = destImage;
         }
         else
         {
-            DirectXTex.Convert2(Image.GetImages(), Image.GetImageCount(), Image.GetMetadata(), format, TexFilterFlags.Default, 0.5f, destImage);
+            result = 0;
+            destImage.Release();
         }
 
-        Image.Release();
-        Image = destImage;
+        result.ThrowIf();
+        Console.WriteLine(Image.GetMetadata().Format);
+        Console.WriteLine(Image.GetMetadata().Width);
+        Console.WriteLine(Image.GetMetadata().Height);
+
+        Console.WriteLine(destImage.GetMetadata().Format);
+        Console.WriteLine(destImage.GetMetadata().Width);
+        Console.WriteLine(destImage.GetMetadata().Height);
+
+
+        Console.WriteLine(Image.GetMetadata().Format);
+        Console.WriteLine(Image.GetMetadata().Width);
+        Console.WriteLine(Image.GetMetadata().Height);
     }
 
     public byte[] GetSectionPixelData(uint mip, uint face)
@@ -750,14 +784,14 @@ public unsafe partial class DDS
 
         var image = DirectXTex.GetImage(Image, (ulong)mip, (ulong)face, (ulong)slice);
 
-        PreviewFormat = (DXGIFormat)image.Format;
-        PreviewWidth = image.Width;
-        PreviewHeight = image.Height;
+        PreviewFormat = (DXGIFormat)image->Format;
+        PreviewWidth = image->Width;
+        PreviewHeight = image->Height;
         PreviewMip = mip;
 
-        byte[] pixels = new byte[image.SlicePitch];
+        byte[] pixels = new byte[image->SlicePitch];
 
-        Marshal.Copy((nint)image.Pixels, pixels, 0, pixels.Length);
+        Marshal.Copy((nint)image->Pixels, pixels, 0, pixels.Length);
 
         return pixels;
     }
@@ -768,7 +802,7 @@ public unsafe partial class DDS
         width = PreviewWidth;
         height = PreviewHeight;
         pitch = DDS_DirectXTexNet.ComputePitch(PreviewFormat, PreviewWidth, PreviewHeight);
-        length = width * height * (DirectXTex.BitsPerPixel((uint)PreviewFormat) / 8);
+        length = width * height * (DirectXTex.BitsPerPixel((int)PreviewFormat) / 8);
     }
 
     public void GetBounds(out uint mip, out uint face)

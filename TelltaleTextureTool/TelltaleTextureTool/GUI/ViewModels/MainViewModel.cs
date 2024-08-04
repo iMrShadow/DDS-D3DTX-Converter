@@ -19,6 +19,10 @@ using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using IImage = Avalonia.Media.IImage;
 using TelltaleTextureTool.DirectX;
+using TelltaleTextureTool.Telltale.TTArch;
+using Avalonia.Data;
+using Hexa.NET.DirectXTex;
+using Pfim;
 
 namespace TelltaleTextureTool.ViewModels;
 
@@ -102,6 +106,8 @@ public partial class MainViewModel : ViewModelBase
         new FormatItemViewModel { Name = "Console Legacy Version 13", ItemStatus = true},
     ];
 
+    private int mode = 0;
+
     private readonly List<string> _allTypes = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".d3dtx", ".dds", ".ktx", ".ktx2", ".tga"];
 
     // No idea if this is correct
@@ -111,6 +117,20 @@ public partial class MainViewModel : ViewModelBase
         AppleUniformTypeIdentifiers = ["public.image"],
         MimeTypes = ["image/png", "image/jpeg", "image/bmp", "image/tiff", "image/tga", "image/vnd.ms-dds", "image/vnd.ms-d3dtx", "image/vnd.ms-ktx", "image/vnd.ms-ktx2"]
     };
+
+    // No idea if this is correct
+    public static FilePickerFileType AllowedTTarchTypes { get; } = new("TTArch Types")
+    {
+        Patterns = ["*.ttarch", "*.ttarch2"]
+    };
+
+    [ObservableProperty]
+    private ObservableCollection<DataGridColumn>? _columns = new ObservableCollection<DataGridColumn>()
+    {
+        new DataGridTextColumn(){Header = "1", Binding = new Binding("KrnListValueId"){ Source = _workingDirectoryFiles }},
+    
+    };
+
 
     private readonly MainManager mainManager = MainManager.GetInstance();
     private readonly Uri _assetsUri = new("avares://TelltaleTextureTool/Assets/");
@@ -150,7 +170,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty][NotifyCanExecuteChangedFor("PreviewImageCommand")] private uint _faceValue;
     [ObservableProperty] private uint _maxMipCount;
     [ObservableProperty] private uint _maxFaceCount;
-    [ObservableProperty] private ObservableCollection<WorkingDirectoryFile> _workingDirectoryFiles = [];
+    [ObservableProperty] private static ObservableCollection<WorkingDirectoryFile> _workingDirectoryFiles = [];
+    [ObservableProperty] private ObservableCollection<WorkingDirectoryFile> _archiveFiles = [];
 
     [ObservableProperty] private ImageData _imageData;
 
@@ -204,9 +225,35 @@ public partial class MainViewModel : ViewModelBase
                 ReturnDirectoryButtonStatus = true;
                 RefreshDirectoryButtonStatus = true;
                 DataGridSelectedItem = null;
-
+                mode = 1;
                 await UpdateUiAsync();
             }
+        }
+        catch (Exception e)
+        {
+            await HandleExceptionAsync(e.Message);
+        }
+    }
+
+    [RelayCommand]
+    public async Task OpenArchiveButton_Click()
+    {
+        try
+        {
+            var topLevel = GetMainWindow();
+
+            // Start async operation to open the dialog.
+            var file = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+            {
+                Title = "Open Archive",
+                AllowMultiple = false,
+                SuggestedStartLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(DirectoryPath),
+                FileTypeFilter = [AllowedTTarchTypes]
+            });
+
+            TTArch tTArch = new TTArch(file.ToArray()[0].Path.AbsolutePath.ToString());
+
+            mode = 2;
         }
         catch (Exception e)
         {
@@ -718,26 +765,32 @@ public partial class MainViewModel : ViewModelBase
         // update our texture directory UI
         try
         {
-            DirectoryPath = mainManager.GetWorkingDirectoryPath();
-            mainManager.RefreshWorkingDirectory();
-            var workingDirectoryFiles = mainManager.GetWorkingDirectoryFiles();
-
-            for (int i = WorkingDirectoryFiles.Count - 1; i >= 0; i--)
+            if (mode == 1)
             {
-                if (!workingDirectoryFiles.Contains(WorkingDirectoryFiles[i]))
+                DirectoryPath = mainManager.GetWorkingDirectoryPath();
+                mainManager.RefreshWorkingDirectory();
+                var workingDirectoryFiles = mainManager.GetWorkingDirectoryFiles();
+
+                for (int i = WorkingDirectoryFiles.Count - 1; i >= 0; i--)
                 {
-                    WorkingDirectoryFiles.RemoveAt(i);
+                    if (!workingDirectoryFiles.Contains(WorkingDirectoryFiles[i]))
+                    {
+                        WorkingDirectoryFiles.RemoveAt(i);
+                    }
                 }
+
+                // Add items from the list to the observable collection if they are not already present
+                foreach (var item in workingDirectoryFiles)
+                {
+                    if (!WorkingDirectoryFiles.Contains(item))
+                    {
+                        WorkingDirectoryFiles.Add(item);
+                    }
+                }
+
+
             }
 
-            // Add items from the list to the observable collection if they are not already present
-            foreach (var item in workingDirectoryFiles)
-            {
-                if (!WorkingDirectoryFiles.Contains(item))
-                {
-                    WorkingDirectoryFiles.Add(item);
-                }
-            }
 
         }
         catch (Exception ex)
@@ -965,12 +1018,13 @@ public partial class MainViewModel : ViewModelBase
             if (extension != string.Empty)
                 textureType = GetTextureTypeFromItem(extension.ToUpperInvariant().Remove(0, 1));
 
-            ImageData imageData = new(filePath, textureType, GetD3DTXConversionType(),MipValue,FaceValue);
-            
-            MaxMipCount =  imageData.MaxMip;
-            MaxFaceCount =  imageData.MaxFace;
+            ImageData imageData = new(filePath, textureType, GetD3DTXConversionType(), MipValue, FaceValue);
+
+            MaxMipCount = imageData.MaxMip;
+            MaxFaceCount = imageData.MaxFace;
 
             ImageProperties = imageData.ImageProperties;
+
 
             if (imageData.ImageBitmap == null)
             {
