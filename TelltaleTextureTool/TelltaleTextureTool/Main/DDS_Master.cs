@@ -7,6 +7,7 @@ using TelltaleTextureTool.TelltaleEnums;
 using System.Linq;
 using Hexa.NET.DirectXTex;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
+using TelltaleTextureTool.Graphics.PVR;
 
 namespace TelltaleTextureTool.Main
 {
@@ -29,6 +30,30 @@ namespace TelltaleTextureTool.Main
                 return;
             }
 
+            if (D3DTX_Master.IsFormatIncompatibleWithDDS(d3dtx.d3dtxMetadata.Format))
+            {
+                if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGB ||
+                    d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGBA ||
+                    d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGB1A)
+                {
+                    InitializeUnsupportedDDSHeader(d3dtx);
+                    InitializeDDSPixelData(d3dtx);
+
+                    pixelData = ATC_Master.Decode(d3dtx.d3dtxMetadata, ByteFunctions.Combine(header, pixelData));
+                    InitializeDDSHeader(d3dtx);
+                }
+                else if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.CTX1)
+                {
+                    throw new Exception("This format is not supported. Please, contact the maintainer as soon as possible!");
+                }
+                else
+                {
+                    pixelData = PVR_Main.DecodeTexture(d3dtx.d3dtxMetadata, d3dtx.GetReversedMipPixelData());
+                }
+
+                return;
+            }
+
             InitializeDDSHeader(d3dtx);
             InitializeDDSPixelData(d3dtx);
         }
@@ -38,11 +63,6 @@ namespace TelltaleTextureTool.Main
             ScratchImage image = DirectXTex.CreateScratchImage();
             D3DTXMetadata d3dtxMetadata = d3dtx.GetMetadata();
 
-            Console.WriteLine("D3dtx width: " + d3dtxMetadata.Width);
-            Console.WriteLine("D3dtx height: " + d3dtxMetadata.Height);
-            Console.WriteLine("D3dtx mip map count: " + d3dtxMetadata.MipLevels);
-            Console.WriteLine("D3dtx d3d format: " + d3dtxMetadata.D3DFormat);
-
             T3SurfaceFormat surfaceFormat = d3dtxMetadata.Format;
             T3SurfaceGamma surfaceGamma = d3dtxMetadata.SurfaceGamma;
             T3PlatformType platformType = d3dtxMetadata.Platform;
@@ -51,23 +71,64 @@ namespace TelltaleTextureTool.Main
             {
                 Width = d3dtxMetadata.Width,
                 Height = d3dtxMetadata.Height,
-                ArraySize = d3dtxMetadata.ArraySize,
+                ArraySize = d3dtxMetadata.IsCubemap() ? d3dtxMetadata.ArraySize * 6 : d3dtxMetadata.ArraySize,
                 Depth = d3dtxMetadata.Depth,
                 MipLevels = d3dtxMetadata.MipLevels,
                 Format = d3dtx.IsLegacyD3DTX() ? (int)DDS_HELPER.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (int)DDS_HELPER.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
                 Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
             };
 
-            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) || D3DTX_Master.IsPlatformIncompatibleWithDDS(platformType))
+            if (D3DTX_Master.IsPlatformIncompatibleWithDDS(platformType))
             {
                 metadata.MipLevels = 1;
             }
 
             image.Initialize(ref metadata, CPFlags.None);
 
+            //DDSFlags flags = D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) ? DDSFlags.ForceDx9Legacy : DDSFlags.ForceDx9Legacy;
             header = DDS_DirectXTexNet.GetDDSHeaderBytes(image);
 
             Console.WriteLine("Header length: " + header.Length);
+
+            image.Release();
+        }
+
+        private void InitializeUnsupportedDDSHeader(D3DTX_Master d3dtx)
+        {
+            ScratchImage image = DirectXTex.CreateScratchImage();
+            D3DTXMetadata d3dtxMetadata = d3dtx.GetMetadata();
+
+            T3SurfaceFormat surfaceFormat = d3dtxMetadata.Format;
+            T3SurfaceGamma surfaceGamma = d3dtxMetadata.SurfaceGamma;
+            TexMetadata metadata = new()
+            {
+                Width = d3dtxMetadata.Width,
+                Height = d3dtxMetadata.Height,
+                ArraySize = d3dtxMetadata.ArraySize,
+                Depth = d3dtxMetadata.Depth,
+                MipLevels = d3dtxMetadata.MipLevels,
+                Format = (int)DDS_HELPER.GetEquivalentDXGIFormat(surfaceFormat, surfaceGamma),
+                Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
+            };
+
+            image.Initialize(ref metadata, CPFlags.None);
+
+            header = DDS_DirectXTexNet.GetDDSHeaderBytes(image, DDSFlags.ForceDx9Legacy);
+
+            Console.WriteLine("Header length: " + header.Length);
+
+            if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGB)
+            {
+                DDS_DirectXTexNet.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', ' ');
+            }
+            else if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGBA)
+            {
+                DDS_DirectXTexNet.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', 'A');
+            }
+            else if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGB1A)
+            {
+                DDS_DirectXTexNet.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', 'I');
+            }
 
             image.Release();
         }
@@ -93,7 +154,7 @@ namespace TelltaleTextureTool.Main
 
             List<byte[]> textureData = [];
 
-            if (D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) || D3DTX_Master.IsPlatformIncompatibleWithDDS(metadata.Platform))
+            if (D3DTX_Master.IsPlatformIncompatibleWithDDS(metadata.Platform))
             {
                 textureData.Add(d3dtx.GetPixelDataByFirstMipmapIndex(metadata.Format, (int)metadata.Width, (int)metadata.Height, metadata.Platform));
             }
@@ -166,6 +227,36 @@ namespace TelltaleTextureTool.Main
 
             // Return the created DDS file.
             return ByteFunctions.Combine(header, pixelData);
+        }
+
+        public ImageAdvancedOptions GetAdvancedOptions(D3DTX_Master d3dtx)
+        {
+            ImageAdvancedOptions advancedOptions = new()
+            {
+                D3dtxVersion = d3dtx.d3dtxVersion,
+                TextureType = TextureType.D3DTX,
+                //  advancedOptions.EnableMips = d3dtx.d3dtxMetadata.EnableMips;
+                // advancedOptions.AutoGenerateMips = d3dtx.d3dtxMetadata.AutoGenerateMips;
+                //  advancedOptions.ManualGenerateMips = d3dtx.d3dtxMetadata.ManualGenerateMips;
+                // advancedOptions.SetMips = d3dtx.d3dtxMetadata.SetMips;
+                // advancedOptions.Compression = d3dtx.d3dtxMetadata.Compression;
+                // advancedOptions.EnableAutomaticCompression = d3dtx.d3dtxMetadata.EnableAutomaticCompression;
+                // advancedOptions.IsAutomaticCompression = d3dtx.d3dtxMetadata.IsAutomaticCompression;
+                // advancedOptions.IsManualCompression = d3dtx.d3dtxMetadata.IsManualCompression;
+                Format = d3dtx.d3dtxMetadata.Format,
+                // advancedOptions.EnableNormalMap = d3dtx.d3dtxMetadata.EnableNormalMap;
+                // advancedOptions.EncodeDDSHeader = d3dtx.d3dtxMetadata.EncodeDDSHeader;
+                // advancedOptions.FilterValues = d3dtx.d3dtxMetadata.FilterValues;
+                //  advancedOptions.EnableWrapU = d3dtx.d3dtxMetadata.EnableWrapU;
+
+                EnableSwizzle = D3DTX_Master.IsPlatformIncompatibleWithDDS(d3dtx.d3dtxMetadata.Platform),
+                IsDeswizzle = D3DTX_Master.IsPlatformIncompatibleWithDDS(d3dtx.d3dtxMetadata.Platform),
+                PlatformType = d3dtx.d3dtxMetadata.Platform,
+                IsSwizzle = false
+            };
+
+
+            return advancedOptions;
         }
     }
 }

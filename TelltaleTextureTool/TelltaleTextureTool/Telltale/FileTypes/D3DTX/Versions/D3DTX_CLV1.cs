@@ -380,7 +380,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         Width = mWidth,
         Height = mHeight,
         MipLevels = mNumMipLevels,
-        Dimension = T3TextureLayout.eTextureLayout_2D,
+        Dimension = T3TextureLayout.Texture2D,
         AlphaMode = mAlphaMode,
         D3DFormat = mD3DFormat,
       };

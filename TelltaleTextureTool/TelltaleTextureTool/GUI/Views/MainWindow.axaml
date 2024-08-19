@@ -8,7 +8,7 @@
         Icon="/Assets/main_icon.ico"
         Title="Telltale Texture Tool"
         Height="700"
-        Width="1570"
+        Width="1400"
         MinWidth="600"
         MinHeight="250">
     <views:MainView />

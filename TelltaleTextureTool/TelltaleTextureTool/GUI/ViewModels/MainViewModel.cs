@@ -21,10 +21,56 @@ using IImage = Avalonia.Media.IImage;
 using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.Telltale.TTArch;
 using Avalonia.Data;
-using Hexa.NET.DirectXTex;
-using Pfim;
+using System.ComponentModel;
+using Avalonia.Data.Converters;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Reflection;
+using TelltaleTextureTool.TelltaleEnums;
+
 
 namespace TelltaleTextureTool.ViewModels;
+
+public class EnumDisplayNameConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value == null)
+            return string.Empty;
+
+        // Get the field in the enum type that matches the current enum value
+        FieldInfo field = value.GetType().GetField(value.ToString());
+
+        // Get the Display attribute if present
+        DisplayAttribute attribute = field?.GetCustomAttributes(false)
+                                          .OfType<DisplayAttribute>()
+                                          .FirstOrDefault();
+
+        // Return the name if available, otherwise fall back to the enum value's name
+        return attribute?.Name ?? value.ToString();
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        // Reverse the conversion if needed
+        if (value is string stringValue)
+        {
+            foreach (var field in targetType.GetFields())
+            {
+                var attribute = field.GetCustomAttributes(false)
+                                     .OfType<DisplayAttribute>()
+                                     .FirstOrDefault();
+
+                if (attribute?.Name == stringValue || field.Name == stringValue)
+                {
+                    return Enum.Parse(targetType, field.Name);
+                }
+            }
+        }
+
+        throw new InvalidOperationException("Cannot convert back.");
+    }
+}
 
 public partial class MainViewModel : ViewModelBase
 {
@@ -34,8 +80,11 @@ public partial class MainViewModel : ViewModelBase
     [
         new FormatItemViewModel { Name = "DDS", ItemStatus = true },
         new FormatItemViewModel { Name = "PNG", ItemStatus = false },
-        new FormatItemViewModel { Name = "KTX", ItemStatus = false },
-        new FormatItemViewModel { Name = "KTX2", ItemStatus = false }
+        new FormatItemViewModel { Name = "JPEG", ItemStatus = false },
+        new FormatItemViewModel { Name = "BMP", ItemStatus = false },
+        new FormatItemViewModel { Name = "TIFF", ItemStatus = false },
+        new FormatItemViewModel { Name = "TGA", ItemStatus = false },
+        new FormatItemViewModel { Name = "HDR", ItemStatus = false },
     ];
 
     private readonly ObservableCollection<FormatItemViewModel> _ddsTypes =
@@ -45,7 +94,8 @@ public partial class MainViewModel : ViewModelBase
         new FormatItemViewModel { Name = "JPEG", ItemStatus = true },
         new FormatItemViewModel { Name = "BMP", ItemStatus = true },
         new FormatItemViewModel { Name = "TIFF", ItemStatus = true },
-        new FormatItemViewModel { Name = "TGA", ItemStatus = false }
+        new FormatItemViewModel { Name = "TGA", ItemStatus = false },
+        new FormatItemViewModel { Name = "HDR", ItemStatus = true },
     ];
 
     private readonly ObservableCollection<FormatItemViewModel> _ktxTypes =
@@ -108,14 +158,14 @@ public partial class MainViewModel : ViewModelBase
 
     private int mode = 0;
 
-    private readonly List<string> _allTypes = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".d3dtx", ".dds", ".ktx", ".ktx2", ".tga"];
+    private readonly List<string> _allTypes = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".d3dtx", ".dds", ".hdr", ".tga"];
 
     // No idea if this is correct
     public static FilePickerFileType AllowedTypes { get; } = new("All Supported Types")
     {
-        Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.tif", "*.tiff", "*.d3dtx", "*.dds", "*.ktx", "*.ktx2", "*.tga", "*.json"],
+        Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.tif", "*.tiff", "*.d3dtx", "*.dds", "*.hdr", "*.tga", "*.json"],
         AppleUniformTypeIdentifiers = ["public.image"],
-        MimeTypes = ["image/png", "image/jpeg", "image/bmp", "image/tiff", "image/tga", "image/vnd.ms-dds", "image/vnd.ms-d3dtx", "image/vnd.ms-ktx", "image/vnd.ms-ktx2"]
+        MimeTypes = ["image/png", "image/jpeg", "image/bmp", "image/tiff", "image/tga", "image/hdr", "image/vnd.ms-dds", "image/vnd.ms-d3dtx", "image/vnd.ms-ktx2"]
     };
 
     // No idea if this is correct
@@ -128,9 +178,7 @@ public partial class MainViewModel : ViewModelBase
     private ObservableCollection<DataGridColumn>? _columns = new ObservableCollection<DataGridColumn>()
     {
         new DataGridTextColumn(){Header = "1", Binding = new Binding("KrnListValueId"){ Source = _workingDirectoryFiles }},
-    
     };
-
 
     private readonly MainManager mainManager = MainManager.GetInstance();
     private readonly Uri _assetsUri = new("avares://TelltaleTextureTool/Assets/");
@@ -139,10 +187,27 @@ public partial class MainViewModel : ViewModelBase
     #endregion
 
     #region UI PROPERTIES
+    public ImageEffect[] ImageConversionModes { get; } = [
+        ImageEffect.DEFAULT,
+        ImageEffect.SWIZZLE_ABGR,
+        ImageEffect.RESTORE_Z,
+        ImageEffect.REMOVE_Z];
+
+    public T3PlatformType[] SwizzlePlatforms { get; } = [
+        T3PlatformType.ePlatform_All,
+        T3PlatformType.ePlatform_Xbox,
+        T3PlatformType.ePlatform_XBOne,
+        T3PlatformType.ePlatform_PS3,
+        T3PlatformType.ePlatform_PS4,
+        T3PlatformType.ePlatform_NX,
+        T3PlatformType.ePlatform_Wii,
+        T3PlatformType.ePlatform_WiiU,
+        ];
 
     [ObservableProperty] private ImageProperties _imageProperties;
+    [ObservableProperty] private ImageAdvancedOptions _imageAdvancedOptions;
+    [ObservableProperty] private bool _isChecked = false;
     [ObservableProperty] private FormatItemViewModel _selectedFormat;
-
     [ObservableProperty] private FormatItemViewModel _selectedVersionConvertOption;
     [ObservableProperty] private ObservableCollection<FormatItemViewModel> _formatsList = [];
     [ObservableProperty] private ObservableCollection<FormatItemViewModel> _versionConvertOptionsList = [];
@@ -157,6 +222,7 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty] private int _selectedComboboxIndex;
     [ObservableProperty] private int _selectedLegacyTitleIndex;
+    [ObservableProperty] private uint _maxMipCountButton;
     [ObservableProperty] private string? _imageNamePreview;
     [ObservableProperty] private IImage? _imagePreview;
     [ObservableProperty] private string _fileText = string.Empty;
@@ -164,16 +230,17 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _returnDirectoryButtonStatus;
     [ObservableProperty] private bool _refreshDirectoryButtonStatus;
     [ObservableProperty] private bool _chooseOutputDirectoryCheckboxStatus;
-    [ObservableProperty] private string _debugInfo = string.Empty;
+    [ObservableProperty] private bool _isMipSliderVisible;
+    [ObservableProperty] private bool _isFaceSliderVisible;
 
-    [ObservableProperty][NotifyCanExecuteChangedFor("PreviewImageCommand")] private uint _mipValue;
-    [ObservableProperty][NotifyCanExecuteChangedFor("PreviewImageCommand")] private uint _faceValue;
+    [ObservableProperty] private string _debugInfo = string.Empty;
+    [ObservableProperty] private uint _mipValue;
+    [ObservableProperty] private uint _faceValue;
     [ObservableProperty] private uint _maxMipCount;
     [ObservableProperty] private uint _maxFaceCount;
     [ObservableProperty] private static ObservableCollection<WorkingDirectoryFile> _workingDirectoryFiles = [];
     [ObservableProperty] private ObservableCollection<WorkingDirectoryFile> _archiveFiles = [];
-
-    [ObservableProperty] private ImageData _imageData;
+    [ObservableProperty] private ImageData _imageData = new ImageData();
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor("ResetPanAndZoomCommand")]
@@ -204,6 +271,7 @@ public partial class MainViewModel : ViewModelBase
         };
         VersionConvertOptionsList = _versionConvertOptions;
         SelectedVersionConvertOption = VersionConvertOptionsList[0];
+        ImageAdvancedOptions = new ImageAdvancedOptions(this);
     }
 
     #region MAIN MENU BUTTONS ACTIONS
@@ -617,8 +685,8 @@ public partial class MainViewModel : ViewModelBase
 
             if (types.Length == 2)
             {
-                oldTextureType = GetTextureTypeFromExtension(types[0]);
-                newTextureType = GetTextureTypeFromExtension(types[1]);
+                oldTextureType = GetTextureTypeFromItem(types[0].Trim());
+                newTextureType = GetTextureTypeFromItem(types[1].Trim());
 
                 if (!ChooseOutputDirectoryCheckboxStatus)
                 {
@@ -667,6 +735,7 @@ public partial class MainViewModel : ViewModelBase
             "KTX" => TextureType.KTX,
             "KTX2" => TextureType.KTX2,
             "TGA" => TextureType.TGA,
+            "HDR" => TextureType.HDR,
             _ => TextureType.Unknown
         };
     }
@@ -855,6 +924,7 @@ public partial class MainViewModel : ViewModelBase
             { ".tga", _otherTypes },
             { ".tif", _otherTypes },
             { ".tiff", _otherTypes },
+            { ".hdr", _otherTypes },
             {"", _folderTypes}
         };
 
@@ -983,7 +1053,7 @@ public partial class MainViewModel : ViewModelBase
         DebugButtonStatus = false;
         ChooseOutputDirectoryCheckboxStatus = false;
 
-        ImageProperties = ImageData.GetImagePropertiesFromInvalid();
+        ImageProperties = new ImageProperties();
         ImagePreview = new SvgImage()
         {
             Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
@@ -1012,38 +1082,107 @@ public partial class MainViewModel : ViewModelBase
             var filePath = workingDirectoryFile.FilePath;
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
 
+            if (Directory.Exists(filePath))
+            {
+                return;
+            }
+
             ImageNamePreview = workingDirectoryFile.FileName + workingDirectoryFile.FileType;
 
             TextureType textureType = TextureType.Unknown;
             if (extension != string.Empty)
                 textureType = GetTextureTypeFromItem(extension.ToUpperInvariant().Remove(0, 1));
 
-            ImageData imageData = new(filePath, textureType, GetD3DTXConversionType(), MipValue, FaceValue);
+            ImageData.Initialize(filePath, textureType, GetD3DTXConversionType());
 
-            MaxMipCount = imageData.MaxMip;
-            MaxFaceCount = imageData.MaxFace;
+            ImageAdvancedOptions = ImageData.GetImageAdvancedOptions(ImageAdvancedOptions);
 
-            ImageProperties = imageData.ImageProperties;
-
-
-            if (imageData.ImageBitmap == null)
+            if (textureType != TextureType.Unknown)
             {
-                ImagePreview = new SvgImage()
+                ImageData.ApplyEffects(ImageAdvancedOptions);
+            }
+
+            await DebugButton_Click();
+
+            MaxMipCount = ImageData.MaxMip;
+            MaxFaceCount = ImageData.MaxFace;
+
+            IsFaceSliderVisible = MaxFaceCount != 0;
+            IsMipSliderVisible = MaxMipCount != 0;
+
+            MaxMipCountButton = ImageData.DDSImage.GetMaxMipLevels();
+
+            ImageProperties = ImageData.ImageProperties;
+
+            if (textureType != TextureType.Unknown)
+            {
+                ImagePreview = ImageData.GetBitmapFromScratchImage(MipValue, FaceValue);
+            }
+            else
+            {
+                ImagePreview = new SvgImage
                 {
                     Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
                 };
             }
-            else
-            {
-                ImagePreview = imageData.ImageBitmap;
-            }
-
-            await DebugButton_Click();
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.StackTrace);
             await HandleImagePreviewErrorAsync(ex);
+        }
+    }
+
+    [RelayCommand]
+    public async Task UpdateBitmap()
+    {
+        try
+        {
+            if (DataGridSelectedItem == null)
+                return;
+
+            var workingDirectoryFile = DataGridSelectedItem;
+            var filePath = workingDirectoryFile.FilePath;
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+            TextureType textureType = TextureType.Unknown;
+            if (extension != string.Empty)
+                textureType = GetTextureTypeFromItem(extension.ToUpperInvariant().Remove(0, 1));
+
+            if (textureType == TextureType.Unknown)
+            {
+                return;
+            }
+
+            ImageData.ApplyEffects(ImageAdvancedOptions);
+
+            MaxMipCount = ImageData.MaxMip;
+            MaxFaceCount = ImageData.MaxFace;
+
+            IsFaceSliderVisible = MaxFaceCount != 0;
+            IsMipSliderVisible = MaxMipCount != 0;
+
+            ImageProperties = ImageData.ImageProperties;
+
+            ImagePreview = ImageData.GetBitmapFromScratchImage(MipValue, FaceValue);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.StackTrace);
+            await HandleImagePreviewErrorAsync(ex);
+        }
+    }
+
+    protected override async void OnPropertyChanged(PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.PropertyName == nameof(MipValue) || e.PropertyName == nameof(FaceValue))
+        {
+            ImagePreview = ImageData.GetBitmapFromScratchImage(MipValue, FaceValue);
+        }
+        if (e.PropertyName == nameof(ImageAdvancedOptions))
+        {
+            await UpdateBitmap();
         }
     }
 

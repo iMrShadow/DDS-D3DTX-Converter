@@ -18,42 +18,6 @@ public static class ImageUtilities
 {
 
     /// <summary>
-    /// Checks if the image from a file path is transparent.
-    /// </summary>
-    /// <param name="imageFilePath"></param>
-    /// <returns></returns>
-    public static bool IsImageOpaque(string imageFilePath)
-    {
-        var image = SixLabors.ImageSharp.Image.Load<Rgba32>(imageFilePath);
-
-        bool hasAlpha = false;
-
-        image.ProcessPixelRows(pixelAccessor =>
-        {
-            for (int y = 0; y < pixelAccessor.Height; y++)
-            {
-                Span<Rgba32> pixelRow = pixelAccessor.GetRowSpan(y);
-
-                for (int x = 0; x < pixelRow.Length; x++)
-                {
-                    if (pixelRow[x].A != 255)
-                    {
-                        hasAlpha = true;
-                        break;
-                    }
-                }
-
-                if (hasAlpha)
-                {
-                    break;
-                }
-            }
-        });
-
-        return hasAlpha;
-    }
-
-    /// <summary>
     /// Checks if the loaded image has any transparent pixels.
     /// </summary>
     /// <param name="image"></param>

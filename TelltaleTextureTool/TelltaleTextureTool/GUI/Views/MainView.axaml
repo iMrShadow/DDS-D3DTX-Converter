@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:TelltaleTextureTool.ViewModels"
              mc:Ignorable="d"
-             d:DesignWidth="3000"
+             d:DesignWidth="1500"
              d:DesignHeight="1000"
              x:Class="TelltaleTextureTool.Views.MainView"
              xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
@@ -16,13 +16,15 @@
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainViewModel />
     </Design.DataContext>
+    <UserControl.Resources>
+        <vm:EnumDisplayNameConverter x:Key="EnumDisplayNameConverter" />
+    </UserControl.Resources>
     <DockPanel Background="{DynamicResource PanelSplitterColor}">
         <Menu DockPanel.Dock="Top"
               Background="{DynamicResource MainPanelColor}"
-              Height="48">
+              Height="38">
             <MenuItem Name="MenuOpenFolder"
                       Command="{Binding OpenDirectoryButton_Click}"
-                      Background="{DynamicResource ButtonColor}"
                       ToolTip.Tip="Open Folder/File">
                 <MenuItem.Header>
                     <!-- Open -->
@@ -31,8 +33,8 @@
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Center">
                         <Image Source="{SvgImage /Assets/open_folder_icon.svg}"
-                               Width="32"
-                               Height="32" />
+                               Width="24"
+                               Height="24" />
                         <TextBlock Text="Open Folder"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -40,9 +42,8 @@
                     </StackPanel>
                 </MenuItem.Header>
             </MenuItem>
-             <MenuItem Name="MenuOpenTTArch"
+            <MenuItem Name="MenuOpenTTArch"
                       Command="{Binding OpenArchiveButton_Click}"
-                      Background="{DynamicResource ButtonColor}"
                       ToolTip.Tip="Open Archive">
                 <MenuItem.Header>
                     <!-- Open -->
@@ -51,8 +52,8 @@
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Center">
                         <Image Source="{SvgImage /Assets/open_folder_icon.svg}"
-                               Width="32"
-                               Height="32" />
+                               Width="24"
+                               Height="24" />
                         <TextBlock Text="Open Archive"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -60,8 +61,7 @@
                     </StackPanel>
                 </MenuItem.Header>
             </MenuItem>
-            <MenuItem Background="{DynamicResource ButtonColor}"
-                      IsEnabled="{Binding SaveButtonStatus}"
+            <MenuItem IsEnabled="{Binding SaveButtonStatus}"
                       ToolTip.Tip="Save File"
                       Command="{Binding SaveFileButton_Click}">
                 <MenuItem.Header>
@@ -70,8 +70,8 @@
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Center">
                         <Image Source="{SvgImage /Assets/save_icon.svg}"
-                               Width="32"
-                               Height="32" />
+                               Width="24"
+                               Height="24" />
                         <TextBlock Text="Save"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -79,8 +79,7 @@
                     </StackPanel>
                 </MenuItem.Header>
             </MenuItem>
-            <MenuItem Background="{DynamicResource ButtonColor}"
-                      ToolTip.Tip="Add files to workspace"
+            <MenuItem ToolTip.Tip="Add files to workspace"
                       Command="{Binding AddFilesButton_Click}"
                       IsEnabled="True">
                 <MenuItem.Header>
@@ -89,8 +88,8 @@
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Center">
                         <Image Source="{SvgImage /Assets/add_icon.svg}"
-                               Width="32"
-                               Height="32" />
+                               Width="24"
+                               Height="24" />
                         <TextBlock Text="Add"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -99,8 +98,7 @@
                 </MenuItem.Header>
                 <MenuItem Header="Exit" />
             </MenuItem>
-            <MenuItem Background="{DynamicResource ButtonColor}"
-                      ToolTip.Tip="Delete file"
+            <MenuItem ToolTip.Tip="Delete file"
                       Command="{Binding DeleteFileButton_Click}"
                       IsEnabled="{Binding DeleteButtonStatus}">
                 <MenuItem.Header>
@@ -109,8 +107,8 @@
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Center">
                         <Image Source="{SvgImage /Assets/delete_icon.svg}"
-                               Width="32"
-                               Height="32" />
+                               Width="24"
+                               Height="24" />
                         <TextBlock Text="Delete"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -119,16 +117,15 @@
                 </MenuItem.Header>
                 <MenuItem Header="Exit" />
             </MenuItem>
-            <MenuItem Background="{DynamicResource ButtonColor}"
-                      ToolTip.Tip="Help">
+            <MenuItem ToolTip.Tip="Help">
                 <MenuItem.Header>
                     <StackPanel Orientation="Horizontal"
                                 Spacing="3"
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Center">
                         <Image Source="{SvgImage /Assets/help_icon.svg}"
-                               Width="32"
-                               Height="32" />
+                               Width="24"
+                               Height="24   " />
                         <TextBlock Text="Help"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -136,6 +133,7 @@
                     </StackPanel>
                 </MenuItem.Header>
                 <MenuItem Header="Help"
+                          Opacity="1.0"
                           Command="{Binding HelpButton_Click}"
                           Icon="{SvgImage /Assets/help_icon.svg}" />
                 <MenuItem Header="About"
@@ -146,11 +144,11 @@
         <Grid Margin="0, 5, 0, 0">
             <!-- MAIN COLUMN DEFINITIONS -->
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="auto"
+                <ColumnDefinition Width="450"
                                   MinWidth="300" />
                 <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="auto"
-                                  MinWidth="128" />
+                <ColumnDefinition Width="600"
+                                  MinWidth="156" />
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="*"
                                   MinWidth="128" />
@@ -173,94 +171,94 @@
                       Background="{DynamicResource PanelSplitterColor}" />
                 <!-- COLUMN 1 ROW 1 DEFINITIONS -->
                 <Grid Grid.Row="0"
-                      Margin="0,0,0,5"
-                      Background="{DynamicResource MainPanelColor}">
-                    <Label Name="TextureDirectoryTitleLabel"
-                           Content="Textures Directory"
-                           Margin="10,0,0,0"
+                      Background="{DynamicResource MainPanelColor}"
+                      RowDefinitions="auto, auto, *">
+                    <Label Grid.Row="0"
+                           Name="TextureDirectoryTitleLabel"
+                           Content="Current Directory"
+                           Margin="10,5,10,0"
                            Height="30"
                            Width="150"
                            VerticalAlignment="Top"
                            VerticalContentAlignment="Bottom"
                            HorizontalAlignment="Left" />
-                    <TextBox Name="TextureDirectoryDirectorypathTextBox"
-                             Width="500"
-                             Height="35"
-                             HorizontalAlignment="Left"
-                             ToolTip.Tip="{Binding DirectoryPath}"
-                             Text="{Binding DirectoryPath}"
-                             IsReadOnly="True"
-                             Margin="10,30,75,0"
-                             VerticalAlignment="Top"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto" />
-                    <Button Name="ReturnDirectory"
-                            HorizontalAlignment="Left"
-                            Margin="515,30,25,0"
-                            VerticalAlignment="Top"
-                            Width="35"
-                            Height="35"
-                            Padding="0"
-                            Background="{DynamicResource ButtonColor}"
-                            ToolTip.Tip="Return to parent directory"
-                            Command="{Binding ReturnDirectory_Click}"
-                            IsEnabled="{Binding ReturnDirectoryButtonStatus}">
-                        <Button.Content>
-                            <StackPanel Orientation="Vertical"
-                                        VerticalAlignment="Center"
-                                        HorizontalAlignment="Center">
-                                <Image Source="{SvgImage /Assets/folder_parent_icon.svg}"
-                                       VerticalAlignment="Center"
-                                       Width="28"
-                                       Height="28" />
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-                    <Button Name="RefreshDirectory"
-                            HorizontalAlignment="Left"
-                            Margin="555,30,25,0"
-                            VerticalAlignment="Top"
-                            Width="35"
-                            Height="35"
-                            Padding="0"
-                            Background="{DynamicResource ButtonColor}"
-                            ToolTip.Tip="Refresh the current directory"
-                            Command="{Binding RefreshDirectoryButton_Click}"
-                            IsEnabled="{Binding RefreshDirectoryButtonStatus}">
-                        <Button.Content>
-                            <StackPanel Orientation="Vertical"
-                                        VerticalAlignment="Center"
-                                        HorizontalAlignment="Center">
-                                <Image Source="{SvgImage /Assets/refresh_icon.svg}"
-                                       VerticalAlignment="Center"
-                                       Width="28"
-                                       Height="28" />
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
+                    <Grid Grid.Row="1"
+                          ColumnDefinitions="*, auto, auto"
+                          Margin="10,10,10,0">
+                        <TextBox Grid.Row="1"
+                                 Grid.Column="0"
+                                 Name="TextureDirectoryDirectorypathTextBox"
+                                 Height="35"
+                                 HorizontalAlignment="Stretch"
+                                 ToolTip.Tip="{Binding DirectoryPath}"
+                                 Text="{Binding DirectoryPath}"
+                                 IsReadOnly="True"
+                                 VerticalAlignment="Top"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                        <Button Grid.Row="1"
+                                Grid.Column="1"
+                                Name="ReturnDirectory"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Margin="5,0,0,0"
+                                ToolTip.Tip="Return to parent directory"
+                                Command="{Binding ReturnDirectory_Click}"
+                                Background="Transparent"
+                                IsEnabled="{Binding ReturnDirectoryButtonStatus}"
+                                BorderThickness="0.4"
+                                RelativePanel.RightOf="TextureDirectoryDirectorypathTextBox">
+                            <Button.Content>
+                                <Image Source="{SvgImage /Assets/folder_parent_icon.svg}" />
+                            </Button.Content>
+                        </Button>
+                        <Button Grid.Row="1"
+                                Grid.Column="2"
+                                Name="RefreshDirectory"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Margin="5,0,0,0"
+                                ToolTip.Tip="Refresh the current directory"
+                                Command="{Binding RefreshDirectoryButton_Click}"
+                                Background="Transparent"
+                                IsEnabled="{Binding RefreshDirectoryButtonStatus}"
+                                BorderThickness="0.4"
+                                RelativePanel.RightOf="ReturnDirectory"
+                                RelativePanel.AlignRightWith="True">
+                            <Button.Content>
+                                <Image Source="{SvgImage /Assets/refresh_icon.svg}" />
+                            </Button.Content>
+                        </Button>
+                    </Grid>
                     <!-- FILE LIST -->
-                    <DataGrid Name="TextureDirectoryFilesDataGrid"
-                              Margin="10,80,10,5"
+                    <DataGrid Grid.Row="2"
+                              Margin="10"
+                              Name="TextureDirectoryFilesDataGrid"
                               ItemsSource="{Binding WorkingDirectoryFiles}"
                               SelectedItem="{Binding DataGridSelectedItem}"
                               BorderThickness="1"
                               BorderBrush="Black"
                               CanUserResizeColumns="True"
                               IsReadOnly="true"
-                              
-                              Background="{DynamicResource PanelSplitterColor}">
+                              Background="#454545"
+                              VerticalAlignment="Stretch">
                         <i:Interaction.Behaviors>
-							<ia:EventTriggerBehavior EventName="DoubleTapped"
+                            <ia:EventTriggerBehavior EventName="DoubleTapped"
                                                      SourceObject="TextureDirectoryFilesDataGrid">
-								<ia:CallMethodAction TargetObject="{Binding}"
+                                <ia:CallMethodAction TargetObject="{Binding}"
                                                      MethodName="RowDoubleTappedCommand" />
-							</ia:EventTriggerBehavior>
-
-							<ia:EventTriggerBehavior EventName="SelectionChanged"
-                                                    >
-								<ia:CallMethodAction TargetObject="{Binding}"
+                            </ia:EventTriggerBehavior>
+                            <ia:EventTriggerBehavior EventName="SelectionChanged"
+                                                     SourceObject="TextureDirectoryFilesDataGrid">
+                                <ia:CallMethodAction TargetObject="{Binding}"
                                                      MethodName="UpdateUIElementsOnItemChange" />
-							</ia:EventTriggerBehavior>
-						</i:Interaction.Behaviors>
+                            </ia:EventTriggerBehavior>
+                        </i:Interaction.Behaviors>
                         <DataGrid.Resources>
                             <DataTemplate x:Key="HeaderTemplate">
                                 <TextBlock Text="{Binding}"
@@ -273,16 +271,19 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="File Name"
                                                 Binding="{Binding FileName}"
+                                                FontSize="12"
                                                 HeaderTemplate="{StaticResource HeaderTemplate}"
                                                 Width="250" />
                             <DataGridTextColumn Header="File Type"
                                                 Binding="{Binding FileType}"
                                                 HeaderTemplate="{StaticResource HeaderTemplate}"
+                                                FontSize="12"
                                                 Width="120" />
                             <DataGridTextColumn Header="Data Modified"
                                                 Binding="{Binding FileLastWrite}"
                                                 HeaderTemplate="{StaticResource HeaderTemplate}"
-                                                Width="200" />
+                                                Width="200"
+                                                IsVisible="False" />
                         </DataGrid.Columns>
                         <!-- CustomSortComparer="{Binding CustomDateSort}" -->
                         <DataGrid.ContextFlyout>
@@ -387,7 +388,7 @@
                                                              VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <!-- Compression Type -->
+                                        <!-- Surface Format -->
                                         <Label Name="CompressionTypeLabel"
                                                Content="Surface Format:"
                                                Width="130"
@@ -398,24 +399,13 @@
                                                              VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <!-- Has Alpha Count -->
-                                        <Label Name="HasAlphaLabel"
-                                               Content="Transparency:"
-                                               Width="130"
-                                               HorizontalAlignment="Left" />
-                                        <SelectableTextBlock Name="HasAlphaTextblock"
-                                                             Text="{Binding ImageProperties.HasAlpha}"
-                                                             HorizontalAlignment="Left"
-                                                             VerticalAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <!-- Channel Count -->
+                                        <!-- Bits Per Pixel -->
                                         <Label Name="ChannelCountLabel"
-                                               Content="Channel Count:"
+                                               Content="Bits Per Pixel:"
                                                Width="130"
                                                HorizontalAlignment="Left" />
                                         <SelectableTextBlock Name="ChannelcountTextblock"
-                                                             Text="{Binding ImageProperties.ChannelCount}"
+                                                             Text="{Binding ImageProperties.BitsPerPixel}"
                                                              HorizontalAlignment="Left"
                                                              VerticalAlignment="Center" />
                                     </StackPanel>
@@ -430,93 +420,258 @@
                                                              HorizontalAlignment="Left"
                                                              VerticalAlignment="Center" />
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" />
-                                    <StackPanel Orientation="Horizontal" />
-                                    <StackPanel Orientation="Horizontal" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- Array Size -->
+                                        <Label Content="Array Size:"
+                                               Width="130"
+                                               HorizontalAlignment="Left" />
+                                        <SelectableTextBlock Text="{Binding ImageProperties.ArraySize}"
+                                                             HorizontalAlignment="Left"
+                                                             VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- Has Alpha Count -->
+                                        <Label Name="HasAlphaLabel"
+                                               Content="Has Transparency:"
+                                               Width="130"
+                                               HorizontalAlignment="Left" />
+                                        <SelectableTextBlock Name="HasAlphaTextblock"
+                                                             Text="{Binding ImageProperties.HasAlpha}"
+                                                             HorizontalAlignment="Left"
+                                                             VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- Alpha Mode -->
+                                        <Label Content="Alpha Mode:"
+                                               Width="130"
+                                               HorizontalAlignment="Left" />
+                                        <SelectableTextBlock Text="{Binding ImageProperties.AlphaMode}"
+                                                             HorizontalAlignment="Left"
+                                                             VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- Texture Layout Count -->
+                                        <Label Content="Texture Layout:"
+                                               Width="130"
+                                               HorizontalAlignment="Left" />
+                                        <SelectableTextBlock Text="{Binding ImageProperties.TextureLayout}"
+                                                             HorizontalAlignment="Left"
+                                                             VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <!-- <StackPanel Orientation="Horizontal" />
+                                    <StackPanel Orientation="Horizontal" /> -->
                                 </StackPanel>
                             </Expander>
-
-							<Expander Header="Advanced Options"
+                            <Expander Header="Advanced Options"
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Stretch"
                                       Background="{DynamicResource MainPanelColor}"
-									  IsExpanded="True">
-								
-								<StackPanel Margin="0,0,10,10" Spacing="4">
-									<Label
-										   Content="Generate Mipmaps"
-										   VerticalAlignment="Top"
-										   HorizontalAlignment="Left"
-										   VerticalContentAlignment="Center"
-										   Height="30"/>
-
-									<Grid>
-										<StackPanel Orientation="Horizontal">
-											<Label
-										   Content="Game:"
-										   VerticalAlignment="Top"
-										   HorizontalAlignment="Left"
-										   VerticalContentAlignment="Center"
-										   Height="30"/>
-
-											<ComboBox
-											  ItemsSource="{Binding FormatsList}"
-											  SelectedItem="{Binding SelectedFormat}"
-											  SelectedIndex="{Binding SelectedConvertOptionsComboBoxIndex}"
-											  HorizontalAlignment="Left"
-											  VerticalAlignment="Top"
-											  Width="160"
-											  Height="30"
-											  IsEnabled="{Binding ComboBoxStatus}"
-											  ToolTip.Tip="Games List">
-												<ComboBox.ItemTemplate>
-													<DataTemplate>
-														<TextBlock Text="{Binding Name}"
-																   IsEnabled="{Binding ItemStatus}" />
-													</DataTemplate>
-												</ComboBox.ItemTemplate>
-											</ComboBox>
-										</StackPanel>
-									</Grid>
-
-									<StackPanel Margin="">
-										<TextBlock Margin="0 10 0 5">Editing</TextBlock>
-										<RadioButton GroupName="First Group"
-												   Content="Default"/>
-										<RadioButton GroupName="First Group"
-												  Content="RGBA -> ABGR"/>
-										<RadioButton GroupName="First Group"
-												  Content="RGB -> BGR"/>
-										<RadioButton GroupName="First Group"
-												  Content="RG -> GR"/>
-										<RadioButton GroupName="First Group"
-												  Content="Restore Z"/>
-										<RadioButton GroupName="First Group"
-												  Content="Remove Z"/>
-									</StackPanel>
-								
-									<Button 
-											Content="Apply"
-											VerticalAlignment="Top"
-											HorizontalAlignment="Left"
-											HorizontalContentAlignment="Center"
-											Width="91"
-											Command="{Binding ConvertButton_Click}"
-											IsEnabled="{Binding ConvertButtonStatus}"
-											ToolTip.Tip="Convert the file into the desired format." />
-								</StackPanel>
-
-							</Expander>
-
-							<Expander Header="Debug Information"
+                                      IsExpanded="True">
+                                <StackPanel Margin="0,0,10,10"
+                                            Spacing="4">
+                                    <Grid ColumnDefinitions="auto,*">
+                                        <Label Content="Select Game:"
+                                               VerticalAlignment="Top"
+                                               HorizontalAlignment="Left"
+                                               VerticalContentAlignment="Center"
+                                               Height="30" />
+                                        <!-- SelectedIndex="{Binding SelectedConvertOptionsComboBoxIndex}" -->
+                                        <ComboBox Grid.Column="1"
+                                                  ItemsSource="{Binding VersionConvertOptionsList}"
+                                                  SelectedItem="{Binding SelectedVersionConvertOption}"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Bottom"
+                                                  Height="30"
+                                                  IsEnabled="{Binding VersionConvertComboBoxStatus}"
+                                                  ToolTip.Tip="Choose the conversion option. Use the default option unless you want to edit legacy titles.">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Border Background="Gray"
+                                            HorizontalAlignment="Stretch"
+                                            Height="3"
+                                            CornerRadius="10" />
+                                    <CheckBox IsChecked="{Binding ImageAdvancedOptions.EnableAutomaticCompression, Mode=TwoWay}">Enable Compression</CheckBox>
+                                    <Grid RowDefinitions="auto, auto"
+                                          ColumnDefinitions="auto, 10, *"
+                                          IsVisible="{Binding ImageAdvancedOptions.EnableAutomaticCompression}">
+                                        <RadioButton Grid.Row="0"
+                                                     Grid.Column="0"
+                                                     IsChecked="{Binding ImageAdvancedOptions.IsAutomaticCompression}">Automatic</RadioButton>
+                                        <RadioButton Grid.Row="0"
+                                                     Grid.Column="2"
+                                                     IsChecked="{Binding ImageAdvancedOptions.IsManualCompression}">Manual</RadioButton>
+                                        <Grid Grid.Row="1"
+                                              Grid.ColumnSpan="3"
+                                              ColumnDefinitions="auto, auto"
+                                              IsVisible="{Binding ImageAdvancedOptions.IsManualCompression}">
+                                            <Label Content="Format:"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalContentAlignment="Center"
+                                                   Height="30" />
+                                            <ComboBox Grid.Column="1"
+                                                      ItemsSource="{Binding FormatsList}"
+                                                      SelectedItem="{Binding SelectedFormat}"
+                                                      VerticalAlignment="Top"
+                                                      Width="160"
+                                                      Height="30"
+                                                      IsEnabled="{Binding ComboBoxStatus}"
+                                                      ToolTip.Tip="Games List">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   IsEnabled="{Binding ItemStatus}" />
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </Grid>
+                                    </Grid>
+                                    <Border Background="Gray"
+                                            HorizontalAlignment="Stretch"
+                                            Height="3"
+                                            CornerRadius="10" />
+                                    <CheckBox IsChecked="{Binding ImageAdvancedOptions.EnableMips, Mode=TwoWay}">Enable Mipmaps</CheckBox>
+                                    <Grid RowDefinitions="auto, auto"
+                                          ColumnDefinitions="auto, 10, *"
+                                          IsVisible="{Binding ImageAdvancedOptions.EnableMips}">
+                                        <RadioButton Grid.Column="0"
+                                                     IsChecked="{Binding ImageAdvancedOptions.AutoGenerateMips, Mode=TwoWay}">Automatic</RadioButton>
+                                        <RadioButton Grid.Column="2"
+                                                     IsChecked="{Binding ImageAdvancedOptions.ManualGenerateMips, Mode=TwoWay}">Manual</RadioButton>
+                                        <Grid Grid.Row="1"
+                                              Grid.ColumnSpan="3"
+                                              ColumnDefinitions="auto, 150"
+                                              IsVisible="{Binding ImageAdvancedOptions.ManualGenerateMips, Mode=TwoWay}">
+                                            <Label Grid.Column="0"
+                                                   Content="Mips:"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalContentAlignment="Center"
+                                                   Height="30" />
+                                            <NumericUpDown Grid.Column="1"
+                                                           HorizontalAlignment="Stretch"
+                                                           Value="{Binding ImageAdvancedOptions.SetMips, Mode=TwoWay}"
+                                                           Minimum="1"
+                                                           Increment="1"
+                                                           Maximum="{Binding MaxMipCountButton}"
+                                                           Background="{DynamicResource ButtonColor}" />
+                                        </Grid>
+                                    </Grid>
+                                    <Border Background="Gray"
+                                            HorizontalAlignment="Stretch"
+                                            Height="3"
+                                            CornerRadius="10" />
+                                    <CheckBox IsChecked="{Binding ImageAdvancedOptions.EnableSwizzle, Mode=TwoWay}">Enable Swizzling</CheckBox>
+                                    <Grid RowDefinitions="auto, auto"
+                                          ColumnDefinitions="auto, 10,  *"
+                                          IsVisible="{Binding ImageAdvancedOptions.EnableSwizzle}">
+                                        <Grid Grid.Row="0"
+                                              ColumnDefinitions="auto, *"
+                                              IsVisible="{Binding ImageAdvancedOptions.EnableSwizzle}">
+                                            <Label Grid.Row="0"
+                                                   Grid.Column="0"
+                                                   Content="Platform:"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalContentAlignment="Center"
+                                                   Height="30" />
+                                            <ComboBox Grid.Row="0"
+                                                      Grid.Column="2"
+                                                      ItemsSource="{Binding SwizzlePlatforms}"
+                                                      SelectedItem="{Binding ImageAdvancedOptions.PlatformType, Mode=TwoWay}"
+                                                      VerticalAlignment="Top"
+                                                      HorizontalAlignment="Stretch"
+                                                      Height="30"
+                                                      ToolTip.Tip="Platforms">
+                                                <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Converter={StaticResource EnumDisplayNameConverter}}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel Grid.Row="1"
+                                                    Grid.ColumnSpan="3"
+                                                    Orientation="Horizontal"
+                                                    Spacing="10">
+                                            <RadioButton IsChecked="{Binding ImageAdvancedOptions.IsSwizzle}">Swizzle</RadioButton>
+                                            <RadioButton IsChecked="{Binding ImageAdvancedOptions.IsDeswizzle}">Deswizzle</RadioButton>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Border Background="Gray"
+                                            HorizontalAlignment="Stretch"
+                                            Height="3"
+                                            CornerRadius="10" />
+                                    <CheckBox IsChecked="{Binding ImageAdvancedOptions.EnableEditing}">Enable Effects</CheckBox>
+                                    <Grid ColumnDefinitions="auto, *"
+                                          IsVisible="{Binding ImageAdvancedOptions.EnableEditing}">
+                                        <Label Grid.Column="0"
+                                               Content="Effect:"
+                                               HorizontalAlignment="Left"
+                                               VerticalContentAlignment="Center"
+                                               Height="30" />
+                                        <ComboBox Grid.Column="1"
+                                                  ItemsSource="{Binding ImageConversionModes}"
+                                                  SelectedItem="{Binding ImageAdvancedOptions.ImageEffect, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Converter={StaticResource EnumDisplayNameConverter}}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Border Background="Gray"
+                                            HorizontalAlignment="Stretch"
+                                            Height="3"
+                                            CornerRadius="10" />
+                                    <CheckBox IsChecked="{Binding ImageAdvancedOptions.EnableAlpha, Mode=TwoWay}">Enable Alpha</CheckBox>
+                                    <Grid ColumnDefinitions="auto, auto"
+                                          IsVisible="{Binding ImageAdvancedOptions.EnableAlpha}">
+                                        <Label Content="D3DTX Alpha:"
+                                               HorizontalAlignment="Left"
+                                               VerticalContentAlignment="Center"
+                                               Height="30" />
+                                        <ComboBox Grid.Column="2"
+                                                  ItemsSource="{Binding FormatsList}"
+                                                  SelectedItem="{Binding SelectedFormat}"
+                                                  VerticalAlignment="Top"
+                                                  Width="160"
+                                                  Height="30"
+                                                  IsEnabled="{Binding ComboBoxStatus}"
+                                                  ToolTip.Tip="Games List">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}"
+                                                               IsEnabled="{Binding ItemStatus}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Button Content="Apply"
+                                            VerticalAlignment="Top"
+                                            HorizontalAlignment="Left"
+                                            HorizontalContentAlignment="Center"
+                                            Width="91"
+                                            Command="{Binding ConvertButton_Click}"
+                                            IsEnabled="{Binding ConvertButtonStatus}"
+                                            ToolTip.Tip="Convert the file into the desired format." />
+                                </StackPanel>
+                            </Expander>
+                            <Expander Header="Debug Information"
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Stretch"
                                       Background="{DynamicResource MainPanelColor}">
-								<TextBox  Background="{DynamicResource PanelSplitterColor}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Text="{Binding DebugInfo}" IsReadOnly="True">
-									
-								</TextBox>
-							</Expander>
-                            <StackPanel Margin="10,10,10,10" Spacing="4">
+                                <Expander.Header />
+                                <TextBox Background="{DynamicResource PanelSplitterColor}"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Stretch"
+                                         Text="{Binding DebugInfo}"
+                                         IsReadOnly="True" />
+                            </Expander>
+                            <StackPanel Margin="10,10,10,10"
+                                        Spacing="4">
                                 <Label Name="ConvertOptionsLabel"
                                        Content="Convert Options:"
                                        VerticalAlignment="Top"
@@ -524,10 +679,10 @@
                                        VerticalContentAlignment="Center"
                                        Height="30"
                                        Width="120" />
+                                <!-- SelectedIndex="{Binding SelectedConvertOptionsComboBoxIndex}" -->
                                 <ComboBox Name="ConvertOptionsComboBox"
                                           ItemsSource="{Binding FormatsList}"
                                           SelectedItem="{Binding SelectedFormat}"
-                                          SelectedIndex="{Binding SelectedConvertOptionsComboBoxIndex}"
                                           HorizontalAlignment="Left"
                                           VerticalAlignment="Top"
                                           Width="160"
@@ -541,31 +696,8 @@
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                
-                                <Label Name="LegacyOptionsLabel"
-                                       Content="Conversion Type:"
-                                       VerticalAlignment="Top"
-                                       HorizontalAlignment="Left"
-                                       VerticalContentAlignment="Center"
-                                       Height="30"
-                                       Width="120" />
-                                <ComboBox Name="VersionConvertComboBox"
-                                          ItemsSource="{Binding VersionConvertOptionsList}"
-                                          SelectedItem="{Binding SelectedVersionConvertOption}"
-                                          HorizontalAlignment="Left"
-                                          VerticalAlignment="Bottom"
-                                          Width="160"
-                                          Height="30"
-                                          IsEnabled="{Binding VersionConvertComboBoxStatus}"
-                                          ToolTip.Tip="Choose the conversion option. Use the default option unless you want to edit legacy titles.">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Name}" />
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                <!-- IsChecked="{Binding ChooseOutputDirectoryCheckBoxStatus}" -->
                                 <CheckBox Name="ChooseOutputDirectoryCheckBox"
-                                          IsChecked="{Binding ChooseOutputDirectoryCheckBoxStatus}"
                                           IsEnabled="{Binding ChooseOutputDirectoryCheckBoxEnabledStatus}"
                                           Content="Choose Output Directory"
                                           VerticalAlignment="Top"
@@ -592,6 +724,7 @@
                   Background="{DynamicResource MainPanelColor}">
                 <Grid Grid.Row="1">
                     <Grid Grid.Row="0"
+                          Margin="0,5,0,0"
                           Background="{DynamicResource MainPanelColor}">
                         <!-- Ensure the Grid can expand -->
                         <Grid.RowDefinitions>
@@ -606,51 +739,38 @@
                                    VerticalAlignment="Stretch">
                             <Label Name="ImagepreviewLabel"
                                    Content="Image Preview"
-                                   VerticalAlignment="Center" />
-                            <Grid Margin="5,0,0,0"
-                                  MinWidth="150">
-								<Slider x:Name="MipSlider"
+                                   VerticalAlignment="Center"
+                                   Margin="5,0,0,0" />
+                            <Grid Margin="5,0,5,0"
+                                  MinWidth="150"
+                                  IsVisible="{Binding IsMipSliderVisible}">
+                                <Slider x:Name="MipSlider"
                                         VerticalAlignment="Center"
                                         MinWidth="100"
                                         MaxWidth="150"
                                         Minimum="0"
-										Maximum="{Binding MaxMipCount}"
-                                        Value="{Binding MipValue} "
-										IsSnapToTickEnabled="True"
-										TickFrequency="1">
-
-									<i:Interaction.Behaviors>
-										<ia:EventTriggerBehavior EventName="ValueChanged" SourceObject="MipSlider">
-											<ia:InvokeCommandAction   Command="{Binding PreviewImage}"/>
-										</ia:EventTriggerBehavior>
-									</i:Interaction.Behaviors>
-									
-								</Slider>
+                                        Maximum="{Binding MaxMipCount}"
+                                        Value="{Binding MipValue}"
+                                        IsSnapToTickEnabled="True"
+                                        TickFrequency="1.0" />
                                 <Label Content="{Binding MipValue, StringFormat='Mip: {0}'}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"
                                        MaxWidth="180" />
                             </Grid>
-                            <Grid Margin="5,0,0,0"
-                                  MinWidth="150">
-								<Slider x:Name="FaceSlider"
+                            <Grid Margin="5,0,5,0"
+                                  MinWidth="150"
+                                  IsVisible="{Binding IsFaceSliderVisible}">
+                                <Slider x:Name="FaceSlider"
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Stretch"
                                         Minimum="0"
                                         MaxWidth="150"
-										Maximum="{Binding MaxFaceCount}"
+                                        Maximum="{Binding MaxFaceCount}"
                                         Value="{Binding FaceValue} "
-										IsSnapToTickEnabled="True"
-										TickFrequency="1">
-
-									<i:Interaction.Behaviors>
-										<ia:EventTriggerBehavior EventName="ValueChanged" SourceObject="FaceSlider">
-											<ia:InvokeCommandAction  Command="{Binding PreviewImage}"/>
-										</ia:EventTriggerBehavior>
-									</i:Interaction.Behaviors>
-
-								</Slider>
+                                        IsSnapToTickEnabled="True"
+                                        TickFrequency="1" />
                                 <Label Content="{Binding FaceValue, StringFormat='Face/Slice: {0}'}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
@@ -678,19 +798,20 @@
                                             VerticalAlignment="Stretch">
                                 <!-- Image Preview (Don't change) -->
                                 <Border HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch">
+                                        VerticalAlignment="Stretch"
+                                        MaxWidth="700"
+                                        Background="#454545">
                                     <Border.Transitions>
                                         <Transitions>
                                             <TransformOperationsTransition Property="RenderTransform"
                                                                            Duration="0:0:0.1" />
                                         </Transitions>
                                     </Border.Transitions>
-                                    <!-- Set Stretch to Fill to ignore aspect ratio -->
+                                    <!-- Set Stretch to Fill to ignore aspectf ratio -->
                                     <Image Name="ImagepreviewImage"
                                            Source="{Binding ImagePreview}"
                                            Stretch="Uniform"
-                                           HorizontalAlignment="Stretch"
-                                           VerticalAlignment="Stretch" Margin="10"/>
+                                           Margin="10" />
                                 </Border>
                             </paz:ZoomBorder>
                         </ScrollViewer>

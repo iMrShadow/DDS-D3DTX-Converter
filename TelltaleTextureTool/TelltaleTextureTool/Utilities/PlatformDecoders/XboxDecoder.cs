@@ -186,22 +186,22 @@ public static class XboxTextureDecoder
     {
         return format switch
         {
-            T3SurfaceFormat.eSurface_BC1 => PixelFormatInfo[1],
-            T3SurfaceFormat.eSurface_BC2 => PixelFormatInfo[2],
-            T3SurfaceFormat.eSurface_BC3 => PixelFormatInfo[3],
-            T3SurfaceFormat.eSurface_BC4 => PixelFormatInfo[4],
-            T3SurfaceFormat.eSurface_BC5 => PixelFormatInfo[5],
-            T3SurfaceFormat.eSurface_BC6 => PixelFormatInfo[6],
-            T3SurfaceFormat.eSurface_BC7 => PixelFormatInfo[7],
-            T3SurfaceFormat.eSurface_RGBA8 => PixelFormatInfo[8],
-            T3SurfaceFormat.eSurface_RGBA8S => PixelFormatInfo[8],
-            T3SurfaceFormat.eSurface_ARGB8 => PixelFormatInfo[9],
-            T3SurfaceFormat.eSurface_ARGB4 => PixelFormatInfo[10],
-            T3SurfaceFormat.eSurface_A8 => PixelFormatInfo[11], //??
-            T3SurfaceFormat.eSurface_L8 => PixelFormatInfo[11],
-            T3SurfaceFormat.eSurface_R8 => PixelFormatInfo[11],
-            T3SurfaceFormat.eSurface_AL8 => PixelFormatInfo[12],
-            T3SurfaceFormat.eSurface_RG8 => PixelFormatInfo[12],
+            T3SurfaceFormat.BC1 => PixelFormatInfo[1],
+            T3SurfaceFormat.BC2 => PixelFormatInfo[2],
+            T3SurfaceFormat.BC3 => PixelFormatInfo[3],
+            T3SurfaceFormat.BC4 => PixelFormatInfo[4],
+            T3SurfaceFormat.BC5 => PixelFormatInfo[5],
+            T3SurfaceFormat.BC6 => PixelFormatInfo[6],
+            T3SurfaceFormat.BC7 => PixelFormatInfo[7],
+            T3SurfaceFormat.RGBA8 => PixelFormatInfo[8],
+            T3SurfaceFormat.RGBA8S => PixelFormatInfo[8],
+            T3SurfaceFormat.ARGB8 => PixelFormatInfo[9],
+            T3SurfaceFormat.ARGB4 => PixelFormatInfo[10],
+            T3SurfaceFormat.A8 => PixelFormatInfo[11], //??
+            T3SurfaceFormat.L8 => PixelFormatInfo[11],
+            T3SurfaceFormat.R8 => PixelFormatInfo[11],
+            T3SurfaceFormat.AL8 => PixelFormatInfo[12],
+            T3SurfaceFormat.RG8 => PixelFormatInfo[12],
 
             _ => PixelFormatInfo[0],
         };

@@ -497,7 +497,7 @@ public class D3DTX_V6 : ID3DTX
             {
                 throw new Exception("Cubemap array textures are not supported on this version!");
             }
-            mTextureLayout = T3TextureLayout.eTextureLayout_Cube;
+            mTextureLayout = T3TextureLayout.TextureCubemap;
 
             int interval = mStreamHeader.mRegionCount / (int)mNumMipLevels;
             // Example a cube array textures with 5 mips will have 30 regions (6 faces * 5 mips)
@@ -520,7 +520,7 @@ public class D3DTX_V6 : ID3DTX
                 throw new ArgumentException("2D Array textures are not supported on this version!");
             }
 
-            mTextureLayout = T3TextureLayout.eTextureLayout_2D;
+            mTextureLayout = T3TextureLayout.Texture2D;
 
             for (int i = 0; i < mStreamHeader.mRegionCount; i++)
             {

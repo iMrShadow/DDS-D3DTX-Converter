@@ -8,6 +8,7 @@ using TelltaleTextureTool.TelltaleEnums;
 using Ktx;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 using TelltaleTextureTool.Utilities;
+using Texture = Ktx.Ktx2.Texture;
 
 namespace TelltaleTextureTool.Main
 {

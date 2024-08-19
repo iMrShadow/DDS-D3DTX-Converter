@@ -433,7 +433,7 @@ public class D3DTX_V8 : ID3DTX
         if (metadata.IsCubemap())
         {
             mArraySize /= 6;
-            mTextureLayout = mArraySize > 1 ? T3TextureLayout.eTextureLayout_CubeArray : T3TextureLayout.eTextureLayout_Cube;
+            mTextureLayout = mArraySize > 1 ? T3TextureLayout.TextureCubemapArray : T3TextureLayout.TextureCubemap;
 
             int interval = mStreamHeader.mRegionCount / (int)mNumMipLevels;
             // Example a cube array textures with 5 mips will have 30 regions (6 faces * 5 mips)
@@ -448,7 +448,7 @@ public class D3DTX_V8 : ID3DTX
 
         else if (metadata.IsVolumemap())
         {
-            mTextureLayout = T3TextureLayout.eTextureLayout_3D;
+            mTextureLayout = T3TextureLayout.Texture3D;
 
             int currDepth = (int)metadata.Depth;
             int currentMipIndex = (int)mNumMipLevels - 1;
@@ -476,7 +476,7 @@ public class D3DTX_V8 : ID3DTX
         }
         else
         {
-            mTextureLayout = mArraySize > 1 ? T3TextureLayout.eTextureLayout_2DArray : T3TextureLayout.eTextureLayout_2D;
+            mTextureLayout = mArraySize > 1 ? T3TextureLayout.Texture2DArray : T3TextureLayout.Texture2D;
 
             int interval = mStreamHeader.mRegionCount / (int)mNumMipLevels;
 

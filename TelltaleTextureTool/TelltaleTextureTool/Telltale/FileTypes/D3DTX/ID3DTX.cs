@@ -57,13 +57,13 @@ public partial class D3DTXMetadata
 
     public uint MipLevels { get; set; } = 1;
 
-    public T3SurfaceFormat Format { get; set; } = T3SurfaceFormat.eSurface_Unknown;
+    public T3SurfaceFormat Format { get; set; } = T3SurfaceFormat.Unknown;
 
     public T3SurfaceGamma SurfaceGamma { get; set; } = T3SurfaceGamma.eSurfaceGamma_Unknown;
 
-    public T3TextureLayout Dimension { get; set; } = T3TextureLayout.eTextureLayout_Unknown;
+    public T3TextureLayout Dimension { get; set; } = T3TextureLayout.Unknown;
 
-    public T3TextureAlphaMode AlphaMode { get; set; } = T3TextureAlphaMode.eTxAlphaUnknown;
+    public T3TextureAlphaMode AlphaMode { get; set; } = T3TextureAlphaMode.Unknown;
 
     public T3PlatformType Platform { get; set; } = T3PlatformType.ePlatform_None;
 
@@ -73,11 +73,11 @@ public partial class D3DTXMetadata
 
     public D3DFormat D3DFormat { get; set; } = D3DFormat.UNKNOWN;
 
-    public bool IsCubemap() => Dimension == T3TextureLayout.eTextureLayout_Cube || Dimension == T3TextureLayout.eTextureLayout_CubeArray;
+    public bool IsCubemap() => Dimension == T3TextureLayout.TextureCubemap || Dimension == T3TextureLayout.TextureCubemapArray;
 
-    public bool IsVolumemap() => Dimension == T3TextureLayout.eTextureLayout_3D;
+    public bool IsVolumemap() => Dimension == T3TextureLayout.Texture3D;
 
-    public bool IsArrayTexture() => Dimension == T3TextureLayout.eTextureLayout_2DArray || Dimension == T3TextureLayout.eTextureLayout_CubeArray;
+    public bool IsArrayTexture() => Dimension == T3TextureLayout.Texture2DArray || Dimension == T3TextureLayout.TextureCubemapArray;
 
     public bool IsLegacyD3DTX() => D3DFormat == D3DFormat.UNKNOWN;
 }

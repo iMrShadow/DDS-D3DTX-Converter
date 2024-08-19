@@ -18,7 +18,6 @@ namespace TelltaleTextureTool;
 
 public static class Converter
 {
-
     public static string[] GetExtension(TextureType textureType)
     {
         return textureType switch
@@ -32,6 +31,7 @@ public static class Converter
             TextureType.BMP => [Main_Shared.bmpExtension],
             TextureType.TIFF => [Main_Shared.tiffExtension, Main_Shared.tifExtension],
             TextureType.TGA => [Main_Shared.tgaExtension],
+            TextureType.HDR => [Main_Shared.hdrExtension],
             _ => throw new InvalidEnumArgumentException("Invalid texture type."),
         };
     }
@@ -439,21 +439,21 @@ public static class Converter
             //ConvertOptions
             if (d3dtxTextureType == T3TextureType.eTxBumpmap || d3dtxTextureType == T3TextureType.eTxNormalMap)
             {
-                DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.SWIZZLE_ABGR);
+              //  DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.SWIZZLE_ABGR);
             }
             else if (d3dtxTextureType == T3TextureType.eTxNormalXYMap)
             {
-                DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.RESTORE_Z);
+            //    DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.RESTORE_Z);
             }
             else
             {
-                DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.DEFAULT);
+           //     DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.DEFAULT);
             }
         }
         // If we didn't find a JSON file, use default conversion.
         else
         {
-            DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, DDS_DirectXTexNet.DDSConversionMode.DEFAULT);
+           // DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.DEFAULT);
             throw new FileNotFoundException(
                 "No .json file was found for the file.\nDefaulting to classic conversion.");
         }

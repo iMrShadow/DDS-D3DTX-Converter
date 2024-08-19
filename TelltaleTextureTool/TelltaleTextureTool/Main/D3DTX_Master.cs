@@ -10,13 +10,9 @@ using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.TelltaleTypes;
 using System.Linq;
 using TelltaleTextureTool.DirectX.Enums;
-using Pvrtc;
-using Decoders;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 using TelltaleTextureTool.Telltale.Meta;
-using LibWindPop.Utils.Graphics.Texture.Coder;
-using LibWindPop.Utils.Graphics.Bitmap;
-using LibWindPop.Utils.Graphics.Texture;
+using DrSwizzler;
 
 namespace TelltaleTextureTool.Main
 {
@@ -554,10 +550,10 @@ namespace TelltaleTextureTool.Main
             return false;
         }
 
-        public string GetStringFormat()
+        public string GetSurfaceFormat()
         {
             if (d3dtxMetadata.D3DFormat == D3DFormat.UNKNOWN)
-                return Enum.GetName(d3dtxMetadata.Format).Remove(0, 9);
+                return d3dtxMetadata.Format.ToString();
             else
             {
                 return d3dtxMetadata.D3DFormat.ToString();
@@ -572,15 +568,6 @@ namespace TelltaleTextureTool.Main
         public string GetHasAlpha()
         {
             return d3dtxMetadata.AlphaMode > 0 ? "True" : ((int)d3dtxMetadata.AlphaMode == -1 ? "Unknown" : "False");
-        }
-
-        /// <summary>
-        /// Gets a string version of the channel count of .d3dtx surface format. 
-        /// </summary>
-        /// <returns></returns>
-        public string GetChannelCount()
-        {
-            return DDS_DirectXTexNet.GetChannelCount(DDS_HELPER.GetDXGIFormat(d3dtxMetadata.Format)).ToString();
         }
 
         public int GetRegionCount()
@@ -603,6 +590,26 @@ namespace TelltaleTextureTool.Main
             return d3dtxObject.GetPixelData();
         }
 
+        public byte[] GetReversedMipPixelData()
+        {
+            List<byte[]> finalArray = [];
+
+            RegionStreamHeader[] regionHeaders = GetRegionStreamHeaders();
+
+            for (int i = 0; i < d3dtxMetadata.MipLevels; i++)
+            {
+                for (int j = 0; j < regionHeaders.Length; j++)
+                {
+                    if (regionHeaders[j].mMipIndex == i)
+                    {
+                        finalArray.Add(GetPixelData()[j]);
+                    }
+                }
+            }
+
+            return finalArray.SelectMany(b => b).ToArray();
+        }
+
         public byte[] GetPixelDataByFaceIndex(int faceIndex, T3SurfaceFormat surfaceFormat, int width, int height, T3PlatformType platformType)
         {
             List<byte[]> newPixelData = [];
@@ -620,8 +627,7 @@ namespace TelltaleTextureTool.Main
                         newPixelData.Add(GetPixelData()[i]); continue;
                     }
 
-                    GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width / divideBy, height / divideBy, platformType);
-                    GetPixelData()[i] = DecodePixelDataByFormat(GetPixelData()[i], surfaceFormat, width / divideBy, height / divideBy, platformType);
+                  //  GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width / divideBy, height / divideBy, platformType);
 
                     divideBy *= 2;
 
@@ -650,8 +656,7 @@ namespace TelltaleTextureTool.Main
                         newPixelData.Add(GetPixelData()[i]); continue;
                     }
 
-                    GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width, height, platformType);
-                    GetPixelData()[i] = DecodePixelDataByFormat(GetPixelData()[i], surfaceFormat, width, height, platformType);
+                   // GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width, height, platformType);
 
                     newPixelData.Add(GetPixelData()[i]);
                 }
@@ -662,110 +667,151 @@ namespace TelltaleTextureTool.Main
 
         public byte[] DecodePixelDataByPlatform(byte[] pixelData, T3SurfaceFormat surfaceFormat, int width, int height, T3PlatformType platformType)
         {
-            if (platformType == T3PlatformType.ePlatform_PS4)
+            DrSwizzler.DDS.DXEnums.DXGIFormat format = (DrSwizzler.DDS.DXEnums.DXGIFormat)DDS_HELPER.GetDXGIFormat(surfaceFormat);
+
+            return platformType switch
             {
-                Console.WriteLine("Decoding PS4 texture data...");
-
-                pixelData = PSTextureDecoder.DecodePS4(pixelData, DDS_HELPER.GetDXGIFormat(surfaceFormat), width, height);
-            }
-
-            else if (platformType == T3PlatformType.ePlatform_PS3 || platformType == T3PlatformType.ePlatform_WiiU)
-            {
-                Console.WriteLine("Decoding PS3 texture data...");
-
-                pixelData = PSTextureDecoder.DecodePS3(pixelData, DDS_HELPER.GetDXGIFormat(surfaceFormat), width, height);
-            }
-
-            else if (platformType == T3PlatformType.ePlatform_Xbox || platformType == T3PlatformType.ePlatform_XBOne)
-            {
-                Console.WriteLine("Decoding Xbox texture data...");
-
-                pixelData = XboxTextureDecoder.Decode(pixelData, width, height, surfaceFormat, true);
-            }
-
-            return pixelData;
+                T3PlatformType.ePlatform_PS3 => Deswizzler.PS3Deswizzle(pixelData, width, height, format),
+                T3PlatformType.ePlatform_PS4 => Deswizzler.PS4Deswizzle(pixelData, width, height, format),
+                T3PlatformType.ePlatform_NX => Deswizzler.SwitchDeswizzle(pixelData, width, height, format),
+                T3PlatformType.ePlatform_Vita => Deswizzler.VitaDeswizzle(pixelData, width, height, format),
+                T3PlatformType.ePlatform_Xbox or T3PlatformType.ePlatform_XBOne => Deswizzler.Xbox360Deswizzle(pixelData, width, height, format),
+                _ => pixelData
+            };
         }
-
-        public byte[] DecodePixelDataByFormat(byte[] pixelData, T3SurfaceFormat surfaceFormat, int width, int height, T3PlatformType platformType)
+        public static byte[] NintendoSwizzle(byte[] content, int width, int height, int code, bool deswizzle)
         {
-            IPitchableTextureCoder coder = null;
-
-            if (surfaceFormat == T3SurfaceFormat.eSurface_PVRTC4 || surfaceFormat == T3SurfaceFormat.eSurface_PVRTC4a)
+            int pos_ = 0;
+            int bpp = GetBpp(bpps, code);
+            int origin_width = width;
+            int origin_height = height;
+            if (code >= 0x40 && code <= 0x42)
             {
-                // coder = new RGBA_PVRTCI_2BPP_UByte();
-
-                PvrtcDecoder pvrtcDecoder = new PvrtcDecoder();
-                pixelData = pvrtcDecoder.DecompressPVRTC(pixelData, width, height, false);
+                origin_height = (origin_height + 3) / 4;
+                origin_width = (origin_width + 3) / 4;
             }
-            else if (surfaceFormat == T3SurfaceFormat.eSurface_PVRTC2 || surfaceFormat == T3SurfaceFormat.eSurface_PVRTC2a)
+            int xb = CountZeros(pow2RoundUp(origin_width));
+            int yb = CountZeros(pow2RoundUp(origin_height));
+            int hh = pow2RoundUp(origin_height) >> 1;
+            if (!isPow2(origin_height) && (origin_height <= (hh + (hh / 3))) && (yb > 3))
+                yb--;
+            width = RoundSize(origin_width, GetData(padds, bpp));
+            int xBase = GetData(xBases, bpp);
+            byte[] result = new byte[content.Length];
+            for (int y = 0; y < origin_height; y++)
             {
-                PvrtcDecoder pvrtcDecoder = new PvrtcDecoder();
-                pixelData = pvrtcDecoder.DecompressPVRTC(pixelData, width, height, true);
-            }
-            else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB)
-            {
-                coder = new RGB_ATC_UByte();
-                //  AtcDecoder atcDecoder = new AtcDecoder();
-                //  pixelData = atcDecoder.DecompressAtcRgb4(pixelData, width, height);
-                // int bytesRead = AssetRipper.TextureDecoder.Atc.AtcDecoder.DecompressAtcRgb4(pixelData, width, height, out byte[] decodedData);
-                //  pixelData = decodedData;
-            }
-            else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGBA)
-            {
-                coder = new RGBA_ATC_Interpolated_UByte();
-                //  AtcDecoder atcDecoder = new AtcDecoder();
-                //  int bytesRead = AssetRipper.TextureDecoder.Atc.AtcDecoder.DecompressAtcRgba8(pixelData, width, height, out byte[] decodedData);
-                // pixelData = atcDecoder.DecompressAtcRgba8(pixelData, width, height);
-                //  pixelData = decodedData;
-            }
-            else if (surfaceFormat == T3SurfaceFormat.eSurface_ATC_RGB1A)
-            {
-                coder = new RGBA_ATC_Explicit_UByte();
-            }
-
-            using (NativeBitmap bitmap = new NativeBitmap(width, height))
-            {
-                RefBitmap refBitmap = bitmap.AsRefBitmap();
-                //RefBitmap refBitmap1 = new RefBitmap(refBitmap, 0, 0, width, height);
-                ReadOnlySpan<byte> dataSpan = pixelData.AsSpan();
-                byte[] newPixelData = new byte[refBitmap.Area * 4];
-
-                if (coder != null)
+                for (int x = 0; x < origin_width; x++)
                 {
-                    coder.Decode(dataSpan, width, height, refBitmap);
-                    int j = 0;
-
-                    if (T3SurfaceFormat.eSurface_ATC_RGB1A != surfaceFormat)
+                    int pos = getAddress(x, y, xb, yb, width, xBase) * bpp;
+                    if (deswizzle)
                     {
-                        for (int i = 0; i < refBitmap.Area; i++)
+                        if ((pos_ + bpp <= content.Length) && (pos + bpp <= content.Length))
                         {
-                            newPixelData[j] = refBitmap.Data[i].Red;
-                            newPixelData[j + 1] = refBitmap.Data[i].Green;
-                            newPixelData[j + 2] = refBitmap.Data[i].Blue;
-                            newPixelData[j + 3] = refBitmap.Data[i].Alpha;
-
-                            j += 4;
+                            Array.Copy(content, pos, result, pos_, bpp);
                         }
                     }
                     else
                     {
-                        for (int i = 0; i < refBitmap.Area; i++)
+                        if ((pos + bpp <= content.Length) && (pos_ + bpp <= content.Length))
                         {
-                            newPixelData[j] = refBitmap.Data[i].Alpha;
-                            newPixelData[j + 1] = refBitmap.Data[i].Red;
-                            newPixelData[j + 2] = refBitmap.Data[i].Green;
-                            newPixelData[j + 3] = refBitmap.Data[i].Blue;
-
-                            j += 4;
+                            Array.Copy(content, pos_, result, pos, bpp);
                         }
                     }
-
-
-                    pixelData = newPixelData;
+                    pos_ += bpp;
                 }
             }
+            return result;
+        }
 
-            return pixelData;
+        private static int[] bpps = { 4, 4, 4, 2, 2, 2, 1, 2, 8, 16, 16, 8, 8, 16, 16 };
+        private static int[,] xBases = { { 1, 2, 4, 8, 16 }, { 4, 3, 2, 1, 0 } };
+        private static int[,] padds = { { 1, 2, 4, 8, 16 }, { 64, 32, 16, 8, 4 } };
+        private static int GetData(int[,] mas, int bpp)
+        {
+            for (int i = 0; i < mas.Length; i++)
+            {
+                for (int j = 0; j < mas.Length; j++)
+                {
+                    if (mas[i, j] == bpp)
+                    {
+                        return mas[++i, j];
+                    }
+                }
+            }
+            return 0;
+        }
+        private static int GetBpp(int[] bpps, int code)
+        {
+            switch (code)
+            {
+                case 0x40:
+                    return bpps[8];
+                case 0x41:
+                    return bpps[9];
+                case 0x42:
+                    return bpps[10];
+            }
+            return 0;
+        }
+        private static int RoundSize(int size, int pad)
+        {
+            int mark = pad - 1;
+            if ((size & mark) != 0)
+            {
+                size &= ~mark;
+                size += pad;
+            }
+            return size;
+        }
+        private static int pow2RoundUp(int v)
+        {
+            v--;
+            v |= (v++) >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            return v + 1;
+        }
+        private static bool isPow2(int v)
+        {
+            return (v != 0) && ((v & (v - 1)) == 0);
+        }
+        private static int CountZeros(int v)
+        {
+            int numZeros = 0;
+            for (int i = 0; i < 32; i++)
+            {
+                if ((v & (1 << i)) != 0)
+                    break;
+                numZeros++;
+            }
+            return numZeros;
+        }
+        private static int getAddress(int x, int y, int xb, int yb, int width, int xBase)
+        {
+            int xCnt = xBase;
+            int yCnt = 1;
+            int xUsed = 0;
+            int yUsed = 0;
+            int address = 0;
+            int xMask = 0;
+            int yMask = 0;
+            while ((xUsed < xBase + 2) && (xUsed + xCnt < xb))
+            {
+                xMask = (1 << xCnt) - 1;
+                yMask = (1 << yCnt) - 1;
+                address |= (x & xMask) << xUsed + yUsed;
+                address |= (y & yMask) << xUsed + yUsed + xCnt;
+                x >>= xCnt;
+                y >>= yCnt;
+                xUsed += xCnt;
+                yUsed += yCnt;
+                xCnt = Math.Max(Math.Min(xb - xUsed, 1), 0);
+                yCnt = Math.Max(Math.Min(yb - yUsed, yCnt << 1), 0);
+            }
+            address |= (x + y * (width >> xUsed)) << (xUsed + yUsed);
+            return address;
         }
 
         public bool IsTextureCompressed()
@@ -789,28 +835,28 @@ namespace TelltaleTextureTool.Main
         {
             return format switch
             {
-                T3SurfaceFormat.eSurface_BC1 => true,
-                T3SurfaceFormat.eSurface_BC2 => true,
-                T3SurfaceFormat.eSurface_BC3 => true,
-                T3SurfaceFormat.eSurface_BC4 => true,
-                T3SurfaceFormat.eSurface_BC5 => true,
-                T3SurfaceFormat.eSurface_BC6 => true,
-                T3SurfaceFormat.eSurface_BC7 => true,
-                T3SurfaceFormat.eSurface_CTX1 => true,
-                T3SurfaceFormat.eSurface_ATC_RGB => true,
-                T3SurfaceFormat.eSurface_ATC_RGBA => true,
-                T3SurfaceFormat.eSurface_ATC_RGB1A => true,
-                T3SurfaceFormat.eSurface_ETC1_RGB => true,
-                T3SurfaceFormat.eSurface_ETC2_RGB => true,
-                T3SurfaceFormat.eSurface_ETC2_RGBA => true,
-                T3SurfaceFormat.eSurface_ETC2_RGB1A => true,
-                T3SurfaceFormat.eSurface_ETC2_R => true,
-                T3SurfaceFormat.eSurface_ETC2_RG => true,
-                T3SurfaceFormat.eSurface_ATSC_RGBA_4x4 => true,
-                T3SurfaceFormat.eSurface_PVRTC2 => true,
-                T3SurfaceFormat.eSurface_PVRTC4 => true,
-                T3SurfaceFormat.eSurface_PVRTC2a => true,
-                T3SurfaceFormat.eSurface_PVRTC4a => true,
+                T3SurfaceFormat.BC1 => true,
+                T3SurfaceFormat.BC2 => true,
+                T3SurfaceFormat.BC3 => true,
+                T3SurfaceFormat.BC4 => true,
+                T3SurfaceFormat.BC5 => true,
+                T3SurfaceFormat.BC6 => true,
+                T3SurfaceFormat.BC7 => true,
+                T3SurfaceFormat.CTX1 => true,
+                T3SurfaceFormat.ATC_RGB => true,
+                T3SurfaceFormat.ATC_RGBA => true,
+                T3SurfaceFormat.ATC_RGB1A => true,
+                T3SurfaceFormat.ETC1_RGB => true,
+                T3SurfaceFormat.ETC2_RGB => true,
+                T3SurfaceFormat.ETC2_RGBA => true,
+                T3SurfaceFormat.ETC2_RGB1A => true,
+                T3SurfaceFormat.ETC2_R => true,
+                T3SurfaceFormat.ETC2_RG => true,
+                T3SurfaceFormat.ATSC_RGBA_4x4 => true,
+                T3SurfaceFormat.PVRTC2 => true,
+                T3SurfaceFormat.PVRTC4 => true,
+                T3SurfaceFormat.PVRTC2a => true,
+                T3SurfaceFormat.PVRTC4a => true,
                 _ => false,
             };
         }
@@ -819,20 +865,20 @@ namespace TelltaleTextureTool.Main
         {
             return format switch
             {
-                T3SurfaceFormat.eSurface_ATC_RGB => true,
-                T3SurfaceFormat.eSurface_ATC_RGBA => true,
-                T3SurfaceFormat.eSurface_ATC_RGB1A => true,
-                T3SurfaceFormat.eSurface_ETC1_RGB => true,
-                T3SurfaceFormat.eSurface_ETC2_RGB => true,
-                T3SurfaceFormat.eSurface_ETC2_RGBA => true,
-                T3SurfaceFormat.eSurface_ETC2_RGB1A => true,
-                T3SurfaceFormat.eSurface_ETC2_R => true,
-                T3SurfaceFormat.eSurface_ETC2_RG => true,
-                T3SurfaceFormat.eSurface_ATSC_RGBA_4x4 => true,
-                T3SurfaceFormat.eSurface_PVRTC2 => true,
-                T3SurfaceFormat.eSurface_PVRTC4 => true,
-                T3SurfaceFormat.eSurface_PVRTC2a => true,
-                T3SurfaceFormat.eSurface_PVRTC4a => true,
+                T3SurfaceFormat.ATC_RGB => true,
+                T3SurfaceFormat.ATC_RGBA => true,
+                T3SurfaceFormat.ATC_RGB1A => true,
+                T3SurfaceFormat.ETC1_RGB => true,
+                T3SurfaceFormat.ETC2_RGB => true,
+                T3SurfaceFormat.ETC2_RGBA => true,
+                T3SurfaceFormat.ETC2_RGB1A => true,
+                T3SurfaceFormat.ETC2_R => true,
+                T3SurfaceFormat.ETC2_RG => true,
+                T3SurfaceFormat.ATSC_RGBA_4x4 => true,
+                T3SurfaceFormat.PVRTC2 => true,
+                T3SurfaceFormat.PVRTC4 => true,
+                T3SurfaceFormat.PVRTC2a => true,
+                T3SurfaceFormat.PVRTC4a => true,
                 _ => false,
             };
         }
@@ -847,9 +893,9 @@ namespace TelltaleTextureTool.Main
                 T3PlatformType.ePlatform_Wii => true,
                 T3PlatformType.ePlatform_Xbox => true,
                 T3PlatformType.ePlatform_XBOne => true,
-                T3PlatformType.ePlatform_iPhone => true,
-                T3PlatformType.ePlatform_Android => true,
-                _ => false,
+                T3PlatformType.ePlatform_NX => true,
+                T3PlatformType.ePlatform_Vita => true,
+                _ => false
             };
         }
 

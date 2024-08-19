@@ -477,7 +477,7 @@ public class D3DTX_V3 : ID3DTX
       Format = mSurfaceFormat,
       MipLevels = mNumMipLevels,
       SurfaceGamma = T3SurfaceGamma.eSurfaceGamma_Linear,
-      Dimension = T3TextureLayout.eTextureLayout_2D,
+      Dimension = T3TextureLayout.Texture2D,
       AlphaMode = mAlphaMode,
       Platform = mPlatform,
       TextureType = mType,

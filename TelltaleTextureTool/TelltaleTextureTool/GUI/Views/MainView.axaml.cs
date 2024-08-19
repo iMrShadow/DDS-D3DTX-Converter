@@ -4,6 +4,7 @@ using Avalonia.Input;
 using CommunityToolkit.Mvvm.Input;
 using TelltaleTextureTool.ViewModels;
 using System;
+using Avalonia.Controls.Primitives;
 
 namespace TelltaleTextureTool.Views;
 
@@ -19,6 +20,8 @@ public partial class MainView : UserControl
         viewModel.ResetPanAndZoomCommand = new RelayCommand(ResetPanAndZoom);
 
         DataContextChanged += OnDataContextChanged;
+        viewModel.ResetPanAndZoomCommand.Execute(null);
+        ResetPanAndZoom();
     }
 
     private void ResetPanAndZoom()
@@ -53,13 +56,10 @@ public partial class MainView : UserControl
     {
         if (DataContext is MainViewModel viewModel)
         {
-          
+
         }
     }
 
-    private void PreviewImageCommand(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
-    {
-    }
 
     private void Binding_1(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
     {
@@ -74,6 +74,10 @@ public partial class MainView : UserControl
     }
 
     private void PreviewImageCommand_1(object? sender, Avalonia.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+    }
+
+    private void PreviewImageCommand(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
     }
 }

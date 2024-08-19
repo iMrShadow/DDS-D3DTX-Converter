@@ -3,8 +3,8 @@
 // Update: Original name could be eTxAlphaMode
 public enum T3TextureAlphaMode
 {
-    eTxAlphaUnknown = -1, 
-    eTxNoAlpha = 0,
-    eTxAlphaTest = 1,
-    eTxAlphaBlend = 2,
+    Unknown = -1, 
+    NoAlpha = 0,
+    AlphaTest = 1,
+    AlphaBlend = 2,
 }

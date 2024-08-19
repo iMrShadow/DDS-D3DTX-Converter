@@ -11,5 +11,6 @@ public enum TextureType
     JPEG,
     BMP,
     TIFF,
-    TGA
+    TGA,
+    HDR
 }
