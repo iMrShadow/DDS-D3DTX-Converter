@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using TelltaleTextureTool.TelltaleEnums;
 using TelltaleTextureTool.TelltaleTypes;
 using TelltaleTextureTool.Utilities;
 
@@ -52,7 +53,7 @@ public class MSV5 : IMetaHeader
     /// </summary>
     public MSV5() { }
 
-    public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
+    public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None,bool printDebug = false)
     {
         ByteFunctions.WriteFixedString(writer, mMetaStreamVersion); // Meta Stream Keyword [4 bytes]
         writer.Write(mDefaultSectionChunkSize); // Default Section Chunk Size [4 bytes] default section chunk size
@@ -67,7 +68,7 @@ public class MSV5 : IMetaHeader
         }
     }
 
-    public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
+    public void ReadFromBinary(BinaryReader reader, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None,bool printDebug = false)
     {
         mMetaStreamVersion = ByteFunctions.ReadFixedString(reader, 4); // Meta Stream Keyword [4 bytes]
         mDefaultSectionChunkSize = reader.ReadUInt32(); // Default Section Chunk Size [4 bytes] //default section chunk size
@@ -94,7 +95,7 @@ public class MSV5 : IMetaHeader
         mAsyncSectionChunkSize = asyncSectionChunkSize;
     }
 
-    public string GetDebugInfo()
+    public string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None)
     {
         string metaInfo = "||||||||||| Meta Header |||||||||||" + Environment.NewLine;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using TelltaleTextureTool.TelltaleEnums;
 using TelltaleTextureTool.TelltaleTypes;
 using TelltaleTextureTool.Utilities;
 
@@ -33,11 +34,16 @@ public class MTRE : IMetaHeader
     public ClassNames[] mClassNames { get; set; } = [];
 
     /// <summary>
+    /// [4 + string length + 4 bytes for each element] An array of class names (Unhashed Class Names) that are used in the file. Used in older games.
+    /// </summary>
+    public UnhashedClassNames[] mUnhashedClassNames { get; set; } = [];
+
+    /// <summary>
     /// Meta Header (empty constructor, only used for json deserialization)
     /// </summary>
     public MTRE() { }
 
-    public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
+    public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None,bool printDebug = false)
     {
         ByteFunctions.WriteFixedString(writer, mMetaStreamVersion); // Meta Stream Keyword [4 bytes]
         writer.Write(mClassNamesLength); // mClassNamesLength [4 bytes]
@@ -47,19 +53,42 @@ public class MTRE : IMetaHeader
         {
             mClassNames[i].WriteBinaryData(writer);
         }
+
+        for (int i = 0; i < mUnhashedClassNames.Length; i++)
+        {
+            mUnhashedClassNames[i].WriteBinaryData(writer);
+        }
     }
 
-    public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
+    public void ReadFromBinary(BinaryReader reader, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None,bool printDebug = false)
     {
         mMetaStreamVersion = ByteFunctions.ReadFixedString(reader, 4); // Meta Stream Keyword [4 bytes]
         mClassNamesLength = reader.ReadUInt32(); // mClassNamesLength [4 bytes]
 
-        //--------------------------mClassNames--------------------------
-        mClassNames = new ClassNames[mClassNamesLength];
+        uint checkValue = reader.ReadUInt32();
 
-        for (int i = 0; i < mClassNames.Length; i++)
+        reader.BaseStream.Position -= 4;
+
+        // Interesting way to check if a string is hashed. Usually hashes are big numbers, while lengths are less than a couple of dozens.
+        if (checkValue < 0 || checkValue > 128)
         {
-            mClassNames[i] = new ClassNames(reader);
+            mClassNames = new ClassNames[mClassNamesLength];
+
+            for (int i = 0; i < mClassNames.Length; i++)
+            {
+                mClassNames[i] = new ClassNames(reader);
+            }
+        }
+        else
+        {
+            reader.BaseStream.Position -= 4;
+
+            mUnhashedClassNames = new UnhashedClassNames[mClassNamesLength];
+
+            for (int i = 0; i < mUnhashedClassNames.Length; i++)
+            {
+                mUnhashedClassNames[i] = new UnhashedClassNames(reader);
+            }
         }
 
         if (printDebug)
@@ -71,7 +100,7 @@ public class MTRE : IMetaHeader
         return;
     }
 
-    public string GetDebugInfo()
+    public string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None)
     {
         string metaInfo = "||||||||||| Meta Header |||||||||||" + Environment.NewLine;
 
@@ -81,6 +110,11 @@ public class MTRE : IMetaHeader
         for (int i = 0; i < mClassNames.Length; i++)
         {
             metaInfo += "Meta mClassName " + i + " = " + mClassNames[i] + Environment.NewLine;
+        }
+
+        for (int i = 0; i < mUnhashedClassNames.Length; i++)
+        {
+            metaInfo += "Meta mClassName " + i + " = " + mUnhashedClassNames[i] + Environment.NewLine;
         }
 
         return metaInfo;

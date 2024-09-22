@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using TelltaleTextureTool.TelltaleEnums;
 using TelltaleTextureTool.TelltaleTypes;
 using TelltaleTextureTool.Utilities;
 
@@ -17,9 +18,6 @@ namespace TelltaleTextureTool.Telltale.Meta;
 /// </summary>
 public class MBIN : IMetaHeader
 {
-
-    public bool isHashed = false;
-
     /// <summary>
     /// [4 bytes] The version of the meta stream version.
     /// </summary>
@@ -47,35 +45,34 @@ public class MBIN : IMetaHeader
     /// </summary>
     public MBIN() { }
 
-    public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
+    public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         ByteFunctions.WriteFixedString(writer, mMetaStreamVersion); // Meta Stream Keyword [4 bytes]
         writer.Write(mClassNamesLength); // mClassNamesLength [4 bytes]
 
         //--------------------------mClassNames--------------------------
+        for (int i = 0; i < mClassNames.Length; i++)
+        {
+            mClassNames[i].WriteBinaryData(writer);
+        }
+
         for (int i = 0; i < mUnhashedClassNames.Length; i++)
         {
             mUnhashedClassNames[i].WriteBinaryData(writer);
         }
     }
 
-    public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
+    public void ReadFromBinary(BinaryReader reader, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         mMetaStreamVersion = ByteFunctions.ReadFixedString(reader, 4); // Meta Stream Keyword [4 bytes]
         mClassNamesLength = reader.ReadUInt32(); // mClassNamesLength [4 bytes]
 
-        // Interesting way to check if a string is hashed. Usually hashes are big numbers, while lengths are less than a couple of dozens.
-        if (reader.ReadUInt32() >= 60)
-        {
-            isHashed = true;
-        }
+        uint checkValue = reader.ReadUInt32();
 
         reader.BaseStream.Position -= 4;
 
-        Console.WriteLine(isHashed);
-
-        //--------------------------mClassNames--------------------------
-        if (isHashed)
+        // Interesting way to check if a string is hashed. Usually hashes are big numbers, while lengths are less than a couple of dozens.
+        if (checkValue < 0 || checkValue > 128)
         {
             mClassNames = new ClassNames[mClassNamesLength];
 
@@ -103,26 +100,21 @@ public class MBIN : IMetaHeader
         return;
     }
 
-    public string GetDebugInfo()
+    public string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None)
     {
         string metaInfo = "||||||||||| Meta Header |||||||||||" + Environment.NewLine;
 
         metaInfo += "Meta Stream Keyword = " + mMetaStreamVersion + Environment.NewLine;
         metaInfo += "Meta mClassNamesLength = " + mClassNamesLength + Environment.NewLine;
 
-        if (isHashed)
+        for (int i = 0; i < mClassNames.Length; i++)
         {
-            for (int i = 0; i < mClassNames.Length; i++)
-            {
-                metaInfo += "Meta mClassName " + i + " = " + mClassNames[i] + Environment.NewLine;
-            }
+            metaInfo += "Meta mClassName " + i + " = " + mClassNames[i] + Environment.NewLine;
         }
-        else
+
+        for (int i = 0; i < mUnhashedClassNames.Length; i++)
         {
-            for (int i = 0; i < mUnhashedClassNames.Length; i++)
-            {
-                metaInfo += "Meta mClassName " + i + " = " + mUnhashedClassNames[i] + Environment.NewLine;
-            }
+            metaInfo += "Meta mClassName " + i + " = " + mUnhashedClassNames[i] + Environment.NewLine;
         }
 
         return metaInfo;
@@ -135,13 +127,6 @@ public class MBIN : IMetaHeader
 
     public void PrintConsole()
     {
-        Console.WriteLine("||||||||||| Meta Header |||||||||||");
-        Console.WriteLine("Meta Stream Keyword = {0}", mMetaStreamVersion);
-        Console.WriteLine("Meta mClassNamesLength = {0}", mClassNamesLength);
-
-        for (int i = 0; i < mUnhashedClassNames.Length; i++)
-        {
-            Console.WriteLine("Meta mClassName {0} = {1}", i, mUnhashedClassNames[i]);
-        }
+        Console.WriteLine(GetDebugInfo());
     }
 }
