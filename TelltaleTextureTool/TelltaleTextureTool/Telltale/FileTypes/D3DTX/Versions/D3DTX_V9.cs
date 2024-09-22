@@ -244,7 +244,7 @@ public class D3DTX_V9 : ID3DTX
     /// </summary>
     public D3DTX_V9() { }
 
-    public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
+    public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         writer.Write(mVersion); //mVersion [4 bytes]
         writer.Write(mSamplerState_BlockSize); //mSamplerState Block Size [4 bytes]
@@ -315,7 +315,7 @@ public class D3DTX_V9 : ID3DTX
         }
     }
 
-    public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
+    public void ReadFromBinary(BinaryReader reader, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         mVersion = reader.ReadInt32(); //mVersion [4 bytes]
         mSamplerState_BlockSize = reader.ReadInt32(); //mSamplerState Block Size [4 bytes]
@@ -407,7 +407,7 @@ public class D3DTX_V9 : ID3DTX
         mWidth = metadata.Width;
         mHeight = metadata.Height;
         mSurfaceFormat = metadata.Format;
-        mNumMipLevels = metadata.MipLevels > 0 ? metadata.MipLevels : 1;
+        mNumMipLevels = metadata.MipLevels;
         mDepth = metadata.Depth;
         mArraySize = metadata.ArraySize;
         mSurfaceGamma = metadata.SurfaceGamma;
@@ -513,7 +513,7 @@ public class D3DTX_V9 : ID3DTX
             Platform = mPlatform,
             TextureType = mType,
             RegionHeaders = mRegionHeaders,
-            D3DFormat = D3DFormat.UNKNOWN,
+            D3DFormat = LegacyFormat.UNKNOWN,
         };
 
         return metadata;
@@ -524,7 +524,7 @@ public class D3DTX_V9 : ID3DTX
         return mPixelData;
     }
 
-    public string GetDebugInfo()
+    public string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None)
     {
         string d3dtxInfo = "";
 

@@ -294,7 +294,7 @@ public class D3DTX_V6 : ID3DTX
         Console.WriteLine(GetDebugInfo());
     }
 
-    public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
+    public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         writer.Write(mVersion); //mVersion [4 bytes]
         writer.Write(mSamplerState_BlockSize); //mSamplerState Block Size [4 bytes]
@@ -360,7 +360,7 @@ public class D3DTX_V6 : ID3DTX
         }
     }
 
-    public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
+    public void ReadFromBinary(BinaryReader reader, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         mVersion = reader.ReadInt32(); //mVersion [4 bytes]
         mSamplerState_BlockSize = reader.ReadInt32(); //mSamplerState Block Size [4 bytes]
@@ -463,10 +463,10 @@ public class D3DTX_V6 : ID3DTX
 
     public void ModifyD3DTX(D3DTXMetadata metadata, ImageSection[] imageSections, bool printDebug = false)
     {
-        mWidth = (uint)metadata.Width;
-        mHeight = (uint)metadata.Height;
+        mWidth = metadata.Width;
+        mHeight = metadata.Height;
         mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format, mSurfaceFormat);
-        mNumMipLevels = (uint)metadata.MipLevels > 0 ? (uint)metadata.MipLevels : 1;
+        mNumMipLevels = metadata.MipLevels;
         mSurfaceGamma = DDS_DirectXTexNet.IsSRGB((DXGIFormat)metadata.Format) ? T3SurfaceGamma.eSurfaceGamma_sRGB : T3SurfaceGamma.eSurfaceGamma_Linear;
 
         mPixelData.Clear();
@@ -548,7 +548,7 @@ public class D3DTX_V6 : ID3DTX
             Platform = mPlatform,
             TextureType = mType,
             RegionHeaders = mRegionHeaders,
-            D3DFormat = D3DFormat.UNKNOWN,
+            D3DFormat = LegacyFormat.UNKNOWN,
         };
 
         return metadata;
@@ -559,7 +559,7 @@ public class D3DTX_V6 : ID3DTX
         return mPixelData;
     }
 
-    public string GetDebugInfo()
+    public string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None)
     {
         string d3dtxInfo = "";
 

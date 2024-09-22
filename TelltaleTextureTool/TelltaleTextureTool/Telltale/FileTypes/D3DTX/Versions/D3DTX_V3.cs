@@ -185,62 +185,6 @@ public class D3DTX_V3 : ID3DTX
     mToonRegions_ArrayLength = mToonRegions.Length;
   }
 
-  public void WriteBinaryData(BinaryWriter writer)
-  {
-    writer.Write(mVersion); //mVersion [4 bytes]
-    writer.Write(mSamplerState_BlockSize); //mSamplerState Block Size [4 bytes]
-    writer.Write(mSamplerState.mData); //mSamplerState mData [4 bytes] 
-    writer.Write(mPlatform_BlockSize); //mPlatform Block Size [4 bytes]
-    writer.Write((int)mPlatform); //mPlatform [4 bytes]
-    writer.Write(mName_BlockSize); //mName Block Size [4 bytes] //mName block size (size + string len)
-    ByteFunctions.WriteString(writer, mName); //mName [x bytes]
-    writer.Write(mImportName_BlockSize); //mImportName Block Size [4 bytes] //mImportName block size (size + string len)
-    ByteFunctions.WriteString(writer, mImportName); //mImportName [x bytes] (this is always 0)
-    writer.Write(mImportScale); //mImportScale [4 bytes]
-    ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps); //mToolProps mbHasProps [1 byte]
-    writer.Write(mNumMipLevels); //mNumMipLevels [4 bytes]
-    writer.Write(mWidth); //mWidth [4 bytes]
-    writer.Write(mHeight); //mHeight [4 bytes]
-    writer.Write((int)mSurfaceFormat); //mSurfaceFormat [4 bytes]
-    writer.Write((int)mResourceUsage); //mResourceUsage [4 bytes]
-    writer.Write((int)mType); //mResourceUsage [4 bytes]
-    writer.Write(mNormalMapFormat); //mNormalMapFormat [4 bytes]
-    writer.Write(mHDRLightmapScale); //mHDRLightmapScale [4 bytes]
-    writer.Write((int)mAlphaMode); //mAlphaMode [4 bytes]
-    writer.Write((int)mColorMode); //mColorMode [4 bytes]
-    writer.Write(mUVOffset.x); //mUVOffset X [4 bytes]
-    writer.Write(mUVOffset.y); //mUVOffset Y [4 bytes]
-    writer.Write(mUVScale.x); //mUVScale X [4 bytes]
-    writer.Write(mUVScale.y); //mUVScale Y [4 bytes]
-
-    writer.Write(mToonRegions_ArrayCapacity); //mToonRegions DCArray Capacity [4 bytes]
-    writer.Write(mToonRegions_ArrayLength); //mToonRegions DCArray Length [4 bytes]
-    for (int i = 0; i < mToonRegions_ArrayLength; i++)
-    {
-      writer.Write(mToonRegions[i].mColor.r); //[4 bytes]
-      writer.Write(mToonRegions[i].mColor.g); //[4 bytes]
-      writer.Write(mToonRegions[i].mColor.b); //[4 bytes]
-      writer.Write(mToonRegions[i].mColor.a); //[4 bytes]
-      writer.Write(mToonRegions[i].mSize); //[4 bytes]
-    }
-
-    writer.Write(mStreamHeader.mRegionCount); //mRegionCount [4 bytes]
-    writer.Write(mStreamHeader.mAuxDataCount); //mAuxDataCount [4 bytes]
-    writer.Write(mStreamHeader.mTotalDataSize); //mTotalDataSize [4 bytes]
-
-    for (int i = 0; i < mStreamHeader.mRegionCount; i++)
-    {
-      writer.Write(mRegionHeaders[i].mMipIndex); //[4 bytes]
-      writer.Write(mRegionHeaders[i].mDataSize); //[4 bytes]
-      writer.Write(mRegionHeaders[i].mPitch); //[4 bytes]
-    }
-
-    for (int i = 0; i < mPixelData.Count; i++)
-    {
-      writer.Write(mPixelData[i]);
-    }
-  }
-
   public uint GetHeaderByteSize()
   {
     uint totalSize = 0;
@@ -303,12 +247,63 @@ public class D3DTX_V3 : ID3DTX
     Console.WriteLine(GetDebugInfo());
   }
 
-  public void WriteToBinary(BinaryWriter writer, bool printDebug = false)
+  public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
   {
-    throw new NotImplementedException();
+    writer.Write(mVersion); //mVersion [4 bytes]
+    writer.Write(mSamplerState_BlockSize); //mSamplerState Block Size [4 bytes]
+    writer.Write(mSamplerState.mData); //mSamplerState mData [4 bytes] 
+    writer.Write(mPlatform_BlockSize); //mPlatform Block Size [4 bytes]
+    writer.Write((int)mPlatform); //mPlatform [4 bytes]
+    writer.Write(mName_BlockSize); //mName Block Size [4 bytes] //mName block size (size + string len)
+    ByteFunctions.WriteString(writer, mName); //mName [x bytes]
+    writer.Write(mImportName_BlockSize); //mImportName Block Size [4 bytes] //mImportName block size (size + string len)
+    ByteFunctions.WriteString(writer, mImportName); //mImportName [x bytes] (this is always 0)
+    writer.Write(mImportScale); //mImportScale [4 bytes]
+    ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps); //mToolProps mbHasProps [1 byte]
+    writer.Write(mNumMipLevels); //mNumMipLevels [4 bytes]
+    writer.Write(mWidth); //mWidth [4 bytes]
+    writer.Write(mHeight); //mHeight [4 bytes]
+    writer.Write((int)mSurfaceFormat); //mSurfaceFormat [4 bytes]
+    writer.Write((int)mResourceUsage); //mResourceUsage [4 bytes]
+    writer.Write((int)mType); //mResourceUsage [4 bytes]
+    writer.Write(mNormalMapFormat); //mNormalMapFormat [4 bytes]
+    writer.Write(mHDRLightmapScale); //mHDRLightmapScale [4 bytes]
+    writer.Write((int)mAlphaMode); //mAlphaMode [4 bytes]
+    writer.Write((int)mColorMode); //mColorMode [4 bytes]
+    writer.Write(mUVOffset.x); //mUVOffset X [4 bytes]
+    writer.Write(mUVOffset.y); //mUVOffset Y [4 bytes]
+    writer.Write(mUVScale.x); //mUVScale X [4 bytes]
+    writer.Write(mUVScale.y); //mUVScale Y [4 bytes]
+
+    writer.Write(mToonRegions_ArrayCapacity); //mToonRegions DCArray Capacity [4 bytes]
+    writer.Write(mToonRegions_ArrayLength); //mToonRegions DCArray Length [4 bytes]
+    for (int i = 0; i < mToonRegions_ArrayLength; i++)
+    {
+      writer.Write(mToonRegions[i].mColor.r); //[4 bytes]
+      writer.Write(mToonRegions[i].mColor.g); //[4 bytes]
+      writer.Write(mToonRegions[i].mColor.b); //[4 bytes]
+      writer.Write(mToonRegions[i].mColor.a); //[4 bytes]
+      writer.Write(mToonRegions[i].mSize); //[4 bytes]
+    }
+
+    writer.Write(mStreamHeader.mRegionCount); //mRegionCount [4 bytes]
+    writer.Write(mStreamHeader.mAuxDataCount); //mAuxDataCount [4 bytes]
+    writer.Write(mStreamHeader.mTotalDataSize); //mTotalDataSize [4 bytes]
+
+    for (int i = 0; i < mStreamHeader.mRegionCount; i++)
+    {
+      writer.Write(mRegionHeaders[i].mMipIndex); //[4 bytes]
+      writer.Write(mRegionHeaders[i].mDataSize); //[4 bytes]
+      writer.Write(mRegionHeaders[i].mPitch); //[4 bytes]
+    }
+
+    for (int i = 0; i < mPixelData.Count; i++)
+    {
+      writer.Write(mPixelData[i]);
+    }
   }
 
-  public void ReadFromBinary(BinaryReader reader, bool printDebug = false)
+  public void ReadFromBinary(BinaryReader reader, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
   {
     mVersion = reader.ReadInt32(); //mVersion [4 bytes]
     mSamplerState_BlockSize = reader.ReadInt32(); //mSamplerState Block Size [4 bytes]
@@ -482,7 +477,7 @@ public class D3DTX_V3 : ID3DTX
       Platform = mPlatform,
       TextureType = mType,
       RegionHeaders = mRegionHeaders,
-      D3DFormat = D3DFormat.UNKNOWN,
+      D3DFormat = LegacyFormat.UNKNOWN,
     };
 
     return metadata;
@@ -493,7 +488,7 @@ public class D3DTX_V3 : ID3DTX
     return mPixelData;
   }
 
-  public string GetDebugInfo()
+  public string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None)
   {
     string d3dtxInfo = "";
 
