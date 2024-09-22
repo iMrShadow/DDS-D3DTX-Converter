@@ -3,7 +3,7 @@
 This page has information regarding **Telltale Archives (TTARCH/TTARCH2)**.
 ## [WIP]
 
-A **TTARCH** file is a game data archive used by a Telltale Games video games. It contains game assets, such as scripts, animations, images, and sounds. Telltale games load assets from TTARCH files during gameplay.
+A **TTarch** file is a game data archive used by a Telltale Games video games. It contains game assets, such as scripts, animations, images, and sounds. Telltale games load assets from TTARCH files during gameplay.
 > For more technical information, check out [this page](https://github.com/Telltale-Modding-Group/ttarch-docs).
 
 Recognizing what each archive stores will make modding easier.
@@ -40,17 +40,24 @@ Telltale has many different files.
 | Name | Description |
 | --- | --- |
 | **lenc/lua** | <ul><li>Contains compiled lua scripts.</li><li></li></ul>
-| **anm** | Animation files.
+| **anm** | Animations.
 | **wav** | <ul><li>Audio files. </li> <li>Some may cannot be opened with regular software.</li></ul>
 | **d3dmesh** | Mesh/3D model files.
-| **skl** |  [WIP]
+| **skl** |  Contains skeletal structure for meshes.
 | **d3dtx** | <ul><li>Texture files.</li> <li> Used on d3dmesh.</li></ul>
 | **prop** | <ul><li>Contains references and other information used internally by Telltale's engine to create objects.</li> <li>May contain all sorts of different objects, ranging from characters and weapons to UI elements to lighting.</li></ul>
 | **scene** | <ul><li>A special type of **prop** file. .</li> <li>Contains all objects in a given scene..</li></ul>
-| **chore** | Contains action sequences used in cutscenes. 
+| **chore** | Action sequences used in cutscenes. 
 | **dlg** | [WIP]
-| **landb** | Contains dialog/speech information.
-| **font** | Contains texture data for fonts.
+| **landb** | Dialog/speech information.
+| **font** | Fonts. Contains a D3DTX file inside it.
+| **bank** | 3rd-party format used by FMOD Studio, used for music.
+| **fx** | Effects.
+| **probe** | Lighting.
+| **enl** | Lighting.
+| ** 
+| **sprite** | Particles.
+| **tmap** | Expressions.
 | _ |  [WIP]
 
 #### If you want to edit or use these files in-game, check out [Mawrak's Telltale Custscene Editor](https://github.com/Telltale-Modding-Group/Telltale-Script-Editor-Tweaks) and its wiki.

@@ -1,5 +1,5 @@
 
-## [Home](/wiki/home.md)
+## [Home](/Docs/home.md)
 
 # How to make a put a D3DTX inside a TTARCH
 
@@ -15,21 +15,21 @@
 
 Open the Telltale Script Editor.
 
-![tse1](/wiki/tutorial-screenshots/tse1_old.png)
+![tse1](/Docs/tutorial-screenshots/tse1_old.png)
 
 Navigate to **File** and click **New Project**. It will ask for you to define where you want your **project folder** to be. After defining a project path it will then ask you for a **project name** and who the **author** is (obviously you!).
 
-![tse2](/wiki/tutorial-screenshots/tse2_old.png)
+![tse2](/Docs/tutorial-screenshots/tse2_old.png)
 
 ## Step 2/6 - Opening a .ttarch2 game archive
 
 Once we have created our project you should see something similar to what is shown below.
 
-![tse3](/wiki/tutorial-screenshots/tse3_old.png)
+![tse3](/Docs/tutorial-screenshots/tse3_old.png)
 
 The next step now is to open a **.ttarch2** archive. Go under **File > Open > .TTARCH2 Archive**. This will open a file browser, you need to navigate to your games archives folder.
 
-![tse4](/wiki/tutorial-screenshots/tse4_old.png)
+![tse4](/Docs/tutorial-screenshots/tse4_old.png)
 
 ## Step 3/6 - Selecting a _txmesh .ttarch2 archive
 
@@ -39,21 +39,21 @@ A **_txmesh** archive means that this archive contains textures and meshes. Wort
 
 **In this case, I am selecting the _txmesh archive for TWD Season 2 Episode 1 because it's where I originally extracted this texture from.** We do this so that Telltale Script Editor can build the archive and set it to where when the episode is loaded in, the mod archive and the modified files in the archive override the original ones (not replace them, override. Since new archives are treated as patch files).
 
-![tse5](/wiki/tutorial-screenshots/tse5_old.png)
+![tse5](/Docs/tutorial-screenshots/tse5_old.png)
 
 ## Step 4/6 - Adding in the modified .d3dtx texture
 
 Once you have opened a **_txmesh** archive you should see the folder appear in the **project hierarchy view**.
 
-![tse6](/wiki/tutorial-screenshots/tse6_old.png)
+![tse6](/Docs/tutorial-screenshots/tse6_old.png)
 
 Open the project directory in File Explorer and navigate to the extracted folder as illustrated below.
 
-![tse7](/wiki/tutorial-screenshots/tse7_old.png)
+![tse7](/Docs/tutorial-screenshots/tse7_old.png)
 
 Open the folder and then move or copy your modified **.d3dtx** and paste it into the folder.
 
-![tse8](/wiki/tutorial-screenshots/tse8_old.png)
+![tse8](/Docs/tutorial-screenshots/tse8_old.png)
 
 Once you have done this, return to the application and you should see the texture appear in the **project hierarchy view** in that folder.
 
@@ -63,22 +63,22 @@ Once you have done step 5, return to the application and you should see the text
 
 **(OPTIONAL READING)** Worth noting there is also an option to **Build and Run**. This isn't required but it's a useful feature of the editor if you want to be able to iterate on this mod fast. It will ask for you to specify where your game executable is and then it will build the project, automatically integrate the mod into the game files, and launch the game for you. It will remember the game executable location every time you do this process in the editor, however closing or restarting the application will require you to select the game executable again.
 
-![tse9](/wiki/tutorial-screenshots/tse9_old.png)
+![tse9](/Docs/tutorial-screenshots/tse9_old.png)
 
 Assuming you've followed the steps, the editor will build the Mod into a Builds folder with the zip file in it and this is shown in the **project hierarchy view**.
 
-![tse10](/wiki/tutorial-screenshots/tse10_old.png)
+![tse10](/Docs/tutorial-screenshots/tse10_old.png)
 
 ## Step 6/6 - Installing
 
 Once again, this can vary depending on how you wish to go. You can either install the mod manually by opening the zip file and dumping ALL of its contents into the game's Archives directory as illustrated below.
 
-![install1](/wiki/tutorial-screenshots/install1_old.png)
+![install1](/Docs/tutorial-screenshots/install1_old.png)
 
 Or, since it's built through the [Telltale Script Editor](https://github.com/Telltale-Modding-Group/Telltale-Script-Editor). It's automatically compatible with the **[Telltale Mod Launcher](https://github.com/Telltale-Modding-Group/TelltaleModLauncher)** and you can install the .zip file through the launcher easily.
 
-![install2](/wiki/tutorial-screenshots/install2_old.png)
+![install2](/Docs/tutorial-screenshots/install2_old.png)
 
 ## Finished!
 
-![result](/wiki/tutorial-screenshots/result_old.png)
+![result](/Docs/tutorial-screenshots/result_old.png)

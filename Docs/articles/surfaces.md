@@ -1,14 +1,18 @@
 
-## [Home](/wiki/home.md)
+## [Home](/Docs/home.md)
 
-Telltale surface formats have their equivalent **DXGI format**. If you are not sure in which format to save, this is a table containing useful information.
-Softwares such as Paint.NET, GIMP, NVIDIA Texture Tool or DirectX SDK (2010) have labeled their options well enough. The download links are [here](/wiki/articles/tutorial_prelude.md#what-software-do-i-need-to-edit-d3dtx). Paint.NET or GIMP will be more than enough.
-More information about different types of textures can be found [here](/wiki/articles/textures.md#what-types-of-textures-usually-exist).
+Many people know that images are usually stored in RGB or RGBA format. While this is true, the pixel data can take in a lot of different forms for a lot of reasons, the main 2 being: to reduce the amount resources (compression) or the program requiring more precise calculations (HDR).
+
+Telltale heavily compressed their textures for a good reason. D3DTX is a container just like DDS or KTX, but it supports multiple platforms.
+
+Telltale surface formats have their equivalent **OpenGL formats**. If you are not sure in which format to save, this is a table containing useful information.
+Softwares such as Paint.NET, GIMP, NVIDIA Texture Tool or DirectX SDK (2010) have labeled their options well enough. The download links are [here](/Docs/articles/tutorial_prelude.md#what-software-do-i-need-to-edit-d3dtx). Paint.NET or GIMP will be more than enough.
+More information about different types of textures can be found [here](/Docs/articles/textures.md#what-types-of-textures-usually-exist).
 
 | Telltale Surface Format | DXGI Format | Notes 
 | ----------------------- | ----------- | -----------  
 | RGBA8 | R8G8B8A8_UNORM or R8G8B8A8_UNORM_SRGB[^1] | <ul><li>Used for **diffuse** textures.</li><li>Use this save option if you do not want to lose quality.</li></ul> | 
-| ARGB8 | B8R8G8A8_UNORM or B8R8G8A8_UNORM_SRGB[^1] | <ul><li>Used for **diffuse** textures.</li></li><li>Use this save option if you do not want to lose quality.</li></ul> |
+| ARGB8 | R8G8B8A8_UNORM or R8G8B8A8_UNORM_SRGB[^1] | <ul><li>Used for **diffuse** textures.</li></li><li>Use this save option if you do not want to lose quality.</li></ul> |
 | BC1[^2] | BC1_UNORM or BC1_UNORM_SRGB[^1] |<ul><li>Used for **diffuse** textures **without alpha/transparency**.</li><li>Use this save option if you want your texture compressed.</li><li>Also known as **DXT1**.</li></ul>
 | BC2[^2] | BC2_UNORM or BC2_UNORM_SRGB[^1] |<ul><li>Used for textures **with alpha/transparency**.</li><li>Use this save option if you want your texture **compressed**.</li><li>Also known as **DXT2** (pre-multiplied alpha) or **DXT3**.</li></ul>
 | BC3[^2] | BC3_UNORM or BC3_UNORM_SRGB[^1] |<ul><li>Used for various textures **with alpha/transparency**.</li><li>Use this save option if you want your texture **compressed**.</li><li>Also known as **DXT4** (pre-multiplied alpha) or **DXT5**.</li></ul>
@@ -17,9 +21,9 @@ More information about different types of textures can be found [here](/wiki/art
 | BC6[^2] | BC6H_UF16 | <ul><li>Use this save option if you want your texture **compressed**.</li></ul>
 | BC7[^2] | BC7_UNORM or BC7_UNORM_SRGB[^1] | <ul><li>Use this save option if you want your texture **compressed**.</li></ul>
 | ARGB16 | R16B16G16A16_UNORM |  <ul><li>Used for big detailed textures.</li><li> Only 1 such texture has been found. **(Poker Night 2 - ui_endofdemo_items.d3dtx)**</li></ul>
-| RGB565 | R5G6B5_UNORM |
+| RGB565 | R5G6B5_UNORM | <ul><li>Used for **diffuse** textures.</li></ul>
 | ARGB1555 | B5G5R5A1_UNORM | 
-| ARGB4 | B4G4R4A4_UNORM |
+| ARGB4 | R4G4B4A4_UNORM | <ul><li>Used for **diffuse** textures.</li></ul>
 | ARGB2101010 | R10G10B10A2_UNORM | Requires swizzling the red and blue channels.
 | R16 | R16_UNORM | 
 | RG16 | R16G16_UNORM |
@@ -32,7 +36,7 @@ More information about different types of textures can be found [here](/wiki/art
 | RGBA8S | R8G8B8A8_SNORM |
 | A8 | A8_UNORM |<ul><li>Used for detail or 1 color textures.</li></ul>
 | L8 | R8_UNORM | <ul><li>Equivalent to R8.</li><li>Used for old lookup textures.</li></ul>
-| AL8 | R8G8_UNORM | 
+| AL8 | R8G8_UNORM | Used for look ups.
 | L16 | R16_UNORM | Use DirectX SDK (2010 version).
 | RG16S | R16G16_SNORM | 
 | RGBA16S | R16G16B16A16_SNORM | 
@@ -100,7 +104,7 @@ For advanced users, verify these ones:
 
 > mRegionHeaders are basically each section of the image - mipmaps, faces, slices. I have few examples [here](/DDS_D3DTX_Converter_GUI/DDS_D3DTX_Converter/Main/DDS_Master.cs#L348).
 
-![debug1](/wiki/application_guide/ui_8.png)
+![debug1](/Docs/application_guide/ui_8.png)
 
 
 #### DDS
@@ -119,7 +123,7 @@ The debug information of a DDS image is very simple. The most important fields a
 - Misc Flags - ignore.
 - Misc Flags2 - ignore. 
 
-![debug1](/wiki/application_guide/ui_9.png)
+![debug1](/Docs/application_guide/ui_9.png)
 
 [^1]: The output depends on the D3DTX's surface gamma value. 
 [^2]: BC means Block Compression, which are basically image compression algorithms. They are **lossy**.
