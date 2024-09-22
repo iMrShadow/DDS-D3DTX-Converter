@@ -41,26 +41,14 @@
                        HorizontalAlignment="Center"
                        TextAlignment="Center">                
                 This tool is designed to convert
-            <Bold>D3DTX</Bold> and <Bold>FONT</Bold> files into more accessible formats like PNG, 
-           DDS, KTX, KTX2 and others, and vice versa. It allows you to easily create or edit textures for Telltale games.
+            <Bold>D3DTX</Bold>
+                files into more accessible formats like PNG,
+                DDS, and others, and vice versa. It allows you to easily create or edit textures for Telltale games.
             </TextBlock>
             <TextBlock FontWeight="Bold"
                        Margin="0,20,0,0"
                        FontSize="18"
                        HorizontalAlignment="Center">Developed by the Telltale Modding Group</TextBlock>
-            <!-- <TextBlock Margin="0,20,0,0"
-                       HorizontalAlignment="Center"
-                       FontSize="18">Credits:</TextBlock>
-            <TextBlock Margin="0,5,0,0"
-                       TextWrapping="Wrap"
-                       HorizontalAlignment="Center"
-                       TextAlignment="Center">                
-                Special thanks to
-            <Bold>David Matos</Bold> (frostbone25) for the original project and guiding me throughout the development, <LineBreak />
-                and
-            <Bold>Lucas Saragosa</Bold>
-                for figuring out the D3DTX file format.
-            </TextBlock> -->
         </StackPanel>
     </Panel>
 </UserControl>
