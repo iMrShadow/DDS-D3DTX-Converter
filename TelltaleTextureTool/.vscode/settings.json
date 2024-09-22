@@ -4,6 +4,8 @@
         "SNORM",
         "SRGB",
         "UNORM",
-        "Volumemap"
+        "UYVY",
+        "Volumemap",
+        "XENOS"
     ]
 }
