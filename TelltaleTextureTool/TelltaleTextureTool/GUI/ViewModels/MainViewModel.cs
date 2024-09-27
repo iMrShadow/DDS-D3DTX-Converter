@@ -19,7 +19,6 @@ using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using IImage = Avalonia.Media.IImage;
 using TelltaleTextureTool.DirectX;
-using TelltaleTextureTool.Telltale.TTArch;
 using Avalonia.Data;
 using System.ComponentModel;
 using Avalonia.Data.Converters;
@@ -27,7 +26,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Reflection;
 using TelltaleTextureTool.TelltaleEnums;
-
 
 namespace TelltaleTextureTool.ViewModels;
 
@@ -79,12 +77,12 @@ public partial class MainViewModel : ViewModelBase
     private readonly ObservableCollection<FormatItemViewModel> _d3dtxTypes =
     [
         new FormatItemViewModel { Name = "DDS", ItemStatus = true },
-        new FormatItemViewModel { Name = "PNG", ItemStatus = false },
-        new FormatItemViewModel { Name = "JPEG", ItemStatus = false },
-        new FormatItemViewModel { Name = "BMP", ItemStatus = false },
-        new FormatItemViewModel { Name = "TIFF", ItemStatus = false },
-        new FormatItemViewModel { Name = "TGA", ItemStatus = false },
-        new FormatItemViewModel { Name = "HDR", ItemStatus = false },
+        new FormatItemViewModel { Name = "PNG", ItemStatus = true },
+        new FormatItemViewModel { Name = "JPEG", ItemStatus = true },
+        new FormatItemViewModel { Name = "BMP", ItemStatus = true },
+        new FormatItemViewModel { Name = "TIFF", ItemStatus = true },
+        new FormatItemViewModel { Name = "TGA", ItemStatus = true },
+        new FormatItemViewModel { Name = "HDR", ItemStatus = true },
     ];
 
     private readonly ObservableCollection<FormatItemViewModel> _ddsTypes =
@@ -94,73 +92,31 @@ public partial class MainViewModel : ViewModelBase
         new FormatItemViewModel { Name = "JPEG", ItemStatus = true },
         new FormatItemViewModel { Name = "BMP", ItemStatus = true },
         new FormatItemViewModel { Name = "TIFF", ItemStatus = true },
-        new FormatItemViewModel { Name = "TGA", ItemStatus = false },
+        new FormatItemViewModel { Name = "TGA", ItemStatus = true },
         new FormatItemViewModel { Name = "HDR", ItemStatus = true },
     ];
 
-    private readonly ObservableCollection<FormatItemViewModel> _ktxTypes =
-    [
-        new FormatItemViewModel { Name = "D3DTX", ItemStatus = true}
-    ];
-
     private readonly ObservableCollection<FormatItemViewModel> _otherTypes =
-        [new FormatItemViewModel { Name = "DDS", ItemStatus = true }];
+        [
+            new FormatItemViewModel { Name = "DDS", ItemStatus = true },
+              new FormatItemViewModel { Name = "D3DTX", ItemStatus = true }
+            ];
 
     private readonly ObservableCollection<FormatItemViewModel> _folderTypes =
     [
-        new FormatItemViewModel { Name = "D3DTX -> DDS", ItemStatus = true},
-        new FormatItemViewModel { Name = "D3DTX -> PNG", ItemStatus = false},
-        new FormatItemViewModel { Name = "D3DTX -> KTX", ItemStatus = false},
-        new FormatItemViewModel { Name = "D3DTX -> KTX2", ItemStatus = false},
-        new FormatItemViewModel { Name = "DDS -> D3DTX", ItemStatus = true},
-        new FormatItemViewModel { Name = "DDS -> PNG", ItemStatus = true},
-        new FormatItemViewModel { Name = "DDS -> JPEG", ItemStatus = true},
-        new FormatItemViewModel { Name = "DDS -> BMP", ItemStatus = true},
-        new FormatItemViewModel { Name = "DDS -> TIFF", ItemStatus = true},
-        new FormatItemViewModel { Name = "DDS -> TGA", ItemStatus = false},
-        new FormatItemViewModel { Name = "PNG -> DDS", ItemStatus = true},
-        new FormatItemViewModel { Name = "JPEG -> DDS", ItemStatus = true},
-        new FormatItemViewModel { Name = "BMP -> DDS", ItemStatus = true},
-        new FormatItemViewModel { Name = "TIFF -> DDS", ItemStatus = true},
-        new FormatItemViewModel { Name = "TGA -> DDS", ItemStatus = false}
+        new FormatItemViewModel { Name = "D3DTX", ItemStatus = true },
+        new FormatItemViewModel { Name = "DDS", ItemStatus = true },
+        new FormatItemViewModel { Name = "PNG", ItemStatus = true },
+        new FormatItemViewModel { Name = "JPEG", ItemStatus = true },
+        new FormatItemViewModel { Name = "BMP", ItemStatus = true },
+        new FormatItemViewModel { Name = "TIFF", ItemStatus = true },
+        new FormatItemViewModel { Name = "TGA", ItemStatus = true },
+        new FormatItemViewModel { Name = "HDR", ItemStatus = true },
     ];
-
-    private readonly ObservableCollection<FormatItemViewModel> _versionConvertOptions =
-    [
-        new FormatItemViewModel { Name = "Default", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 1", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 2", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 3", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 4", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 5", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 6", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 7", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 8", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 9", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 10", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 11", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 12", ItemStatus = true},
-        new FormatItemViewModel { Name = "Legacy Version 13", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 1", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 2", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 3", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 4", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 5", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 6", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 7", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 8", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 9", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 10", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 11", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 12", ItemStatus = true},
-        new FormatItemViewModel { Name = "Console Legacy Version 13", ItemStatus = true},
-    ];
-
-    private int mode = 0;
 
     private readonly List<string> _allTypes = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".d3dtx", ".dds", ".hdr", ".tga"];
 
-    // No idea if this is correct
+    // No idea if this is correct. This just sets a filter list.
     public static FilePickerFileType AllowedTypes { get; } = new("All Supported Types")
     {
         Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.tif", "*.tiff", "*.d3dtx", "*.dds", "*.hdr", "*.tga", "*.json"],
@@ -204,14 +160,49 @@ public partial class MainViewModel : ViewModelBase
         T3PlatformType.ePlatform_WiiU,
         ];
 
+    public TelltaleToolGame[] Games { get; } = [
+     TelltaleToolGame.DEFAULT,
+     TelltaleToolGame.TEXAS_HOLD_EM_OG,  // LV?
+     TelltaleToolGame.TEXAS_HOLD_EM_V1,  // LV9
+     TelltaleToolGame.BONE_OUT_FROM_BONEVILLE, // LV11
+     TelltaleToolGame.CSI_3_DIMENSIONS, // LV12
+     TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006, // LV13
+     TelltaleToolGame.BONE_THE_GREAT_COW_RACE, // LV11
+     TelltaleToolGame.CSI_HARD_EVIDENCE, // LV10
+     TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_OG, // LV9
+     TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_101, // LV8
+     TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_102, // LV8
+     TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_103, // LV7
+     TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_104, // LV7
+     TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_105, // LV6
+     TelltaleToolGame. WALLACE_AND_GROMITS_GRAND_ADVENTURES_101, // LV5
+     TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_102, // LV5
+     TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_103, // LV5
+     TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_104, // LV4
+     TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2007, // LV4
+     TelltaleToolGame.CSI_DEADLY_INTENT, // LV4
+     TelltaleToolGame.TALES_OF_MONKEY_ISLAND, // LV4
+     TelltaleToolGame.CSI_FATAL_CONSPIRACY, // LV4
+     TelltaleToolGame.NELSON_TETHERS_PUZZLE_AGENT, // LV3
+     TelltaleToolGame.POKER_NIGHT_AT_THE_INVENTORY, // LV3
+     TelltaleToolGame.SAM_AND_MAX_THE_DEVILS_PLAYHOUSE, // LV4
+     TelltaleToolGame.BACK_TO_THE_FUTURE_THE_GAME, // LV3
+     TelltaleToolGame.HECTOR_BADGE_OF_CARNAGE, // LV3
+     TelltaleToolGame.JURASSIC_PARK_THE_GAME, // LV2
+     TelltaleToolGame.PUZZLE_AGENT_2, // LV2
+     TelltaleToolGame.LAW_AND_ORDER_LEGACIES, // LV2
+     TelltaleToolGame.THE_WALKING_DEAD, // LV1
+        ];
+
     [ObservableProperty] private ImageProperties _imageProperties;
     [ObservableProperty] private ImageAdvancedOptions _imageAdvancedOptions;
     [ObservableProperty] private bool _isChecked = false;
-    [ObservableProperty] private FormatItemViewModel _selectedFormat;
-    [ObservableProperty] private FormatItemViewModel _selectedVersionConvertOption;
-    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _formatsList = [];
-    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _versionConvertOptionsList = [];
-    [ObservableProperty] private bool _comboBoxStatus;
+    [ObservableProperty] private FormatItemViewModel _selectedFromFormat;
+    [ObservableProperty] private FormatItemViewModel _selectedToFormat;
+    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _fromFormatsList = [];
+    [ObservableProperty] private ObservableCollection<FormatItemViewModel> _toFormatsList = [];
+    [ObservableProperty] private bool _isFromSelectedComboboxEnable;
+    [ObservableProperty] private bool _isToSelectedComboboxEnable;
     [ObservableProperty] private bool _versionConvertComboBoxStatus;
     [ObservableProperty] private bool _saveButtonStatus;
     [ObservableProperty] private bool _deleteButtonStatus;
@@ -232,6 +223,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _chooseOutputDirectoryCheckboxStatus;
     [ObservableProperty] private bool _isMipSliderVisible;
     [ObservableProperty] private bool _isFaceSliderVisible;
+    [ObservableProperty] private bool _isImageInformationVisible;
+    [ObservableProperty] private bool _isDebugInformationVisible;
 
     [ObservableProperty] private string _debugInfo = string.Empty;
     [ObservableProperty] private uint _mipValue;
@@ -269,9 +262,7 @@ public partial class MainViewModel : ViewModelBase
         {
             Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
         };
-        VersionConvertOptionsList = _versionConvertOptions;
-        SelectedVersionConvertOption = VersionConvertOptionsList[0];
-        ImageAdvancedOptions = new ImageAdvancedOptions(this);
+      ImageAdvancedOptions = new ImageAdvancedOptions(this);
     }
 
     #region MAIN MENU BUTTONS ACTIONS
@@ -293,35 +284,8 @@ public partial class MainViewModel : ViewModelBase
                 ReturnDirectoryButtonStatus = true;
                 RefreshDirectoryButtonStatus = true;
                 DataGridSelectedItem = null;
-                mode = 1;
                 await UpdateUiAsync();
             }
-        }
-        catch (Exception e)
-        {
-            await HandleExceptionAsync(e.Message);
-        }
-    }
-
-    [RelayCommand]
-    public async Task OpenArchiveButton_Click()
-    {
-        try
-        {
-            var topLevel = GetMainWindow();
-
-            // Start async operation to open the dialog.
-            var file = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
-            {
-                Title = "Open Archive",
-                AllowMultiple = false,
-                SuggestedStartLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(DirectoryPath),
-                FileTypeFilter = [AllowedTTarchTypes]
-            });
-
-            TTArch tTArch = new TTArch(file.ToArray()[0].Path.AbsolutePath.ToString());
-
-            mode = 2;
         }
         catch (Exception e)
         {
@@ -676,32 +640,16 @@ public partial class MainViewModel : ViewModelBase
                 outputDirectoryPath = folderPath.First().Path.AbsolutePath;
             }
 
-            D3DTXVersion conversionType = GetD3DTXConversionType();
+            TextureType oldTextureType = GetTextureTypeFromItem(SelectedFromFormat.Name);
+            TextureType newTextureType = GetTextureTypeFromItem(SelectedToFormat.Name);
 
-            string[] types = SelectedFormat.Name.Split(" -> ");
-
-            TextureType oldTextureType;
-            TextureType newTextureType;
-
-            if (types.Length == 2)
+            if (File.Exists(textureFilePath))
             {
-                oldTextureType = GetTextureTypeFromItem(types[0].Trim());
-                newTextureType = GetTextureTypeFromItem(types[1].Trim());
-
-                if (!ChooseOutputDirectoryCheckboxStatus)
-                {
-                    outputDirectoryPath = textureFilePath;
-                }
-
-                Converter.ConvertBulk(textureFilePath, outputDirectoryPath, oldTextureType, newTextureType, conversionType);
+                Converter.ConvertTexture(textureFilePath, outputDirectoryPath, ImageAdvancedOptions, oldTextureType, newTextureType);
             }
-            else
+            else if (Directory.Exists(textureFilePath))
             {
-                oldTextureType = GetTextureTypeFromExtension(DataGridSelectedItem.FileType);
-                newTextureType = GetTextureTypeFromItem(SelectedFormat.Name);
-                Console.WriteLine("Old Texture Type: " + oldTextureType);
-                Console.WriteLine("New Texture Type: " + newTextureType);
-                await Converter.ConvertTexture(textureFilePath, outputDirectoryPath, oldTextureType, newTextureType, conversionType);
+                Converter.ConvertBulk(textureFilePath, outputDirectoryPath, ImageAdvancedOptions, oldTextureType, newTextureType);
             }
         }
         catch (Exception ex)
@@ -732,55 +680,14 @@ public partial class MainViewModel : ViewModelBase
             "BMP" => TextureType.BMP,
             "TIF" => TextureType.TIFF,
             "TIFF" => TextureType.TIFF,
-            "KTX" => TextureType.KTX,
-            "KTX2" => TextureType.KTX2,
             "TGA" => TextureType.TGA,
             "HDR" => TextureType.HDR,
             _ => TextureType.Unknown
         };
     }
 
-    private D3DTXVersion GetD3DTXConversionType()
-    {
-        return SelectedVersionConvertOption.Name switch
-        {
-            "Legacy Version 1" => D3DTXVersion.LV1,
-            "Legacy Version 2" => D3DTXVersion.LV2,
-            "Legacy Version 3" => D3DTXVersion.LV3,
-            "Legacy Version 4" => D3DTXVersion.LV4,
-            "Legacy Version 5" => D3DTXVersion.LV5,
-            "Legacy Version 6" => D3DTXVersion.LV6,
-            "Legacy Version 7" => D3DTXVersion.LV7,
-            "Legacy Version 8" => D3DTXVersion.LV8,
-            "Legacy Version 9" => D3DTXVersion.LV9,
-            "Legacy Version 10" => D3DTXVersion.LV10,
-            "Legacy Version 11" => D3DTXVersion.LV11,
-            "Legacy Version 12" => D3DTXVersion.LV12,
-            "Legacy Version 13" => D3DTXVersion.LV13,
-            "Console Legacy Version 1" => D3DTXVersion.CLV1,
-            "Console Legacy Version 2" => D3DTXVersion.CLV2,
-            "Console Legacy Version 3" => D3DTXVersion.CLV3,
-            "Console Legacy Version 4" => D3DTXVersion.CLV4,
-            "Console Legacy Version 5" => D3DTXVersion.CLV5,
-            "Console Legacy Version 6" => D3DTXVersion.CLV6,
-            "Console Legacy Version 7" => D3DTXVersion.CLV7,
-            "Console Legacy Version 8" => D3DTXVersion.CLV8,
-            "Console Legacy Version 9" => D3DTXVersion.CLV9,
-            "Console Legacy Version 10" => D3DTXVersion.CLV10,
-            "Console Legacy Version 11" => D3DTXVersion.CLV11,
-            "Console Legacy Version 12" => D3DTXVersion.CLV12,
-            "Console Legacy Version 13" => D3DTXVersion.CLV13,
-            _ => D3DTXVersion.DEFAULT
-        };
-    }
-
-    private static TextureType GetTextureTypeFromExtension(string newTextureType)
-    {
-        return GetTextureTypeFromItem(newTextureType.ToUpper().Remove(0, 1));
-    }
-
     /// <summary>
-    /// 
+    /// Debug button command. It shows the debug information of the selected texture.
     /// </summary>
     /// <returns></returns>
     [RelayCommand]
@@ -799,10 +706,8 @@ public partial class MainViewModel : ViewModelBase
 
             if (workingDirectoryFile.FileType == ".d3dtx")
             {
-                D3DTXVersion conversionType = GetD3DTXConversionType();
-
                 var d3dtx = new D3DTX_Master();
-                d3dtx.ReadD3DTXFile(textureFilePath, conversionType);
+                d3dtx.ReadD3DTXFile(textureFilePath, ImageAdvancedOptions.GameID, ImageAdvancedOptions.IsLegacyConsole);
 
                 debugInfo = d3dtx.GetD3DTXDebugInfo();
             }
@@ -834,33 +739,26 @@ public partial class MainViewModel : ViewModelBase
         // update our texture directory UI
         try
         {
-            if (mode == 1)
+            DirectoryPath = mainManager.GetWorkingDirectoryPath();
+            mainManager.RefreshWorkingDirectory();
+            var workingDirectoryFiles = mainManager.GetWorkingDirectoryFiles();
+
+            for (int i = WorkingDirectoryFiles.Count - 1; i >= 0; i--)
             {
-                DirectoryPath = mainManager.GetWorkingDirectoryPath();
-                mainManager.RefreshWorkingDirectory();
-                var workingDirectoryFiles = mainManager.GetWorkingDirectoryFiles();
-
-                for (int i = WorkingDirectoryFiles.Count - 1; i >= 0; i--)
+                if (!workingDirectoryFiles.Contains(WorkingDirectoryFiles[i]))
                 {
-                    if (!workingDirectoryFiles.Contains(WorkingDirectoryFiles[i]))
-                    {
-                        WorkingDirectoryFiles.RemoveAt(i);
-                    }
+                    WorkingDirectoryFiles.RemoveAt(i);
                 }
-
-                // Add items from the list to the observable collection if they are not already present
-                foreach (var item in workingDirectoryFiles)
-                {
-                    if (!WorkingDirectoryFiles.Contains(item))
-                    {
-                        WorkingDirectoryFiles.Add(item);
-                    }
-                }
-
-
             }
 
-
+            // Add items from the list to the observable collection if they are not already present
+            foreach (var item in workingDirectoryFiles)
+            {
+                if (!WorkingDirectoryFiles.Contains(item))
+                {
+                    WorkingDirectoryFiles.Add(item);
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -911,12 +809,10 @@ public partial class MainViewModel : ViewModelBase
 
     private void ChangeComboBoxItemsByItemExtension(string itemExtension)
     {
-        var extensionMappings = new Dictionary<string, ObservableCollection<FormatItemViewModel>>
+        var extensionToMappings = new Dictionary<string, ObservableCollection<FormatItemViewModel>>
         {
             { ".dds", _ddsTypes },
             { ".d3dtx", _d3dtxTypes },
-            {".ktx", _otherTypes},
-            {".ktx2", _otherTypes},
             { ".png", _otherTypes },
             { ".jpg", _otherTypes },
             { ".jpeg", _otherTypes },
@@ -925,38 +821,77 @@ public partial class MainViewModel : ViewModelBase
             { ".tif", _otherTypes },
             { ".tiff", _otherTypes },
             { ".hdr", _otherTypes },
-            {"", _folderTypes}
+            {string.Empty, _folderTypes}
         };
 
         if (itemExtension == null)
         {
-            FormatsList = null;
+            FromFormatsList = null;
+            ToFormatsList = null;
             ConvertButtonStatus = false;
-            ComboBoxStatus = false;
+            IsFromSelectedComboboxEnable = false;
+            IsToSelectedComboboxEnable = false;
+            VersionConvertComboBoxStatus = false;
+            SelectedToFormat = null;
+            SelectedFromFormat = null;
         }
-        else if (extensionMappings.TryGetValue(itemExtension, out var selectedItems))
+        else if (extensionToMappings.TryGetValue(itemExtension, out var selectedItems))
         {
             if (itemExtension.Equals(".d3dtx"))
                 VersionConvertComboBoxStatus = true;
             else
                 VersionConvertComboBoxStatus = false;
 
-            FormatsList = selectedItems;
+            FromFormatsList = _folderTypes;
+            ToFormatsList = selectedItems;
+            IsFromSelectedComboboxEnable = IsToSelectedComboboxEnable = true;
+
+            if (itemExtension != string.Empty)
+            {
+               SelectedFromFormat = _folderTypes[GetFormatPosition(itemExtension)];
+               IsFromSelectedComboboxEnable = false;
+            }
+
             ConvertButtonStatus = true;
-            SelectedComboboxIndex = 0;
-            ComboBoxStatus = true;
+            
+            // SelectedComboboxIndex = GetFormatPosition(itemExtension);
             // There is an issue in Avalonia relating to dynamic sources and binding indexes.
             // Github issue: https://github.com/AvaloniaUI/Avalonia/issues/13736
             // When fixed, the line below can be removed.
-            SelectedFormat = selectedItems[0];
+            SelectedToFormat = selectedItems[0];
         }
         else
         {
-            FormatsList = null;
+            FromFormatsList = null;
+            ToFormatsList = null;
             ConvertButtonStatus = false;
+            IsFromSelectedComboboxEnable = false;
+            IsToSelectedComboboxEnable = false;
             VersionConvertComboBoxStatus = false;
-            ComboBoxStatus = false;
+            SelectedToFormat = null;
+            SelectedFromFormat = null;
         }
+    }
+
+    private static int GetFormatPosition(string itemExtension)
+    {
+        TextureType textureType = TextureType.Unknown;
+
+        if (itemExtension != string.Empty)
+            textureType = GetTextureTypeFromItem(itemExtension.ToUpperInvariant().Remove(0, 1));
+
+        return textureType switch
+        {
+            TextureType.D3DTX => 0,
+            TextureType.DDS => 1,
+            TextureType.PNG => 2,
+            TextureType.JPEG => 3,
+            TextureType.BMP => 4,
+            TextureType.TIFF => 5,
+            TextureType.TGA => 6,
+            TextureType.HDR => 7,
+            _ => 0
+        };
     }
 
     #endregion
@@ -1026,13 +961,19 @@ public partial class MainViewModel : ViewModelBase
             DeleteButtonStatus = true;
             ContextOpenFolderStatus = Directory.Exists(path);
             ChooseOutputDirectoryCheckBoxEnabledStatus = true;
+
+
             if (extension == string.Empty && !Directory.Exists(path))
             {
                 ChangeComboBoxItemsByItemExtension(null);
+                IsImageInformationVisible = false;
+                IsDebugInformationVisible = false;
             }
             else
             {
                 ChangeComboBoxItemsByItemExtension(extension);
+                IsImageInformationVisible = extension != string.Empty;
+                IsDebugInformationVisible = extension != string.Empty;
             }
         }
         else
@@ -1047,7 +988,8 @@ public partial class MainViewModel : ViewModelBase
         DeleteButtonStatus = false;
         DebugButtonStatus = false;
         ConvertButtonStatus = false;
-        ComboBoxStatus = false;
+        IsFromSelectedComboboxEnable = false;
+        IsToSelectedComboboxEnable = false;
         VersionConvertComboBoxStatus = false;
         ChooseOutputDirectoryCheckBoxEnabledStatus = false;
         DebugButtonStatus = false;
@@ -1093,7 +1035,7 @@ public partial class MainViewModel : ViewModelBase
             if (extension != string.Empty)
                 textureType = GetTextureTypeFromItem(extension.ToUpperInvariant().Remove(0, 1));
 
-            ImageData.Initialize(filePath, textureType, GetD3DTXConversionType());
+            ImageData.Initialize(filePath, textureType, ImageAdvancedOptions.GameID, ImageAdvancedOptions.IsLegacyConsole);
 
             ImageAdvancedOptions = ImageData.GetImageAdvancedOptions(ImageAdvancedOptions);
 
