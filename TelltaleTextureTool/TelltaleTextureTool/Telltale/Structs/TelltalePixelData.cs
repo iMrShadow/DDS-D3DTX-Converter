@@ -7,9 +7,19 @@ public struct TelltalePixelData
     public uint length;
     public byte[] pixelData;
 
-    public TelltalePixelData(BinaryReader reader)
+    public TelltalePixelData(BinaryReader reader, bool IsEncrypted = false)
     {
         length = reader.ReadUInt32();
+
+        if (IsEncrypted)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                reader.ReadUInt32();
+            }
+            length -= 128;
+        }
+
         pixelData = reader.ReadBytes((int)length);
     }
 
