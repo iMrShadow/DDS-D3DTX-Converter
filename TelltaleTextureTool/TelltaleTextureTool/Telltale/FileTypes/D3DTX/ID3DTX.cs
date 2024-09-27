@@ -71,7 +71,7 @@ public partial class D3DTXMetadata
 
     public RegionStreamHeader[] RegionHeaders { get; set; } = []; // Only used for D3DTX v3-9
 
-    public D3DFormat D3DFormat { get; set; } = D3DFormat.UNKNOWN;
+    public LegacyFormat D3DFormat { get; set; } = LegacyFormat.UNKNOWN;
 
     public bool IsCubemap() => Dimension == T3TextureLayout.TextureCubemap || Dimension == T3TextureLayout.TextureCubemapArray;
 
@@ -79,5 +79,5 @@ public partial class D3DTXMetadata
 
     public bool IsArrayTexture() => Dimension == T3TextureLayout.Texture2DArray || Dimension == T3TextureLayout.TextureCubemapArray;
 
-    public bool IsLegacyD3DTX() => D3DFormat == D3DFormat.UNKNOWN;
+    public bool IsLegacyD3DTX() => D3DFormat == LegacyFormat.UNKNOWN;
 }

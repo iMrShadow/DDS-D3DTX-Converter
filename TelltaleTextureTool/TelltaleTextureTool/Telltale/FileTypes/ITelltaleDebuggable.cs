@@ -1,3 +1,5 @@
+using TelltaleTextureTool.TelltaleEnums;
+
 namespace TelltaleTextureTool.FileTypes;
 
 /// <summary>
@@ -10,5 +12,5 @@ public interface ITelltaleDebuggable
     /// </summary>
     /// <returns>A string containing debug information.</returns>
     /// Note: I am aware that strings can be built with StringBuilder for better performance.
-    string GetDebugInfo();
+    string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None);
 }

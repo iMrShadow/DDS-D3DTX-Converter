@@ -39,7 +39,7 @@ namespace TelltaleTextureTool.Main
                     InitializeUnsupportedDDSHeader(d3dtx);
                     InitializeDDSPixelData(d3dtx);
 
-                    pixelData = ATC_Master.Decode(d3dtx.d3dtxMetadata, ByteFunctions.Combine(header, pixelData));
+                    pixelData = ATC_Master.Decode(ByteFunctions.Combine(header, pixelData));
                     InitializeDDSHeader(d3dtx);
                 }
                 else if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.CTX1)
@@ -233,7 +233,7 @@ namespace TelltaleTextureTool.Main
         {
             ImageAdvancedOptions advancedOptions = new()
             {
-                D3dtxVersion = d3dtx.d3dtxVersion,
+                GameID = d3dtx.Game,
                 TextureType = TextureType.D3DTX,
                 //  advancedOptions.EnableMips = d3dtx.d3dtxMetadata.EnableMips;
                 // advancedOptions.AutoGenerateMips = d3dtx.d3dtxMetadata.AutoGenerateMips;

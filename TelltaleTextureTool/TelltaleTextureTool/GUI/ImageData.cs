@@ -6,6 +6,7 @@ using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 using Avalonia.Media.Imaging;
 using SkiaSharp;
 using System.Runtime.InteropServices;
+using TelltaleTextureTool.TelltaleEnums;
 
 namespace TelltaleTextureTool;
 
@@ -19,25 +20,26 @@ public class ImageData
 
     private string CurrentFilePath { get; set; } = string.Empty;
     private bool IsSamePath { get; set; }
+    private bool HasPixelData { get; set; }
     private TextureType CurrentTextureType { get; set; }
 
-    private D3DTXVersion CurrentD3DTXVersion { get; set; }
+    private TelltaleToolGame Game { get; set; }
+    private bool IsLegacyConsole { get; set; }
 
-    public void Initialize(string filePath, TextureType textureType, D3DTXVersion d3DTXVersion = D3DTXVersion.DEFAULT, uint mip = 0, uint face = 0)
+    public void Initialize(string filePath, TextureType textureType, TelltaleToolGame game = TelltaleToolGame.DEFAULT, bool isLegacyConsole = false)
     {
         IsSamePath = CurrentFilePath == filePath;
 
-        if (!IsSamePath && CurrentFilePath != string.Empty)
+        if (!IsSamePath && CurrentFilePath != string.Empty && HasPixelData)
         {
-            if (CurrentTextureType != TextureType.Unknown)
-            {
-                DDSImage.Release();
-            }
+            HasPixelData = false;
+            DDSImage.Release();
         }
 
         CurrentFilePath = filePath;
         CurrentTextureType = textureType;
-        CurrentD3DTXVersion = d3DTXVersion;
+        Game = game;
+        IsLegacyConsole = isLegacyConsole;
 
         GetImageData(out ImageProperties imageProperties);
 
@@ -50,13 +52,19 @@ public class ImageData
     /// <param name="options"></param>
     public void ApplyEffects(ImageAdvancedOptions options)
     {
-        DDSImage.ChangePreviewImage(options);
+        try
+        {
+            DDSImage.ChangePreviewImage(options);
 
-        DDSImage.GetBounds(out uint maxMip, out uint maxFace);
-        MaxMip = maxMip;
-        MaxFace = maxFace;
-
-        ImageProperties = DDS_DirectXTexNet.GetDDSProperties(CurrentFilePath, DDSImage.Metadata);
+            DDSImage.GetBounds(out uint maxMip, out uint maxFace);
+            MaxMip = maxMip;
+            MaxFace = maxFace;
+        }
+        catch (Exception)
+        {
+            HasPixelData = false;
+            throw;
+        }
     }
 
     private void GetImageData(out ImageProperties imageProperties)
@@ -71,21 +79,23 @@ public class ImageData
             case TextureType.TIFF:
             case TextureType.HDR:
                 GetImageDataFromCommon(out imageProperties);
+                HasPixelData = true;
                 break;
-
             case TextureType.D3DTX:
-                GetImageDataFromD3DTX(CurrentD3DTXVersion, out imageProperties);
+                GetImageDataFromD3DTX(Game, out imageProperties);
+                HasPixelData = true;
                 break;
             default:
+                HasPixelData = false;
                 GetImageDataFromInvalid(out imageProperties);
                 break;
         }
     }
 
-    private void GetImageDataFromD3DTX(D3DTXVersion d3DTXVersion, out ImageProperties imageProperties)
+    private void GetImageDataFromD3DTX(TelltaleToolGame game, out ImageProperties imageProperties)
     {
         var d3dtx = new D3DTX_Master();
-        d3dtx.ReadD3DTXFile(CurrentFilePath, d3DTXVersion);
+        d3dtx.ReadD3DTXFile(CurrentFilePath, game, IsLegacyConsole);
 
         // Initialize image properties
         D3DTXMetadata metadata = d3dtx.GetMetadata();
@@ -127,16 +137,25 @@ public class ImageData
         }
 
         var d3dtx = new D3DTX_Master();
-        d3dtx.ReadD3DTXFile(CurrentFilePath, CurrentD3DTXVersion);
+        d3dtx.ReadD3DTXFile(CurrentFilePath, Game, options.IsLegacyConsole);
+        d3dtx.ReadD3DTXJSON(Path.Combine(Path.GetDirectoryName(CurrentFilePath), Path.GetFileNameWithoutExtension(CurrentFilePath) + ".json"));
 
         // Initialize image properties
         D3DTXMetadata metadata = d3dtx.GetMetadata();
 
-        if (D3DTX_Master.IsPlatformIncompatibleWithDDS(metadata.Platform))
+        if (metadata.TextureType == T3TextureType.eTxNormalMap || metadata.TextureType == T3TextureType.eTxBumpmap)
         {
-            // options.EnableSwizzle = true;
-            // options.IsDeswizzle = true;
-            // options.PlatformType = metadata.Platform;
+            options.EnableEditing = true;
+            options.ImageEffect = ImageEffect.SWIZZLE_ABGR;
+        } else if (metadata.TextureType == T3TextureType.eTxNormalXYMap)
+        {
+            options.EnableEditing = true;
+            options.ImageEffect = CurrentTextureType == TextureType.D3DTX ? ImageEffect.RESTORE_Z : ImageEffect.REMOVE_Z;
+        }
+
+        if (d3dtx.IsLegacyConsole())
+        {
+            options.IsLegacyConsole = true;
         }
 
         return options;

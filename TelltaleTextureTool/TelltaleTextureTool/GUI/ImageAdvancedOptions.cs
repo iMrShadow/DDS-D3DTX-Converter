@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using TelltaleTextureTool.DirectX;
-using TelltaleTextureTool.Main;
 using TelltaleTextureTool.TelltaleEnums;
 using TelltaleTextureTool.ViewModels;
 
@@ -10,9 +9,9 @@ namespace TelltaleTextureTool;
 public partial class ImageAdvancedOptions : ObservableObject
 {
 
-    //Private telltale games
+    // Private telltale games
     [ObservableProperty]
-    private D3DTXVersion _d3dtxVersion;
+    private TelltaleToolGame _gameID = TelltaleToolGame.DEFAULT;
 
     [ObservableProperty]
     private TextureType _textureType;
@@ -31,6 +30,9 @@ public partial class ImageAdvancedOptions : ObservableObject
 
     [ObservableProperty]
     private bool _compression;
+
+    [ObservableProperty]
+    private bool _isLegacyConsole;
 
     [ObservableProperty]
     private bool _enableAutomaticCompression;
@@ -93,7 +95,7 @@ public partial class ImageAdvancedOptions : ObservableObject
 
     public ImageAdvancedOptions(ImageAdvancedOptions imageAdvancedOptions)
     {
-        _d3dtxVersion = imageAdvancedOptions._d3dtxVersion;
+        _gameID = imageAdvancedOptions._gameID;
         _textureType = imageAdvancedOptions._textureType;
         _enableMips = imageAdvancedOptions._enableMips;
         _autoGenerateMips = imageAdvancedOptions._autoGenerateMips;
@@ -105,6 +107,7 @@ public partial class ImageAdvancedOptions : ObservableObject
         _isManualCompression = imageAdvancedOptions._isManualCompression;
         _format = imageAdvancedOptions._format;
         _enableNormalMap = imageAdvancedOptions._enableNormalMap;
+        _isLegacyConsole = imageAdvancedOptions._isLegacyConsole;
         _encodeDDSHeader = imageAdvancedOptions._encodeDDSHeader;
         _filterValues = imageAdvancedOptions._filterValues;
         _enableWrapU = imageAdvancedOptions._enableWrapU;
@@ -128,7 +131,6 @@ public partial class ImageAdvancedOptions : ObservableObject
         base.OnPropertyChanged(e);
 
         // Trigger the command in MainViewModel
-
         _mainViewModel.UpdateBitmapCommand.Execute(null);
     }
 

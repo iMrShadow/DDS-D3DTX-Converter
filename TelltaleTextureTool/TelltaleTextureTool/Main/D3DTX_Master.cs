@@ -31,12 +31,15 @@ namespace TelltaleTextureTool.Main
 
         public D3DTXMetadata d3dtxMetadata;
 
-        public D3DTXVersion d3dtxVersion;
+        public TelltaleToolGame Game { get; set; } = TelltaleToolGame.DEFAULT;
+        public T3PlatformType Platform { get; set; } = T3PlatformType.ePlatform_None;
 
         public struct D3DTX_JSON
         {
-            public D3DTXVersion ConversionType;
-            public bool ContainsHeader;
+            public TelltaleToolGame GameID;
+            public T3PlatformType PlatformType;
+
+            public int ConversionType;
         }
 
         /// <summary>
@@ -44,7 +47,7 @@ namespace TelltaleTextureTool.Main
         /// </summary>
         /// <param name="filePath"></param>
         /// <param name="setD3DTXVersion"></param>
-        public void ReadD3DTXFile(string filePath, D3DTXVersion setD3DTXVersion = D3DTXVersion.DEFAULT)
+        public void ReadD3DTXFile(string filePath, TelltaleToolGame game = TelltaleToolGame.DEFAULT, bool isLegacyConsole = false)
         {
             FilePath = filePath;
 
@@ -77,163 +80,81 @@ namespace TelltaleTextureTool.Main
             }
 
             metaHeaderObject = MetaHeaderFactory.CreateMetaHeader(metaVersion);
-            metaHeaderObject.ReadFromBinary(reader);
+            metaHeaderObject.ReadFromBinary(reader, TelltaleToolGame.DEFAULT, T3PlatformType.ePlatform_None, true);
 
             // Attempt to read the d3dtx version of the file
             int d3dtdMetaVersion = ReadD3DTXFileD3DTXVersionOnly(filePath);
-            this.d3dtxVersion = setD3DTXVersion;
+            Game = game;
 
             switch (d3dtdMetaVersion)
             {
                 case 1:
                 case 2:
                 case 3:
-                    d3dtxVersion = D3DTXVersion.V3;
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = new D3DTX_V3();
                     break;
                 case 4:
-                    d3dtxVersion = D3DTXVersion.V4;
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = new D3DTX_V4();
                     break;
                 case 5:
-                    d3dtxVersion = D3DTXVersion.V5;
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = new D3DTX_V5();
                     break;
                 case 6:
-                    d3dtxVersion = D3DTXVersion.V6;
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = new D3DTX_V6();
                     break;
                 case 7:
-                    d3dtxVersion = D3DTXVersion.V7;
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = new D3DTX_V7();
                     break;
                 case 8:
-                    d3dtxVersion = D3DTXVersion.V8;
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = new D3DTX_V7();
                     break;
                 case 9:
-                    d3dtxVersion = D3DTXVersion.V9;
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = new D3DTX_V9();
                     break;
                 case -1:
 
-                    if (setD3DTXVersion == D3DTXVersion.DEFAULT)
+                    if (game == TelltaleToolGame.DEFAULT)
                     {
-                        d3dtxVersion = TryToInitializeLegacyD3DTX(reader);
-                        Console.WriteLine(d3dtxVersion);
+                        Game = TryToInitializeLegacyD3DTX(reader);
+
+                        if (Game == TelltaleToolGame.UNKNOWN)
+                        {
+                            throw new Exception("This D3DTX version is not supported. Please report this issue to the author!");
+                        }
                     }
                     else
                     {
-                        d3dtxVersion = setD3DTXVersion;
+                        Game = game;
+                        Platform = isLegacyConsole ? T3PlatformType.ePlatform_PS3 : T3PlatformType.ePlatform_None;
                     }
 
+                    d3dtxObject = new LegacyD3DTX();
 
-                    // if (setD3DTXVersion == D3DTXConversionType.DEFAULT)
-                    // {
-                    //     try
-                    //     {
-                    //         if (mbin != null)
-                    //         {
-                    //             throw new IOException("No DDS Header are found in MBIN meta files. Please use a different conversion option.");
-                    //         }
-
-                    //         ddsData = ByteFunctions.GetBytesAfterBytePattern(DDS.MAGIC_WORD, reader.ReadBytes((int)reader.BaseStream.Length));
-                    //         ddsImage = DDS_DirectXTexNet.GetDDSImage(ddsData);
-                    //     }
-                    //     catch (Exception e)
-                    //     {
-                    //         Console.WriteLine("No DDS Header found");
-                    //     }
-                    // }
-                    // else
-                    // {
-                    //     Console.WriteLine("ERROR! '{0}' d3dtx version is not supported!", d3dtxVersion);
-                    // }
-                    // break;
                     break;
                 default:
-                    Console.WriteLine("ERROR! '{0}' d3dtx version is not supported!", d3dtxVersion);
+                    Console.WriteLine("ERROR! '{0}' d3dtx version is not supported!", Game);
                     break;
             }
 
-            Console.WriteLine(d3dtxVersion);
-            d3dtxObject = D3DTXFactory.CreateD3DTX(d3dtxVersion);
-            d3dtxObject.ReadFromBinary(reader, true);
+            d3dtxObject.ReadFromBinary(reader, Game, Platform, true);
+
             d3dtxMetadata = d3dtxObject.GetD3DTXMetadata();
         }
 
-        public static class D3DTXFactory
+        public void CreateD3DTX(TelltaleToolGame game, JObject jsonObject)
         {
-            public static ID3DTX CreateD3DTX(D3DTXVersion version)
+            if (game == TelltaleToolGame.UNKNOWN)
             {
-                return version switch
-                {
-                    D3DTXVersion.V9 => new D3DTX_V9(),
-                    D3DTXVersion.V8 => new D3DTX_V8(),
-                    D3DTXVersion.V7 => new D3DTX_V7(),
-                    D3DTXVersion.V6 => new D3DTX_V6(),
-                    D3DTXVersion.V5 => new D3DTX_V5(),
-                    D3DTXVersion.V4 => new D3DTX_V4(),
-                    D3DTXVersion.V3 => new D3DTX_V3(),
-                    D3DTXVersion.LV1 => new D3DTX_LV1(),
-                    D3DTXVersion.LV2 => new D3DTX_LV2(),
-                    D3DTXVersion.LV3 => new D3DTX_LV3(),
-                    D3DTXVersion.LV4 => new D3DTX_LV4(),
-                    D3DTXVersion.LV5 => new D3DTX_LV5(),
-                    D3DTXVersion.LV6 => new D3DTX_LV6(),
-                    D3DTXVersion.LV7 => new D3DTX_LV7(),
-                    D3DTXVersion.LV8 => new D3DTX_LV8(),
-                    D3DTXVersion.LV9 => new D3DTX_LV9(),
-                    D3DTXVersion.LV10 => new D3DTX_LV10(),
-                    D3DTXVersion.LV11 => new D3DTX_LV11(),
-                    D3DTXVersion.LV12 => new D3DTX_LV12(),
-                    D3DTXVersion.CLV1 => new D3DTX_CLV1(),
-                    D3DTXVersion.CLV2 => new D3DTX_CLV2(),
-                    D3DTXVersion.CLV3 => new D3DTX_CLV3(),
-                    D3DTXVersion.CLV4 => new D3DTX_CLV4(),
-                    D3DTXVersion.CLV5 => new D3DTX_CLV5(),
-                    D3DTXVersion.CLV6 => new D3DTX_CLV6(),
-                    D3DTXVersion.CLV7 => new D3DTX_CLV7(),
-                    D3DTXVersion.CLV8 => new D3DTX_CLV8(),
-                    D3DTXVersion.CLV9 => new D3DTX_CLV9(),
-                    D3DTXVersion.CLV10 => new D3DTX_CLV10(),
-                    D3DTXVersion.CLV11 => new D3DTX_CLV11(),
-                    D3DTXVersion.CLV12 => new D3DTX_CLV12(),
-                    _ => throw new ArgumentException($"Unsupported D3DTX version: {version}")
-                };
+                throw new Exception("This D3DTX version is not supported. Please report this issue to the author!");
             }
 
-            public static ID3DTX CreateD3DTX(D3DTXVersion version, JObject jsonObject)
+            if (game >= TelltaleToolGame.POKER_NIGHT_2 || game == TelltaleToolGame.DEFAULT)
             {
-                return version switch
-                {
-                    D3DTXVersion.V9 => jsonObject.ToObject<D3DTX_V9>(),
-                    D3DTXVersion.V8 => jsonObject.ToObject<D3DTX_V8>(),
-                    D3DTXVersion.V7 => jsonObject.ToObject<D3DTX_V7>(),
-                    D3DTXVersion.V6 => jsonObject.ToObject<D3DTX_V6>(),
-                    D3DTXVersion.V5 => jsonObject.ToObject<D3DTX_V5>(),
-                    D3DTXVersion.V4 => jsonObject.ToObject<D3DTX_V4>(),
-                    D3DTXVersion.V3 => jsonObject.ToObject<D3DTX_V3>(),
-                    D3DTXVersion.LV1 => jsonObject.ToObject<D3DTX_LV1>(),
-                    D3DTXVersion.LV2 => jsonObject.ToObject<D3DTX_LV2>(),
-                    D3DTXVersion.LV3 => jsonObject.ToObject<D3DTX_LV3>(),
-                    D3DTXVersion.LV4 => jsonObject.ToObject<D3DTX_LV4>(),
-                    D3DTXVersion.LV5 => jsonObject.ToObject<D3DTX_LV5>(),
-                    D3DTXVersion.LV6 => jsonObject.ToObject<D3DTX_LV6>(),
-                    D3DTXVersion.LV7 => jsonObject.ToObject<D3DTX_LV7>(),
-                    D3DTXVersion.LV8 => jsonObject.ToObject<D3DTX_LV8>(),
-                    D3DTXVersion.LV9 => jsonObject.ToObject<D3DTX_LV9>(),
-                    D3DTXVersion.LV10 => jsonObject.ToObject<D3DTX_LV10>(),
-                    D3DTXVersion.LV11 => jsonObject.ToObject<D3DTX_LV11>(),
-                    D3DTXVersion.LV12 => jsonObject.ToObject<D3DTX_LV12>(),
-                    D3DTXVersion.CLV1 => jsonObject.ToObject<D3DTX_CLV1>(),
-                    D3DTXVersion.CLV2 => jsonObject.ToObject<D3DTX_CLV2>(),
-                    D3DTXVersion.CLV3 => jsonObject.ToObject<D3DTX_CLV3>(),
-                    D3DTXVersion.CLV4 => jsonObject.ToObject<D3DTX_CLV4>(),
-                    D3DTXVersion.CLV5 => jsonObject.ToObject<D3DTX_CLV5>(),
-                    D3DTXVersion.CLV6 => jsonObject.ToObject<D3DTX_CLV6>(),
-                    D3DTXVersion.CLV7 => jsonObject.ToObject<D3DTX_CLV7>(),
-                    D3DTXVersion.CLV8 => jsonObject.ToObject<D3DTX_CLV8>(),
-                    D3DTXVersion.CLV9 => jsonObject.ToObject<D3DTX_CLV9>(),
-                    D3DTXVersion.CLV10 => jsonObject.ToObject<D3DTX_CLV10>(),
-                    D3DTXVersion.CLV11 => jsonObject.ToObject<D3DTX_CLV11>(),
-                    D3DTXVersion.CLV12 => jsonObject.ToObject<D3DTX_CLV12>(),
-                    _ => throw new ArgumentException($"Unsupported D3DTX version: {version}")
-                };
+                ConvertJSONObjectToD3dtx(jsonObject);
+                return;
             }
+
+            d3dtxObject = jsonObject.ToObject<LegacyD3DTX>();
         }
 
         public static class MetaHeaderFactory
@@ -263,39 +184,20 @@ namespace TelltaleTextureTool.Main
             }
         }
 
-
-        public object GetMetaObject()
-        {
-            return metaHeaderObject;
-        }
-
-        public D3DTXVersion TryToInitializeLegacyD3DTX(BinaryReader reader)
+        public TelltaleToolGame TryToInitializeLegacyD3DTX(BinaryReader reader)
         {
             var startPos = reader.BaseStream.Position;
 
-            D3DTXVersion[] legacyD3DTXVersion = [
-                D3DTXVersion.LV1, D3DTXVersion.LV2,
-                D3DTXVersion.LV3, D3DTXVersion.LV4,
-                D3DTXVersion.LV5, D3DTXVersion.LV6,
-                D3DTXVersion.LV7, D3DTXVersion.LV8,
-                D3DTXVersion.LV9, D3DTXVersion.LV10,
-                D3DTXVersion.LV11, D3DTXVersion.LV12,
-                D3DTXVersion.CLV1,
-                D3DTXVersion.CLV2, D3DTXVersion.CLV3,
-                D3DTXVersion.CLV4, D3DTXVersion.CLV5,
-                D3DTXVersion.CLV6, D3DTXVersion.CLV7,
-                D3DTXVersion.CLV8, D3DTXVersion.CLV9,
-                D3DTXVersion.CLV10, D3DTXVersion.CLV11,
-                D3DTXVersion.CLV12];
+            TelltaleToolGame[] allGames = Enum.GetValues(typeof(TelltaleToolGame)).Cast<TelltaleToolGame>().ToArray();
 
-            foreach (var version in legacyD3DTXVersion)
+            foreach (var game in allGames)
             {
                 try
                 {
-                    d3dtxObject = D3DTXFactory.CreateD3DTX(version);
-                    d3dtxObject.ReadFromBinary(reader);
+                    d3dtxObject = new LegacyD3DTX();
+                    d3dtxObject.ReadFromBinary(reader, game, T3PlatformType.ePlatform_None, true);
                     reader.BaseStream.Position = startPos;
-                    return version;
+                    return game;
                 }
                 catch (PixelDataNotFoundException e)
                 {
@@ -307,7 +209,27 @@ namespace TelltaleTextureTool.Main
                 }
             }
 
-            d3dtxVersion = D3DTXVersion.Unknown;
+            foreach (var game in allGames)
+            {
+                try
+                {
+                    d3dtxObject = new LegacyD3DTX();
+                    d3dtxObject.ReadFromBinary(reader, game, T3PlatformType.ePlatform_PS3, true);
+                    reader.BaseStream.Position = startPos;
+                    Platform = T3PlatformType.ePlatform_PS3;
+                    return game;
+                }
+                catch (PixelDataNotFoundException e)
+                {
+                    throw new PixelDataNotFoundException("The texture does not have any pixel data!");
+                }
+                catch (Exception)
+                {
+                    reader.BaseStream.Position = startPos;
+                }
+            }
+
+            Game = TelltaleToolGame.UNKNOWN;
 
             throw new Exception("This D3DTX version is not supported. Please report this issue to the author!");
         }
@@ -334,7 +256,7 @@ namespace TelltaleTextureTool.Main
             }
             else allInfo += "Error! Meta data not found!" + Environment.NewLine;
 
-            if (d3dtxObject != null) allInfo += d3dtxObject.GetDebugInfo();
+            if (d3dtxObject != null) allInfo += d3dtxObject.GetDebugInfo(Game);
             else allInfo += "Error! Data not found!";
 
             return allInfo;
@@ -346,6 +268,11 @@ namespace TelltaleTextureTool.Main
         /// <param name="filePath"></param>
         public void ReadD3DTXJSON(string filePath)
         {
+            if (!File.Exists(filePath))
+            {
+                return;
+            }
+
             string jsonText = File.ReadAllText(filePath);
 
             // parse the data into a json array
@@ -354,33 +281,20 @@ namespace TelltaleTextureTool.Main
             // read the first object in the array to determine if the json file is a legacy json file or not
             JObject firstObject = jarray[0] as JObject;
 
-            bool isLegacyJSON = true;
+            int metaObjectIndex = 1;
+            int d3dtxObjectIndex = 2;
 
-            foreach (JProperty property in firstObject.Properties())
-            {
-                if (property.Name.Equals("ConversionType")) isLegacyJSON = false;
-                break;
-            }
-
-            int metaObjectIndex = isLegacyJSON ? 0 : 1;
-            int d3dtxObjectIndex = isLegacyJSON ? 1 : 2;
-
-            d3dtxVersion = isLegacyJSON ? D3DTXVersion.DEFAULT : firstObject.ToObject<D3DTX_JSON>().ConversionType;
+            Game = firstObject.ToObject<D3DTX_JSON>().GameID;
 
             // I am creating the metaObject again instead of using the firstObject variable and i am aware of the performance hit.
             JObject? metaObject = jarray[metaObjectIndex] as JObject;
             ConvertJSONObjectToMeta(metaObject);
 
             // d3dtx object
-            JObject? d3dtxObject1 = jarray[d3dtxObjectIndex] as JObject;
+            JObject? jsond3dtxObject = jarray[d3dtxObjectIndex] as JObject;
 
             //deserialize the appropriate json object
-            if (d3dtxVersion == D3DTXVersion.DEFAULT)
-            {
-                ConvertJSONObjectToD3dtx(d3dtxObject1);
-            }
-            else
-                d3dtxObject = D3DTXFactory.CreateD3DTX(d3dtxVersion, d3dtxObject1);
+            CreateD3DTX(Game, jsond3dtxObject);
 
             d3dtxMetadata = d3dtxObject.GetD3DTXMetadata();
         }
@@ -397,7 +311,37 @@ namespace TelltaleTextureTool.Main
                 break;
             }
 
-            d3dtxObject = D3DTXFactory.CreateD3DTX((D3DTXVersion)d3dtxVersion, jObject);
+            ConvertToNewD3DTX(jObject, d3dtxVersion);
+        }
+
+        public void ConvertToNewD3DTX(JObject jObject, int d3dtxVersion)
+        {
+            switch (d3dtxVersion)
+            {
+                case 1:
+                case 2:
+                case 3:
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = jObject.ToObject<D3DTX_V3>();
+                    break;
+                case 4:
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = jObject.ToObject<D3DTX_V4>();
+                    break;
+                case 5:
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = jObject.ToObject<D3DTX_V5>();
+                    break;
+                case 6:
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = jObject.ToObject<D3DTX_V6>();
+                    break;
+                case 7:
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = jObject.ToObject<D3DTX_V7>();
+                    break;
+                case 8:
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = jObject.ToObject<D3DTX_V8>();
+                    break;
+                case 9:
+                    Game = TelltaleToolGame.DEFAULT; d3dtxObject = jObject.ToObject<D3DTX_V9>();
+                    break;
+            }
         }
 
         public void ConvertJSONObjectToMeta(JObject metaObject)
@@ -414,10 +358,10 @@ namespace TelltaleTextureTool.Main
 
             metaVersion = metaStreamVersion switch
             {
-                "6VSM" => MetaVersion.MSV6,
-                "5VSM" or "4VSM" => MetaVersion.MSV5,
-                "ERTM" or "MOCM" => MetaVersion.MTRE,
-                "NIBM" or "SEBM" => MetaVersion.MBIN,
+                "6VSM" or "MSV6" => MetaVersion.MSV6,
+                "5VSM" or "4VSM" or "MSV5" or "MSV4" => MetaVersion.MSV5,
+                "ERTM" or "MTRE"=> MetaVersion.MTRE,
+                "NIBM" or "MBIN" => MetaVersion.MBIN,
                 _ => throw new Exception("This meta version is not supported!"),
             };
 
@@ -440,8 +384,8 @@ namespace TelltaleTextureTool.Main
 
             D3DTX_JSON conversionTypeObject = new()
             {
-                ConversionType = d3dtxVersion,
-                ContainsHeader = HasDDSHeader()
+                GameID = Game,
+                PlatformType = Platform
             };
 
             List<object> jsonObjects = [conversionTypeObject, metaHeaderObject, d3dtxObject];
@@ -456,10 +400,10 @@ namespace TelltaleTextureTool.Main
 
             if (IsLegacyD3DTX())
             {
-                if (!HasDDSHeader())
-                {
-                    sections = sections.Skip(1).ToArray();
-                }
+                // if (!HasDDSHeader())
+                // {
+                //sections = sections.Skip(1).ToArray();
+                //}
 
                 d3dtxObject.ModifyD3DTX(metadata, sections.ToArray()); //ISSUE HERE WITH DXT5 AND MIP MAPS WITH UPSCALED TEXTURES
             }
@@ -527,16 +471,11 @@ namespace TelltaleTextureTool.Main
 
         public bool IsLegacyD3DTX()
         {
-            return (int)d3dtxVersion < 3;
+            return Game != TelltaleToolGame.DEFAULT;
         }
 
         public bool HasDDSHeader()
         {
-            if (d3dtxVersion > D3DTXVersion.DEFAULT)
-            {
-                return false;
-            }
-
             foreach (var region in GetPixelData())
             {
                 byte[] header = region.Take(128).ToArray();
@@ -552,7 +491,7 @@ namespace TelltaleTextureTool.Main
 
         public string GetSurfaceFormat()
         {
-            if (d3dtxMetadata.D3DFormat == D3DFormat.UNKNOWN)
+            if (d3dtxMetadata.D3DFormat == LegacyFormat.UNKNOWN)
                 return d3dtxMetadata.Format.ToString();
             else
             {
@@ -627,7 +566,7 @@ namespace TelltaleTextureTool.Main
                         newPixelData.Add(GetPixelData()[i]); continue;
                     }
 
-                  //  GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width / divideBy, height / divideBy, platformType);
+                    //  GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width / divideBy, height / divideBy, platformType);
 
                     divideBy *= 2;
 
@@ -656,7 +595,7 @@ namespace TelltaleTextureTool.Main
                         newPixelData.Add(GetPixelData()[i]); continue;
                     }
 
-                   // GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width, height, platformType);
+                    // GetPixelData()[i] = DecodePixelDataByPlatform(GetPixelData()[i], surfaceFormat, width, height, platformType);
 
                     newPixelData.Add(GetPixelData()[i]);
                 }
@@ -678,140 +617,6 @@ namespace TelltaleTextureTool.Main
                 T3PlatformType.ePlatform_Xbox or T3PlatformType.ePlatform_XBOne => Deswizzler.Xbox360Deswizzle(pixelData, width, height, format),
                 _ => pixelData
             };
-        }
-        public static byte[] NintendoSwizzle(byte[] content, int width, int height, int code, bool deswizzle)
-        {
-            int pos_ = 0;
-            int bpp = GetBpp(bpps, code);
-            int origin_width = width;
-            int origin_height = height;
-            if (code >= 0x40 && code <= 0x42)
-            {
-                origin_height = (origin_height + 3) / 4;
-                origin_width = (origin_width + 3) / 4;
-            }
-            int xb = CountZeros(pow2RoundUp(origin_width));
-            int yb = CountZeros(pow2RoundUp(origin_height));
-            int hh = pow2RoundUp(origin_height) >> 1;
-            if (!isPow2(origin_height) && (origin_height <= (hh + (hh / 3))) && (yb > 3))
-                yb--;
-            width = RoundSize(origin_width, GetData(padds, bpp));
-            int xBase = GetData(xBases, bpp);
-            byte[] result = new byte[content.Length];
-            for (int y = 0; y < origin_height; y++)
-            {
-                for (int x = 0; x < origin_width; x++)
-                {
-                    int pos = getAddress(x, y, xb, yb, width, xBase) * bpp;
-                    if (deswizzle)
-                    {
-                        if ((pos_ + bpp <= content.Length) && (pos + bpp <= content.Length))
-                        {
-                            Array.Copy(content, pos, result, pos_, bpp);
-                        }
-                    }
-                    else
-                    {
-                        if ((pos + bpp <= content.Length) && (pos_ + bpp <= content.Length))
-                        {
-                            Array.Copy(content, pos_, result, pos, bpp);
-                        }
-                    }
-                    pos_ += bpp;
-                }
-            }
-            return result;
-        }
-
-        private static int[] bpps = { 4, 4, 4, 2, 2, 2, 1, 2, 8, 16, 16, 8, 8, 16, 16 };
-        private static int[,] xBases = { { 1, 2, 4, 8, 16 }, { 4, 3, 2, 1, 0 } };
-        private static int[,] padds = { { 1, 2, 4, 8, 16 }, { 64, 32, 16, 8, 4 } };
-        private static int GetData(int[,] mas, int bpp)
-        {
-            for (int i = 0; i < mas.Length; i++)
-            {
-                for (int j = 0; j < mas.Length; j++)
-                {
-                    if (mas[i, j] == bpp)
-                    {
-                        return mas[++i, j];
-                    }
-                }
-            }
-            return 0;
-        }
-        private static int GetBpp(int[] bpps, int code)
-        {
-            switch (code)
-            {
-                case 0x40:
-                    return bpps[8];
-                case 0x41:
-                    return bpps[9];
-                case 0x42:
-                    return bpps[10];
-            }
-            return 0;
-        }
-        private static int RoundSize(int size, int pad)
-        {
-            int mark = pad - 1;
-            if ((size & mark) != 0)
-            {
-                size &= ~mark;
-                size += pad;
-            }
-            return size;
-        }
-        private static int pow2RoundUp(int v)
-        {
-            v--;
-            v |= (v++) >> 1;
-            v |= v >> 2;
-            v |= v >> 4;
-            v |= v >> 8;
-            v |= v >> 16;
-            return v + 1;
-        }
-        private static bool isPow2(int v)
-        {
-            return (v != 0) && ((v & (v - 1)) == 0);
-        }
-        private static int CountZeros(int v)
-        {
-            int numZeros = 0;
-            for (int i = 0; i < 32; i++)
-            {
-                if ((v & (1 << i)) != 0)
-                    break;
-                numZeros++;
-            }
-            return numZeros;
-        }
-        private static int getAddress(int x, int y, int xb, int yb, int width, int xBase)
-        {
-            int xCnt = xBase;
-            int yCnt = 1;
-            int xUsed = 0;
-            int yUsed = 0;
-            int address = 0;
-            int xMask = 0;
-            int yMask = 0;
-            while ((xUsed < xBase + 2) && (xUsed + xCnt < xb))
-            {
-                xMask = (1 << xCnt) - 1;
-                yMask = (1 << yCnt) - 1;
-                address |= (x & xMask) << xUsed + yUsed;
-                address |= (y & yMask) << xUsed + yUsed + xCnt;
-                x >>= xCnt;
-                y >>= yCnt;
-                xUsed += xCnt;
-                yUsed += yCnt;
-                xCnt = Math.Max(Math.Min(xb - xUsed, 1), 0);
-                yCnt = Math.Max(Math.Min(yb - yUsed, yCnt << 1), 0);
-            }
-            address |= (x + y * (width >> xUsed)) << (xUsed + yUsed);
-            return address;
         }
 
         public bool IsTextureCompressed()
@@ -911,6 +716,10 @@ namespace TelltaleTextureTool.Main
             }
 
             return info;
+        }
+
+        public bool IsLegacyConsole(){
+            return Platform != T3PlatformType.ePlatform_None;
         }
     }
 }

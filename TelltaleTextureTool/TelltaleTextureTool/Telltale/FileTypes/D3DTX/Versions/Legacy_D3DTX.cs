@@ -148,17 +148,17 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         public uint mTextureDataFormats { get; set; }
 
         /// <summary>
-        /// [4 bytes] The texture data size (tpl?). 
+        /// [4 bytes] The TPL texture data size, used for Wii textures.
         /// </summary>
         public uint mTplTextureDataSize { get; set; }
 
         /// <summary>
-        /// [4 bytes] The alpha size of the texture? No idea why this exists.
+        /// [4 bytes] The TPL alpha data size, used for Wii textures.
         /// </summary>
         public uint mTplAlphaDataSize { get; set; }
 
         /// <summary>
-        /// [4 bytes] The JPEG texture data size? (There were some screenshots of the game in the ttarch archives)
+        /// [4 bytes] The JPEG texture data size.
         /// </summary>
         public uint mJPEGTextureDataSize { get; set; }
 
@@ -193,27 +193,27 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         public TelltaleBoolean mbAlphaHDR { get; set; }
 
         /// <summary>
-        /// [1 byte] Whether or not the texture encrypted.
+        /// [1 byte] Whether or not the texture is encrypted.
         /// </summary>
         public TelltaleBoolean mbEncrypted { get; set; }
 
         /// <summary>
-        /// [1 byte] Whether or not the texture has alpha HDR?
+        /// [1 byte] Whether or not the texture is used as a bumpmap.
         /// </summary>
         public TelltaleBoolean mbUsedAsBumpmap { get; set; }
 
         /// <summary>
-        /// [1 byte] Whether or not the texture has alpha HDR?
+        /// [1 byte] Whether or not the texture is used as a detail map.
         /// </summary>
         public TelltaleBoolean mbUsedAsDetailMap { get; set; }
 
         /// <summary>
-        /// [4 bytes] Map brightness for the Detail map type.
+        /// [4 bytes] The detail map brightness.
         /// </summary>
         public float mDetailMapBrightness { get; set; }
 
         /// <summary>
-        /// [4 bytes] Normal map related stuff. 
+        /// [4 bytes] The normal map format.
         /// </summary>
         public int mNormalMapFmt { get; set; }
 
@@ -228,7 +228,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         public Vector2 mUVScale { get; set; }
 
         /// <summary>
-        /// [4 bytes] Legacy console editions. It should be always zero.
+        /// [4 bytes] An empty buffer for legacy console editions. It should be always zero.
         /// </summary>
         public int mEmptyBuffer { get; set; }
 
@@ -238,17 +238,17 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         public List<TelltalePixelData> mPixelData { get; set; } = [];
 
         /// <summary>
-        /// A byte array of the pixel regions in a texture.
+        /// The TPL texture data.
         /// </summary>
         public byte[] mTplData { get; set; } = [];
 
         /// <summary>
-        /// A byte array of the pixel regions in a texture.
+        /// The TPL alpha data.
         /// </summary>
         public byte[] mTplAlphaData { get; set; } = [];
 
         /// <summary>
-        /// A byte array of the pixel regions in a texture.
+        /// The JPEG texture data.
         /// </summary>
         public byte[] mJPEGTextureData { get; set; } = [];
 
@@ -500,6 +500,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                 writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
             }
 
+        
 
             if (platform != T3PlatformType.ePlatform_None)
             {
@@ -540,8 +541,6 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                     mWidth = reader.ReadUInt32();
                     mHeight = reader.ReadUInt32();
                 }
-
-
 
                 if (game == TelltaleToolGame.THE_WALKING_DEAD)
                 {
@@ -1101,140 +1100,38 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                 return string.Empty;
             }
 
-            bool after_CSI_FATAL_CONSPIRACY = game >= TelltaleToolGame.CSI_FATAL_CONSPIRACY;
-            bool before_THE_WALKING_DEAD_GAME = game <= TelltaleToolGame.THE_WALKING_DEAD;
-            bool between_CSI_FATAL_CONSPIRACY_AND_TWD = after_CSI_FATAL_CONSPIRACY && before_THE_WALKING_DEAD_GAME;
+            string d3dtxInfo = "Game: " + Enum.GetName(typeof(TelltaleToolGame), game) + "\n";
 
-            string d3dtxInfo = "";
-
-            d3dtxInfo += "|||||||||||" + Enum.GetName(typeof(TelltaleToolGame), (int)game) + "|||||||||||" + Environment.NewLine;
-            d3dtxInfo += "||||||||||| D3DTX Legacy Version Header |||||||||||" + Environment.NewLine;
-            if (between_CSI_FATAL_CONSPIRACY_AND_TWD && game != TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW)
-            {
-                d3dtxInfo += "mSamplerState_BlockSize = " + mSamplerState_BlockSize + Environment.NewLine;
-                d3dtxInfo += "mSamplerState = " + mSamplerState.ToString() + Environment.NewLine;
-            }
-            d3dtxInfo += "mName_BlockSize = " + mName_BlockSize + Environment.NewLine;
-            d3dtxInfo += "mName = " + mName + Environment.NewLine;
-            d3dtxInfo += "mImportName_BlockSize = " + mImportName_BlockSize + Environment.NewLine;
-            d3dtxInfo += "mImportName = " + mImportName + Environment.NewLine;
-            if (between_CSI_FATAL_CONSPIRACY_AND_TWD && game != TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW)
-            {
-                d3dtxInfo += "mToolProps = " + mToolProps + Environment.NewLine;
-            }
-            d3dtxInfo += "mbHasTextureData = " + mbHasTextureData + Environment.NewLine;
-            d3dtxInfo += "mbIsMipMapped = " + mbIsMipMapped + Environment.NewLine;
-            if (!(between_CSI_FATAL_CONSPIRACY_AND_TWD && game != TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW))
-            {
-                d3dtxInfo += "mbIsWrapU = " + mbIsWrapU + Environment.NewLine;
-                d3dtxInfo += "mbIsWrapV = " + mbIsWrapV + Environment.NewLine;
-                d3dtxInfo += "mbIsFiltered = " + mbIsFiltered + Environment.NewLine;
-            }
-            if ((game <= TelltaleToolGame.HECTOR_BADGE_OF_CARNAGE && game >= TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW)
-            && game != TelltaleToolGame.TEXAS_HOLD_EM_V1)
-            {
-                d3dtxInfo += "mbEmbedMipMaps = " + mbEmbedMipMaps + Environment.NewLine;
-            }
-            d3dtxInfo += "mNumMipLevels = " + mNumMipLevels + Environment.NewLine;
-            d3dtxInfo += "mD3DFormat = " + mD3DFormat + Environment.NewLine;
-            d3dtxInfo += "mWidth = " + mWidth + Environment.NewLine;
-            d3dtxInfo += "mHeight = " + mHeight + Environment.NewLine;
-            if (game >= TelltaleToolGame.HECTOR_BADGE_OF_CARNAGE)
-            {
-                d3dtxInfo += "mFlags = " + mFlags + Environment.NewLine;
-            }
-            if (game <= TelltaleToolGame.CSI_HARD_EVIDENCE && game != TelltaleToolGame.TEXAS_HOLD_EM_V1)
-            {
-                d3dtxInfo += "mWiiForceWidth = " + mWiiForceWidth + Environment.NewLine;
-                d3dtxInfo += "mWiiForceHeight = " + mWiiForceHeight + Environment.NewLine;
-                d3dtxInfo += "mbWiiForceUncompressed = " + mbWiiForceUncompressed + Environment.NewLine;
-            }
-            if (!(game == TelltaleToolGame.TEXAS_HOLD_EM_V1 ||
-
-                game == TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW ||
-                game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_101 ||
-                game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_102))
-            {
-                d3dtxInfo += "mType = " + mType + Environment.NewLine;
-            }
-            if (!(game == TelltaleToolGame.BONE_OUT_FROM_BONEVILLE ||
-
-                game == TelltaleToolGame.CSI_3_DIMENSIONS ||
-                game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006 ||
-                game == TelltaleToolGame.BONE_THE_GREAT_COW_RACE ||
-                game == TelltaleToolGame.THE_WALKING_DEAD))
-            {
-                d3dtxInfo += "mTextureDataFormats = " + mTextureDataFormats + Environment.NewLine;
-                d3dtxInfo += "mTplTextureDataSize = " + mTplTextureDataSize + Environment.NewLine;
-                if (game >= TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_101)
-                {
-                    d3dtxInfo += "mTplAlphaDataSize = " + mTplAlphaDataSize + Environment.NewLine;
-                }
-            }
-            if (!(game <= TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW))
-            {
-                d3dtxInfo += "mJPEGTextureDataSize = " + mJPEGTextureDataSize + Environment.NewLine;
-            }
-            if (game == TelltaleToolGame.THE_WALKING_DEAD)
-            {
-                d3dtxInfo += "mHDRLightmapScale = " + mHDRLightmapScale + Environment.NewLine;
-            }
-            if (!(game == TelltaleToolGame.BONE_OUT_FROM_BONEVILLE ||
-
-                game == TelltaleToolGame.CSI_3_DIMENSIONS ||
-                game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006 ||
-                game == TelltaleToolGame.BONE_THE_GREAT_COW_RACE))
-            {
-                d3dtxInfo += "mAlphaMode = " + Enum.GetName(typeof(T3TextureAlphaMode), (int)mAlphaMode) + " (" + mAlphaMode + ")" + Environment.NewLine;
-            }
-            if (game >= TelltaleToolGame.HECTOR_BADGE_OF_CARNAGE)
-            {
-                d3dtxInfo += "mExactAlphaMode = " + Enum.GetName(typeof(T3TextureAlphaMode), (int)mExactAlphaMode) + " (" + mExactAlphaMode + ")" + Environment.NewLine;
-                d3dtxInfo += "mColorMode = " + Enum.GetName(typeof(T3TextureColor), (int)mColorMode) + " (" + mColorMode + ")" + Environment.NewLine;
-            }
-            if (!(game == TelltaleToolGame.BONE_OUT_FROM_BONEVILLE ||
-
-                game == TelltaleToolGame.CSI_3_DIMENSIONS ||
-                game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006 ||
-                game == TelltaleToolGame.BONE_THE_GREAT_COW_RACE))
-            {
-                d3dtxInfo += "mWiiTextureFormat = " + mWiiTextureFormat + Environment.NewLine;
-            }
-            if (!(game == TelltaleToolGame.THE_WALKING_DEAD ||
-            game == TelltaleToolGame.CSI_3_DIMENSIONS ||
-            game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006)
-            )
-            {
-                d3dtxInfo += "mbAlphaHDR = " + mbAlphaHDR + Environment.NewLine;
-            }
-            d3dtxInfo += "mbEncrypted = " + mbEncrypted + Environment.NewLine;
-            if (game >= TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_104 &&
-
-                !(game == TelltaleToolGame.CSI_3_DIMENSIONS) &&
-                !(game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006))
-            {
-                d3dtxInfo += "mbUsedAsBumpmap = " + mbUsedAsBumpmap + Environment.NewLine;
-                d3dtxInfo += "mbUsedAsDetailMap = " + mbUsedAsDetailMap + Environment.NewLine;
-            }
-            if (!(game == TelltaleToolGame.CSI_3_DIMENSIONS ||
-                    game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006))
-            {
-                d3dtxInfo += "mDetailMapBrightness = " + mDetailMapBrightness + Environment.NewLine;
-            }
-            if (game >= TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_101)
-            {
-                d3dtxInfo += "mNormalMapFmt = " + mNormalMapFmt + Environment.NewLine;
-            }
-            if (game >= TelltaleToolGame.HECTOR_BADGE_OF_CARNAGE)
-            {
-                d3dtxInfo += "mUVOffset = " + mUVOffset + Environment.NewLine;
-                d3dtxInfo += "mUVScale = " + mUVScale + Environment.NewLine;
-            }
-
-            for (int i = 0; i < mPixelData.Count; i++)
-            {
-                d3dtxInfo += "mPixelData[" + i + "] = " + mPixelData[i].ToString() + Environment.NewLine;
-            }
+            d3dtxInfo = "|||||| D3DTX Info ||||||\n";
+            d3dtxInfo += "Name: " + mName + "\n";
+            d3dtxInfo += "Import Name: " + mImportName + "\n";
+            d3dtxInfo += "Has Texture Data: " + mbHasTextureData.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Is Mip Mapped: " + mbIsMipMapped.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Is Wrap U: " + mbIsWrapU.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Is Wrap V: " + mbIsWrapV.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Is Filtered: " + mbIsFiltered.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Embed Mip Maps: " + mbEmbedMipMaps.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Num Mip Levels: " + mNumMipLevels + "\n";
+            d3dtxInfo += "D3D Format: " + mD3DFormat + "\n";
+            d3dtxInfo += "Width: " + mWidth + "\n";
+            d3dtxInfo += "Height: " + mHeight + "\n";
+            d3dtxInfo += "Wii Force Width: " + mWiiForceWidth + "\n";
+            d3dtxInfo += "Wii Force Height: " + mWiiForceHeight + "\n";
+            d3dtxInfo += "Wii Force Uncompressed: " + mbWiiForceUncompressed.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Type: " + mType + "\n";
+            d3dtxInfo += "Texture Data Formats: " + mTextureDataFormats + "\n";
+            d3dtxInfo += "TPL Texture Data Size: " + mTplTextureDataSize + "\n";
+            d3dtxInfo += "TPL Alpha Data Size: " + mTplAlphaDataSize + "\n";
+            d3dtxInfo += "JPEG Texture Data Size: " + mJPEGTextureDataSize + "\n";
+            d3dtxInfo += "Alpha Mode: " + mAlphaMode + "\n";
+            d3dtxInfo += "Wii Texture Format: " + mWiiTextureFormat + "\n";
+            d3dtxInfo += "Alpha HDR: " + mbAlphaHDR.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Encrypted: " + mbEncrypted.mbTelltaleBoolean + "\n";
+            d3dtxInfo += "Detail Map Brightness: " + mDetailMapBrightness + "\n";
+            d3dtxInfo += "Normal Map Format: " + mNormalMapFmt + "\n";
+            d3dtxInfo += "UV Offset: " + mUVOffset + "\n";
+            d3dtxInfo += "UV Scale: " + mUVScale + "\n";
+            d3dtxInfo += "Empty Buffer: " + mEmptyBuffer + "\n";
 
             d3dtxInfo += "|||||||||||||||||||||||||||||||||||||||";
 
