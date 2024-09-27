@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TelltaleTextureTool.Graphics.PVR
 {
@@ -10,7 +6,7 @@ namespace TelltaleTextureTool.Graphics.PVR
     {
         public static byte[] DecodeCTX1(byte[] data, int width, int height)
         {
-            byte[] DestData = new byte[(width * height) * 4];
+            byte[] DestData = new byte[width * height * 4];
 
             int dptr = 0;
             for (int i = 0; i < width * height; i += 16)
@@ -44,22 +40,22 @@ namespace TelltaleTextureTool.Graphics.PVR
                 int XPos = ChunkNum % (width / 4);
                 int YPos = (ChunkNum - XPos) / (width / 4);
 
-                int sizeh = (height < 4) ? height : 4;
-                int sizew = (width < 4) ? width : 4;
+                int sizeH = (height < 4) ? height : 4;
+                int sizeW = (width < 4) ? width : 4;
 
-                for (int x = 0; x < sizeh; x++)
-                    for (int y = 0; y < sizew; y++)
+                for (int x = 0; x < sizeH; x++)
+                    for (int y = 0; y < sizeW; y++)
                     {
                         RGBAColor CColor = colorTable[CData & 3];
                         CData >>= 2;
 
                         int tmp1 = ((YPos * 4 + x) * width + XPos * 4 + y) * 4;
 
-                        float cx = ((CColor.R / 255.0f) * 2.0f) - 1.0f;
-                        float cy = ((CColor.G / 255.0f) * 2.0f) - 1.0f;
+                        float cx = (CColor.R / 255.0f * 2.0f) - 1.0f;
+                        float cy = (CColor.G / 255.0f * 2.0f) - 1.0f;
                         float cz = (float)Math.Sqrt(Math.Max(0.0f, Math.Min(1.0f, 1.0f - cx * cx - cy * cy)));
 
-                        DestData[tmp1] = (byte)(((cz + 1.0f) / 2.0f) * 255.0f);//(255 - (Math.Abs(CColor.R - CColor.G)));
+                        DestData[tmp1] = (byte)((cz + 1.0f) / 2.0f * 255.0f); // (255 - (Math.Abs(CColor.R - CColor.G)));
                         DestData[tmp1 + 1] = (byte)CColor.G;
                         DestData[tmp1 + 2] = (byte)CColor.R;
                         DestData[tmp1 + 3] = 255;
@@ -78,9 +74,9 @@ namespace TelltaleTextureTool.Graphics.PVR
         private static RGBAColor GradientColors(RGBAColor Color1, RGBAColor Color2)
         {
             RGBAColor newColor;
-            newColor.R = (byte)(((Color1.R * 2 + Color2.R)) / 3);
-            newColor.G = (byte)(((Color1.G * 2 + Color2.G)) / 3);
-            newColor.B = (byte)(((Color1.B * 2 + Color2.B)) / 3);
+            newColor.R = (byte)((Color1.R * 2 + Color2.R) / 3);
+            newColor.G = (byte)((Color1.G * 2 + Color2.G) / 3);
+            newColor.B = (byte)((Color1.B * 2 + Color2.B) / 3);
             newColor.A = 0xFF;
             return newColor;
         }
@@ -94,6 +90,5 @@ namespace TelltaleTextureTool.Graphics.PVR
             newColor.A = 0xFF;
             return newColor;
         }
-
     }
 }

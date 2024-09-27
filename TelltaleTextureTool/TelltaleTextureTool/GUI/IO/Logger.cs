@@ -3,6 +3,7 @@ using System.IO;
 
 namespace TelltaleTextureTool;
 
+// A simple logger class that logs exceptions to a text file
 public class Logger
 {
     static readonly string CrashesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Crashes");
