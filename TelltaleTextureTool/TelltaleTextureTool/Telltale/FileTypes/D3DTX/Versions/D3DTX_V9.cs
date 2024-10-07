@@ -248,7 +248,7 @@ public class D3DTX_V9 : ID3DTX
     {
         writer.Write(mVersion); //mVersion [4 bytes]
         writer.Write(mSamplerState_BlockSize); //mSamplerState Block Size [4 bytes]
-        mSamplerState.WriteBinaryData(writer); //mSamplerState mData [4 bytes] 
+        writer.Write(mSamplerState.mData); //mSamplerState mData [4 bytes] 
         writer.Write(mPlatform_BlockSize); //mPlatform Block Size [4 bytes]
         writer.Write((int)mPlatform); //mPlatform [4 bytes]
         writer.Write(mName_BlockSize); //mName Block Size [4 bytes] //mName block size (size + string len)
@@ -446,7 +446,7 @@ public class D3DTX_V9 : ID3DTX
             // The mip index will be the region index % interval
             for (int i = 0; i < mStreamHeader.mRegionCount; i++)
             {
-                mRegionHeaders[i].mFaceIndex = i % (6 * (int)mArraySize); //Unknown guess, it could be 6 or 6 * mArraySize
+                mRegionHeaders[i].mFaceIndex = i % (6 * (int)mArraySize); // Unknown guess, it could be 6 or 6 * mArraySize
                 mRegionHeaders[i].mMipIndex = (mStreamHeader.mRegionCount - i - 1) / interval;
             }
         }
@@ -464,7 +464,7 @@ public class D3DTX_V9 : ID3DTX
 
             for (int i = 0; i < mStreamHeader.mRegionCount; i++)
             {
-                mRegionHeaders[mStreamHeader.mRegionCount - currDepth + depthIndex++].mFaceIndex = faceIndex++; //NOTE: This could be different for 3D textures. I don't have information at the moment.
+                mRegionHeaders[mStreamHeader.mRegionCount - currDepth + depthIndex++].mFaceIndex = faceIndex++; // NOTE: This could be different for 3D textures. I don't have information at the moment.
                 mRegionHeaders[i].mMipIndex = currentMipIndex;
 
                 if (depthIndex == copyOfDepth)
@@ -596,6 +596,7 @@ public class D3DTX_V9 : ID3DTX
 
         return d3dtxInfo;
     }
+    
     public void UpdateArrayCapacities()
     {
         mArrayFrameNames_ArrayCapacity = 8 + (uint)(8 * mArrayFrameNames.Length);

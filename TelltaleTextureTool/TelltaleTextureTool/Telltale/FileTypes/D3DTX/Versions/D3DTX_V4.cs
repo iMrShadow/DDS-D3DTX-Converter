@@ -185,76 +185,6 @@ public class D3DTX_V4 : ID3DTX
     /// </summary>
     public D3DTX_V4() { }
 
-    public void UpdateArrayCapacities()
-    {
-        mToonRegions_ArrayCapacity = 8 + (uint)(20 * mToonRegions.Length);
-        mToonRegions_ArrayLength = mToonRegions.Length;
-    }
-
-    public uint GetHeaderByteSize()
-    {
-        uint totalSize = 0;
-
-        totalSize += 4; //mVersion [4 bytes]
-        totalSize += 4; //mSamplerState Block Size [4 bytes]
-        totalSize += 4; //mSamplerState mData [4 bytes] 
-        totalSize += 4; //mPlatform Block Size [4 bytes]
-        totalSize += 4; //mPlatform [4 bytes]
-        totalSize += 4; //mName Block Size [4 bytes] //mName block size (size + string len)
-        totalSize += 4; //mName (strength length prefix) [4 bytes]
-        totalSize += (uint)mName.Length;  //mName [x bytes]
-        totalSize += 4; //mImportName Block Size [4 bytes] //mImportName block size (size + string len)
-        totalSize += 4; //mImportName (strength length prefix) [4 bytes] (this is always 0)
-        totalSize += (uint)mImportName.Length; //mImportName [x bytes] (this is always 0)
-        totalSize += 4; //mImportScale [4 bytes]
-        totalSize += 1; //mToolProps mbHasProps [1 byte]
-        totalSize += 4; //mNumMipLevels [4 bytes]
-        totalSize += 4; //mWidth [4 bytes]
-        totalSize += 4; //mHeight [4 bytes]
-        totalSize += 4; //mSurfaceFormat [4 bytes]
-        totalSize += 4; //mResourceUsage [4 bytes]
-        totalSize += 4; //mType [4 bytes]
-        totalSize += 4; //mNormalMapFormat [4 bytes]
-        totalSize += 4; //mHDRLightmapScale [4 bytes]
-        totalSize += 4; //mToonGradientCutoff [4 bytes]
-        totalSize += 4; //mAlphaMode [4 bytes]
-        totalSize += 4; //mColorMode [4 bytes]
-        totalSize += 4; //mUVOffset X [4 bytes]
-        totalSize += 4; //mUVOffset Y [4 bytes]
-        totalSize += 4; //mUVScale X [4 bytes]
-        totalSize += 4; //mUVScale Y [4 bytes]
-
-        totalSize += 4; //mToonRegions DCArray Capacity [4 bytes]
-        totalSize += 4; //mToonRegions DCArray Length [4 bytes]
-        for (int i = 0; i < mToonRegions_ArrayLength; i++)
-        {
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-        }
-
-        totalSize += 4; //mRegionCount [4 bytes]
-        totalSize += 4; //mAuxDataCount [4 bytes]
-        totalSize += 4; //mTotalDataSize [4 bytes]
-
-        for (int i = 0; i < mStreamHeader.mRegionCount; i++)
-        {
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-        }
-
-        return totalSize;
-    }
-
-    public void PrintConsole()
-    {
-        Console.WriteLine(GetDebugInfo());
-    }
-
     public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         writer.Write(mVersion); //mVersion [4 bytes]
@@ -410,10 +340,10 @@ public class D3DTX_V4 : ID3DTX
 
     public void ModifyD3DTX(D3DTXMetadata metadata, ImageSection[] imageSections, bool printDebug = false)
     {
-        mWidth = (uint)metadata.Width;
-        mHeight = (uint)metadata.Height;
-        mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format, mSurfaceFormat);
-        mNumMipLevels = (uint)metadata.MipLevels > 0 ? (uint)metadata.MipLevels : 1;
+        mWidth = metadata.Width;
+        mHeight = metadata.Height;
+        mSurfaceFormat = metadata.Format;
+        mNumMipLevels = metadata.MipLevels;
 
         mPixelData.Clear();
         mPixelData = DDS_DirectXTexNet.GetPixelDataListFromSections(imageSections);
@@ -471,7 +401,7 @@ public class D3DTX_V4 : ID3DTX
             Height = mHeight,
             Format = mSurfaceFormat,
             MipLevels = mNumMipLevels,
-            SurfaceGamma = T3SurfaceGamma.eSurfaceGamma_Linear,
+            SurfaceGamma = T3SurfaceGamma.Linear,
             Dimension = T3TextureLayout.Texture2D,
             AlphaMode = mAlphaMode,
             Platform = mPlatform,
@@ -543,5 +473,75 @@ public class D3DTX_V4 : ID3DTX
         d3dtxInfo += "|||||||||||||||||||||||||||||||||||||||";
 
         return d3dtxInfo;
+    }
+
+    public void UpdateArrayCapacities()
+    {
+        mToonRegions_ArrayCapacity = 8 + (uint)(20 * mToonRegions.Length);
+        mToonRegions_ArrayLength = mToonRegions.Length;
+    }
+
+    public uint GetHeaderByteSize()
+    {
+        uint totalSize = 0;
+
+        totalSize += 4; //mVersion [4 bytes]
+        totalSize += 4; //mSamplerState Block Size [4 bytes]
+        totalSize += 4; //mSamplerState mData [4 bytes] 
+        totalSize += 4; //mPlatform Block Size [4 bytes]
+        totalSize += 4; //mPlatform [4 bytes]
+        totalSize += 4; //mName Block Size [4 bytes] //mName block size (size + string len)
+        totalSize += 4; //mName (strength length prefix) [4 bytes]
+        totalSize += (uint)mName.Length;  //mName [x bytes]
+        totalSize += 4; //mImportName Block Size [4 bytes] //mImportName block size (size + string len)
+        totalSize += 4; //mImportName (strength length prefix) [4 bytes] (this is always 0)
+        totalSize += (uint)mImportName.Length; //mImportName [x bytes] (this is always 0)
+        totalSize += 4; //mImportScale [4 bytes]
+        totalSize += 1; //mToolProps mbHasProps [1 byte]
+        totalSize += 4; //mNumMipLevels [4 bytes]
+        totalSize += 4; //mWidth [4 bytes]
+        totalSize += 4; //mHeight [4 bytes]
+        totalSize += 4; //mSurfaceFormat [4 bytes]
+        totalSize += 4; //mResourceUsage [4 bytes]
+        totalSize += 4; //mType [4 bytes]
+        totalSize += 4; //mNormalMapFormat [4 bytes]
+        totalSize += 4; //mHDRLightmapScale [4 bytes]
+        totalSize += 4; //mToonGradientCutoff [4 bytes]
+        totalSize += 4; //mAlphaMode [4 bytes]
+        totalSize += 4; //mColorMode [4 bytes]
+        totalSize += 4; //mUVOffset X [4 bytes]
+        totalSize += 4; //mUVOffset Y [4 bytes]
+        totalSize += 4; //mUVScale X [4 bytes]
+        totalSize += 4; //mUVScale Y [4 bytes]
+
+        totalSize += 4; //mToonRegions DCArray Capacity [4 bytes]
+        totalSize += 4; //mToonRegions DCArray Length [4 bytes]
+        for (int i = 0; i < mToonRegions_ArrayLength; i++)
+        {
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+        }
+
+        totalSize += 4; //mRegionCount [4 bytes]
+        totalSize += 4; //mAuxDataCount [4 bytes]
+        totalSize += 4; //mTotalDataSize [4 bytes]
+
+        for (int i = 0; i < mStreamHeader.mRegionCount; i++)
+        {
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+        }
+
+        return totalSize;
+    }
+
+    public void PrintConsole()
+    {
+        Console.WriteLine(GetDebugInfo());
     }
 }

@@ -401,11 +401,11 @@ public class D3DTX_V8 : ID3DTX
     {
         mWidth = metadata.Width;
         mHeight = metadata.Height;
-        mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format, mSurfaceFormat);
+        mSurfaceFormat = metadata.Format;
         mNumMipLevels = metadata.MipLevels;
         mDepth = metadata.Depth;
         mArraySize = metadata.ArraySize;
-        mSurfaceGamma = DDS_DirectXTexNet.IsSRGB((DXGIFormat)metadata.Format) ? T3SurfaceGamma.eSurfaceGamma_sRGB : T3SurfaceGamma.eSurfaceGamma_Linear;
+        mSurfaceGamma = metadata.SurfaceGamma;
 
         mPixelData.Clear();
         mPixelData = DDS_DirectXTexNet.GetPixelDataListFromSections(imageSections);
@@ -451,7 +451,7 @@ public class D3DTX_V8 : ID3DTX
             mTextureLayout = T3TextureLayout.Texture3D;
 
             int currDepth = (int)metadata.Depth;
-            int currentMipIndex = (int)mNumMipLevels - 1;
+            int currentMipIndex = (int)(mNumMipLevels - 1);
             int copyOfDepth = currDepth;
 
             int depthIndex = 0;

@@ -7,8 +7,6 @@ using TelltaleTextureTool.Utilities;
 using TelltaleTextureTool.DirectX;
 using TelltaleTextureTool.DirectX.Enums;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
-using System.Linq;
-using ColorTextBlock.Avalonia;
 
 /*
  * NOTE:
@@ -66,7 +64,6 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         /// </summary>
         public ToolProps mToolProps { get; set; }
 
-
         /// <summary>
         /// [1 byte] Indicates whether or not the texture contains mips. (what? need further research)
         /// </summary>
@@ -78,22 +75,22 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         public TelltaleBoolean mbIsMipMapped { get; set; }
 
         /// <summary>
-        /// [1 byte] Indicates whether or not the texture contains mips.
+        /// [1 byte] Indicates if the texture is wrapped horizontally.
         /// </summary>
         public TelltaleBoolean mbIsWrapU { get; set; }
 
         /// <summary>
-        /// [1 byte] Indicates whether or not the texture contains mips.
+        /// [1 byte] Indicates if the texture is wrapped vertically.
         /// </summary>
         public TelltaleBoolean mbIsWrapV { get; set; }
 
         /// <summary>
-        /// [1 byte] Indicates whether or not the texture contains mips.
+        /// [1 byte] Indicates if the texture is filtered.
         /// </summary>
         public TelltaleBoolean mbIsFiltered { get; set; }
 
         /// <summary>
-        /// [1 byte] No idea.
+        /// [1 byte] Indicates if the texture contains embedded mips.
         /// </summary>
         public TelltaleBoolean mbEmbedMipMaps { get; set; }
 
@@ -235,7 +232,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         /// <summary>
         /// A byte array of the pixel regions in a texture.
         /// </summary>
-        public List<TelltalePixelData> mPixelData { get; set; } = [];
+        public TelltalePixelData mPixelData { get; set; }
 
         /// <summary>
         /// The TPL texture data.
@@ -258,81 +255,95 @@ namespace TelltaleTextureTool.TelltaleD3DTX
         {
             if (game == TelltaleToolGame.DEFAULT || game == TelltaleToolGame.UNKNOWN)
             {
-                throw new Exception();
+                throw new Exception("The game is not supported.");
+            }
+
+            if (game == TelltaleToolGame.TEXAS_HOLD_EM_OG)
+            {
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
             }
 
             if (game == TelltaleToolGame.THE_WALKING_DEAD)
             {
-                writer.Write(mSamplerState_BlockSize); // mSamplerState_BlockSize [4 bytes]
-                mSamplerState.WriteBinaryData(writer); // mSamplerState [4 bytes]
-                writer.Write(mName_BlockSize); // mName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mName); // mName [mName_StringLength bytes]
-                writer.Write(mImportName_BlockSize); // mImportName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mImportName); // mImportName [x bytes] (this is always 0)
-                ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps); // mToolProps mbHasProps [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean); // mbHasTextureData [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean); // mbIsMipMapped [1 byte]
-                writer.Write(mNumMipLevels); // mNumMipLevels [4 bytes]
-                writer.Write((uint)mD3DFormat); // mD3DFormat [4 bytes]
-                writer.Write(mWidth); // mWidth [4 bytes]
-                writer.Write(mHeight); // mHeight [4 bytes]
-                writer.Write(mFlags); // mFlags [4 bytes]
-                writer.Write(mWiiForceWidth); // mWiiForceWidth [4 bytes]
-                writer.Write(mWiiForceHeight); // mWiiForceHeight [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); // mbWiiForceUncompressed [1 byte]
-                writer.Write(mType); // mType [4 bytes]
-                writer.Write(mTextureDataFormats); // mTextureDataFormats [4 bytes]
-                writer.Write(mTplTextureDataSize); // mTplTextureDataSize [4 bytes]
-                writer.Write(mTplAlphaDataSize); // mTplAlphaDataSize [4 bytes]
-                writer.Write(mJPEGTextureDataSize); // mJPEGTextureDataSize [4 bytes]
-                writer.Write(mHDRLightmapScale); // mHDRLightmapScale [4 bytes]
-                writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
-                writer.Write((int)mExactAlphaMode); // mExactAlphaMode [4 bytes]
-                writer.Write((int)mColorMode); // mColorMode [4 bytes]
-                writer.Write((int)mWiiTextureFormat); // mWiiTextureFormat [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); // mbEncrypted [1 byte]
-                writer.Write(mDetailMapBrightness); // mDetailMapBrightness [4 bytes]
-                writer.Write(mNormalMapFmt); // mNormalMapFmt [4 bytes]
-                mUVOffset.WriteBinaryData(writer); // mUVOffset [8 bytes]
-                mUVScale.WriteBinaryData(writer); // mUVScale [8 bytes]
+                writer.Write(mSamplerState_BlockSize);
+                writer.Write(mSamplerState.mData);
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mFlags);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mTplAlphaDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write(mHDRLightmapScale);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mExactAlphaMode);
+                writer.Write((int)mColorMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+                writer.Write(mNormalMapFmt);
+                mUVOffset.WriteBinaryData(writer);
+                mUVScale.WriteBinaryData(writer);
             }
 
             if (game == TelltaleToolGame.PUZZLE_AGENT_2 ||
             game == TelltaleToolGame.LAW_AND_ORDER_LEGACIES ||
             game == TelltaleToolGame.JURASSIC_PARK_THE_GAME)
             {
-                writer.Write(mSamplerState_BlockSize); // mSamplerState_BlockSize [4 bytes]
-                mSamplerState.WriteBinaryData(writer); // mSamplerState [4 bytes]
-                writer.Write(mName_BlockSize); // mName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mName); // mName [mName_StringLength bytes]
-                writer.Write(mImportName_BlockSize); // mImportName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mImportName); // mImportName [x bytes] (this is always 0)
-                ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps); // mToolProps mbHasProps [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean); // mbHasTextureData [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean); // mbIsMipMapped [1 byte]
-                writer.Write(mNumMipLevels); // mNumMipLevels [4 bytes]
-                writer.Write((uint)mD3DFormat); // mD3DFormat [4 bytes]
-                writer.Write(mWidth); // mWidth [4 bytes]
-                writer.Write(mHeight); // mHeight [4 bytes]
-                writer.Write(mFlags); // mFlags [4 bytes]
-                writer.Write(mWiiForceWidth); // mWiiForceWidth [4 bytes]
-                writer.Write(mWiiForceHeight); // mWiiForceHeight [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); // mbWiiForceUncompressed [1 byte]
-                writer.Write(mType); // mType [4 bytes]
-                writer.Write(mTextureDataFormats); // mTextureDataFormats [4 bytes]
-                writer.Write(mTplTextureDataSize); // mTplTextureDataSize [4 bytes]
-                writer.Write(mTplAlphaDataSize); // mTplAlphaDataSize [4 bytes]
-                writer.Write(mJPEGTextureDataSize); // mJPEGTextureDataSize [4 bytes]
-                writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
-                writer.Write((int)mExactAlphaMode); // mExactAlphaMode [4 bytes]
-                writer.Write((int)mColorMode); // mColorMode [4 bytes]
-                writer.Write((int)mWiiTextureFormat); // mWiiTextureFormat [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean); // mbAlphaHDR [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); // mbEncrypted [1 byte]
-                writer.Write(mDetailMapBrightness); // mDetailMapBrightness [4 bytes]
-                writer.Write(mNormalMapFmt); // mNormalMapFmt [4 bytes]
-                mUVOffset.WriteBinaryData(writer); // mUVOffset [8 bytes]
-                mUVScale.WriteBinaryData(writer); // mUVScale [8 bytes]
+                writer.Write(mSamplerState_BlockSize);
+                writer.Write(mSamplerState.mData);
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mFlags);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mTplAlphaDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write(mHDRLightmapScale);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mExactAlphaMode);
+                writer.Write((int)mColorMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+                writer.Write(mNormalMapFmt);
+                mUVOffset.WriteBinaryData(writer);
+                mUVScale.WriteBinaryData(writer);
             }
 
             if (game == TelltaleToolGame.NELSON_TETHERS_PUZZLE_AGENT ||
@@ -341,34 +352,34 @@ namespace TelltaleTextureTool.TelltaleD3DTX
             game == TelltaleToolGame.BACK_TO_THE_FUTURE_THE_GAME ||
             game == TelltaleToolGame.POKER_NIGHT_AT_THE_INVENTORY)
             {
-                writer.Write(mSamplerState_BlockSize); // mSamplerState_BlockSize [4 bytes]
-                mSamplerState.WriteBinaryData(writer); // mSamplerState [4 bytes]
-                writer.Write(mName_BlockSize); // mName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mName); // mName [mName_StringLength bytes]
-                writer.Write(mImportName_BlockSize); // mImportName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mImportName); // mImportName [x bytes] (this is always 0)
-                ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps); // mToolProps mbHasProps [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean); // mbHasTextureData [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean); // mbIsMipMapped [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean); // mbEmbedMipMaps [1 byte]
-                writer.Write(mNumMipLevels); // mNumMipLevels [4 bytes]
-                writer.Write((uint)mD3DFormat); // mD3DFormat [4 bytes]
-                writer.Write(mWidth); // mWidth [4 bytes]
-                writer.Write(mHeight); // mHeight [4 bytes]
-                writer.Write(mWiiForceWidth); // mWiiForceWidth [4 bytes]
-                writer.Write(mWiiForceHeight); // mWiiForceHeight [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); // mbWiiForceUncompressed [1 byte]
-                writer.Write(mType); // mType [4 bytes]
-                writer.Write(mTextureDataFormats); // mTextureDataFormats [4 bytes]
-                writer.Write(mTplTextureDataSize); // mTplTextureDataSize [4 bytes]
-                writer.Write(mTplAlphaDataSize); // mTplAlphaDataSize [4 bytes]
-                writer.Write(mJPEGTextureDataSize); // mJPEGTextureDataSize [4 bytes]
-                writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
-                writer.Write((int)mWiiTextureFormat); // mWiiTextureFormat [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean); // mbAlphaHDR [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); // mbEncrypted [1 byte]
-                writer.Write(mDetailMapBrightness); // mDetailMapBrightness [4 bytes]
-                writer.Write(mNormalMapFmt); // mNormalMapFmt [4 bytes]
+                writer.Write(mSamplerState_BlockSize);
+                writer.Write(mSamplerState.mData);
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mToolProps.mbHasProps);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mTplAlphaDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+                writer.Write(mNormalMapFmt);
             }
 
             if (game == TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_104 ||
@@ -377,139 +388,313 @@ namespace TelltaleTextureTool.TelltaleD3DTX
             game == TelltaleToolGame.SAM_AND_MAX_THE_DEVILS_PLAYHOUSE ||
             game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2007)
             {
-                writer.Write(mName_BlockSize); // mName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mName); // mName [mName_StringLength bytes]
-                writer.Write(mImportName_BlockSize); // mImportName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mImportName); // mImportName [x bytes] (this is always 0)
-                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean); // mbHasTextureData [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean); // mbIsMipMapped [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean); // mbIsWrapU [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean); // mbIsWrapV [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean); // mbIsFiltered [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean); // mbEmbedMipMaps [1 byte]
-                writer.Write(mNumMipLevels); // mNumMipLevels [4 bytes]
-                writer.Write((uint)mD3DFormat); // mD3DFormat [4 bytes]
-                writer.Write(mWidth); // mWidth [4 bytes]
-                writer.Write(mHeight); // mHeight [4 bytes]
-                writer.Write(mWiiForceWidth); // mWiiForceWidth [4 bytes]
-                writer.Write(mWiiForceHeight); // mWiiForceHeight [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); // mbWiiForceUncompressed [1 byte]
-                writer.Write(mType); // mType [4 bytes]
-                writer.Write(mTextureDataFormats); // mTextureDataFormats [4 bytes]
-                writer.Write(mTplTextureDataSize); // mTplTextureDataSize [4 bytes]
-                writer.Write(mTplAlphaDataSize); // mTplAlphaDataSize [4 bytes]
-                writer.Write(mJPEGTextureDataSize); // mJPEGTextureDataSize [4 bytes]
-                writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
-                writer.Write((int)mWiiTextureFormat); // mWiiTextureFormat [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean); // mbAlphaHDR [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); // mbEncrypted [1 byte]
-                writer.Write(mDetailMapBrightness); // mDetailMapBrightness [4 bytes]
-                writer.Write(mNormalMapFmt); // mNormalMapFmt [4 bytes]
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mTplAlphaDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+                writer.Write(mNormalMapFmt);
             }
 
             if (game == TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_101 ||
             game == TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_102 ||
             game == TelltaleToolGame.WALLACE_AND_GROMITS_GRAND_ADVENTURES_103)
             {
-                writer.Write(mName_BlockSize); // mName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mName); // mName [mName_StringLength bytes]
-                writer.Write(mImportName_BlockSize); // mImportName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mImportName); // mImportName [x bytes] (this is always 0)
-                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean); // mbHasTextureData [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean); // mbIsMipMapped [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean); // mbIsWrapU [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean); // mbIsWrapV [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean); // mbIsFiltered [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean); // mbEmbedMipMaps [1 byte]
-                writer.Write(mNumMipLevels); // mNumMipLevels [4 bytes]
-                writer.Write((uint)mD3DFormat); // mD3DFormat [4 bytes]
-                writer.Write(mWidth); // mWidth [4 bytes]
-                writer.Write(mHeight); // mHeight [4 bytes]
-                writer.Write(mWiiForceWidth); // mWiiForceWidth [4 bytes]
-                writer.Write(mWiiForceHeight); // mWiiForceHeight [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); // mbWiiForceUncompressed [1 byte]
-                writer.Write(mType); // mType [4 bytes]
-                writer.Write(mTextureDataFormats); // mTextureDataFormats [4 bytes]
-                writer.Write(mTplTextureDataSize); // mTplTextureDataSize [4 bytes]
-                writer.Write(mTplAlphaDataSize); // mTplAlphaDataSize [4 bytes]
-                writer.Write(mJPEGTextureDataSize); // mJPEGTextureDataSize [4 bytes]
-                writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
-                writer.Write((int)mWiiTextureFormat); // mWiiTextureFormat [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean); // mbAlphaHDR [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); // mbEncrypted [1 byte]
-                writer.Write(mDetailMapBrightness); // mDetailMapBrightness [4 bytes]
-                writer.Write(mNormalMapFmt); // mNormalMapFmt [4 bytes]
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mTplAlphaDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+                writer.Write(mNormalMapFmt);
             }
 
             if (game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_105)
             {
-                writer.Write(mName_BlockSize); // mName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mName); // mName [mName_StringLength bytes]
-                writer.Write(mImportName_BlockSize); // mImportName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mImportName); // mImportName [x bytes] (this is always 0)
-                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean); // mbHasTextureData [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean); // mbIsMipMapped [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean); // mbIsWrapU [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean); // mbIsWrapV [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean); // mbIsFiltered [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean); // mbEmbedMipMaps [1 byte]
-                writer.Write(mNumMipLevels); // mNumMipLevels [4 bytes]
-                writer.Write((uint)mD3DFormat); // mD3DFormat [4 bytes]
-                writer.Write(mWidth); // mWidth [4 bytes]
-                writer.Write(mHeight); // mHeight [4 bytes]
-                writer.Write(mWiiForceWidth); // mWiiForceWidth [4 bytes]
-                writer.Write(mWiiForceHeight); // mWiiForceHeight [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); // mbWiiForceUncompressed [1 byte]
-                writer.Write(mType); // mType [4 bytes]
-                writer.Write(mTextureDataFormats); // mTextureDataFormats [4 bytes]
-                writer.Write(mTplTextureDataSize); // mTplTextureDataSize [4 bytes]
-                writer.Write(mTplAlphaDataSize); // mTplAlphaDataSize [4 bytes]
-                writer.Write(mJPEGTextureDataSize); // mJPEGTextureDataSize [4 bytes]
-                writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
-                writer.Write((int)mWiiTextureFormat); // mWiiTextureFormat [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean); // mbAlphaHDR [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean); // mbEncrypted [1 byte]
-                writer.Write(mDetailMapBrightness); // mDetailMapBrightness [4 bytes]
-                writer.Write(mNormalMapFmt); // mNormalMapFmt [4 bytes]
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
             }
 
-            if (game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_104)
+            if (game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_103 || game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_104)
             {
-                writer.Write(mName_BlockSize); // mName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mName); // mName [mName_StringLength bytes]
-                writer.Write(mImportName_BlockSize); // mImportName_BlockSize [4 bytes]
-                ByteFunctions.WriteString(writer, mImportName); // mImportName [x bytes] (this is always 0)
-                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean); // mbHasTextureData [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean); // mbIsMipMapped [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean); // mbIsWrapU [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean); // mbIsWrapV [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean); // mbIsFiltered [1 byte]
-                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean); // mbEmbedMipMaps [1 byte]
-                writer.Write(mNumMipLevels); // mNumMipLevels [4 bytes]
-                writer.Write((uint)mD3DFormat); // mD3DFormat [4 bytes]
-                writer.Write(mWidth); // mWidth [4 bytes]
-                writer.Write(mHeight); // mHeight [4 bytes]
-                writer.Write(mWiiForceWidth); // mWiiForceWidth [4 bytes]
-                writer.Write(mWiiForceHeight); // mWiiForceHeight [4 bytes]
-                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean); // mbWiiForceUncompressed [1 byte]
-                writer.Write(mType); // mType [4 bytes]
-                writer.Write(mTextureDataFormats); // mTextureDataFormats [4 bytes]
-                writer.Write(mTplTextureDataSize); // mTplTextureDataSize [4 bytes]
-                writer.Write(mTplAlphaDataSize); // mTplAlphaDataSize [4 bytes]
-                writer.Write(mJPEGTextureDataSize); // mJPEGTextureDataSize [4 bytes]
-                writer.Write((int)mAlphaMode); // mAlphaMode [4 bytes]
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
             }
 
-        
+            if (game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_102 || game == TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_101)
+            {
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mJPEGTextureDataSize);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+            }
+
+            if (game == TelltaleToolGame.TEXAS_HOLD_EM_V1 || game == TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW)
+            {
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mTplTextureDataSize);
+                writer.Write(mTextureDataFormats);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+            }
+
+            if (game == TelltaleToolGame.CSI_HARD_EVIDENCE || game == TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_OG)
+            {
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                writer.Write(mTextureDataFormats);
+                writer.Write(mTplTextureDataSize);
+                writer.Write((int)mAlphaMode);
+                writer.Write((int)mWiiTextureFormat);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+            }
+
+            if (game == TelltaleToolGame.BONE_OUT_FROM_BONEVILLE || game == TelltaleToolGame.BONE_THE_GREAT_COW_RACE)
+            {
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mType);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean);
+                writer.Write(mDetailMapBrightness);
+            }
+
+            if (game == TelltaleToolGame.CSI_3_DIMENSIONS)
+            {
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mType);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+            }
+
+            if (game == TelltaleToolGame.SAM_AND_MAX_SAVE_THE_WORLD_2006)
+            {
+                writer.Write(mName_BlockSize);
+                ByteFunctions.WriteString(writer, mName);
+                writer.Write(mImportName_BlockSize);
+                ByteFunctions.WriteString(writer, mImportName);
+                ByteFunctions.WriteBoolean(writer, mbHasTextureData.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsMipMapped.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapU.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsWrapV.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbIsFiltered.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEmbedMipMaps.mbTelltaleBoolean);
+                writer.Write(mNumMipLevels);
+                writer.Write((uint)mD3DFormat);
+                writer.Write(mWidth);
+                writer.Write(mHeight);
+                writer.Write(mWiiForceWidth);
+                writer.Write(mWiiForceHeight);
+                ByteFunctions.WriteBoolean(writer, mbWiiForceUncompressed.mbTelltaleBoolean);
+                writer.Write(mType);
+                ByteFunctions.WriteBoolean(writer, mbAlphaHDR.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbEncrypted.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsBumpmap.mbTelltaleBoolean);
+                ByteFunctions.WriteBoolean(writer, mbUsedAsDetailMap.mbTelltaleBoolean);
+            }
 
             if (platform != T3PlatformType.ePlatform_None)
             {
-                writer.Write(mEmptyBuffer); //mEmptyBuffer [4 bytes]
+                writer.Write(mEmptyBuffer);
             }
 
-            for (int i = 0; i < mPixelData.Count; i++) //DDS file including header [mTextureDataSize bytes]
+            mPixelData.WriteBinaryData(writer);
+
+            if (mTplTextureDataSize > 0)
             {
-                mPixelData[i].WriteBinaryData(writer);
+                writer.Write(mTplTextureDataSize);
+            }
+
+            if (mTplAlphaDataSize > 0)
+            {
+                writer.Write(mTplAlphaDataSize);
+            }
+
+            if (mJPEGTextureDataSize > 0)
+            {
+                writer.Write(mJPEGTextureData);
             }
         }
 
@@ -866,7 +1051,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                     mDetailMapBrightness = reader.ReadSingle();
                 }
 
-                if (game == TelltaleToolGame.CSI_HARD_EVIDENCE || game == TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_OG)
+                if (game == TelltaleToolGame.CSI_HARD_EVIDENCE)
                 {
                     mName_BlockSize = reader.ReadInt32();
                     mName = ByteFunctions.ReadString(reader);
@@ -885,6 +1070,37 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                     mType = reader.ReadUInt32();
                     mTextureDataFormats = reader.ReadUInt32();
                     mTplTextureDataSize = reader.ReadUInt32();
+                    mAlphaMode = (T3TextureAlphaMode)reader.ReadInt32();
+                    mbAlphaHDR = new TelltaleBoolean(reader);
+                    mbEncrypted = new TelltaleBoolean(reader);
+                    mbUsedAsBumpmap = new TelltaleBoolean(reader);
+                    mbUsedAsDetailMap = new TelltaleBoolean(reader);
+                    mDetailMapBrightness = reader.ReadSingle();
+                }
+
+                if (game == TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_OG)
+                {
+                    mName_BlockSize = reader.ReadInt32();
+                    mName = ByteFunctions.ReadString(reader);
+                    mImportName_BlockSize = reader.ReadInt32();
+                    mImportName = ByteFunctions.ReadString(reader);
+                    mbHasTextureData = new TelltaleBoolean(reader);
+                    mbIsMipMapped = new TelltaleBoolean(reader);
+                    mbIsWrapU = new TelltaleBoolean(reader);
+                    mbIsWrapV = new TelltaleBoolean(reader);
+                    mbIsFiltered = new TelltaleBoolean(reader);
+                    mbEmbedMipMaps = new TelltaleBoolean(reader);
+                    mNumMipLevels = reader.ReadUInt32();
+                    mD3DFormat = (LegacyFormat)reader.ReadUInt32();
+                    mWidth = reader.ReadUInt32();
+                    mHeight = reader.ReadUInt32();
+
+                    mWiiForceWidth = reader.ReadUInt32();
+                    mWiiForceHeight = reader.ReadUInt32();
+                    mbWiiForceUncompressed = new TelltaleBoolean(reader);
+                    mTplTextureDataSize = reader.ReadUInt32();
+                    mTextureDataFormats = reader.ReadUInt32();
+
                     mAlphaMode = (T3TextureAlphaMode)reader.ReadInt32();
                     mbAlphaHDR = new TelltaleBoolean(reader);
                     mbEncrypted = new TelltaleBoolean(reader);
@@ -974,12 +1190,6 @@ namespace TelltaleTextureTool.TelltaleD3DTX
 
                 PrintConsole(game);
 
-                if (!mbHasTextureData.mbTelltaleBoolean)
-                {
-                    PrintConsole();
-                    throw new PixelDataNotFoundException("The texture does not have any pixel data!");
-                }
-
                 uint mTextureDataSize = reader.ReadUInt32();
 
                 if (mTextureDataSize == 0 && mbHasTextureData.mbTelltaleBoolean)
@@ -988,8 +1198,6 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                 }
 
                 reader.BaseStream.Position -= 4;
-
-                mPixelData = [];
 
                 int magic = reader.ReadInt32();
                 if (magic == 8 || magic == mName.Length + 8)
@@ -1003,7 +1211,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                 mNumMipLevels = mbEncrypted.mbTelltaleBoolean ? 1 : mNumMipLevels;
                 int skip = mbEncrypted.mbTelltaleBoolean ? 128 : 0;
 
-                mPixelData.Add(new TelltalePixelData(reader, skip));
+                mPixelData = new TelltalePixelData(reader, skip);
 
                 if (mTplTextureDataSize > 0)
                 {
@@ -1038,6 +1246,12 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                 read = false;
             }
 
+            // if (!mbHasTextureData.mbTelltaleBoolean)
+            // {
+            //     PrintConsole();
+            //     throw new PixelDataNotFoundException("The texture does not have any pixel data!");
+            // }
+
             if (reader.BaseStream.Position != reader.BaseStream.Length)
             {
                 PrintConsole();
@@ -1056,25 +1270,30 @@ namespace TelltaleTextureTool.TelltaleD3DTX
             mNumMipLevels = metadata.MipLevels;
             mbHasTextureData = new TelltaleBoolean(true);
             mbIsMipMapped = new TelltaleBoolean(metadata.MipLevels > 1);
+            mbEmbedMipMaps = new TelltaleBoolean(metadata.MipLevels > 1);
 
             var textureData = DDS_DirectXTexNet.GetPixelDataArrayFromSections(imageSections);
 
-            mPixelData.Clear();
-
-            TelltalePixelData telltalePixelData = new TelltalePixelData()
+            if (mTextureDataFormats > 0x200)
             {
-                length = (uint)textureData.Length,
-                pixelData = textureData
-            };
-
-            mPixelData.Add(telltalePixelData);
+                // Attempt to write pixel data for PS3 and other console games
+                mPixelData = new TelltalePixelData(textureData, 128, 128);
+            }
+            else
+            {
+                mPixelData = new TelltalePixelData()
+                {
+                    length = (uint)textureData.Length,
+                    pixelData = textureData
+                };
+            }
 
             PrintConsole();
         }
 
         public D3DTXMetadata GetD3DTXMetadata()
         {
-            D3DTXMetadata metadata = new D3DTXMetadata()
+            D3DTXMetadata metadata = new()
             {
                 TextureName = mName,
                 Width = mWidth,
@@ -1083,6 +1302,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
                 Dimension = T3TextureLayout.Texture2D,
                 AlphaMode = mAlphaMode,
                 D3DFormat = mD3DFormat,
+                SurfaceGamma = T3SurfaceGamma.Unknown,
             };
 
             return metadata;
@@ -1090,7 +1310,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
 
         public List<byte[]> GetPixelData()
         {
-            return mPixelData.Select(x => x.pixelData).ToList();
+            return [mPixelData.pixelData];
         }
 
         public string GetDebugInfo(TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None)

@@ -206,94 +206,6 @@ public class D3DTX_V6 : ID3DTX
     /// </summary>
     public D3DTX_V6() { }
 
-    /// <summary>
-    /// Deserializes a D3DTX Object from a byte array.
-    /// </summary>
-    /// <param name="data"></param>
-    /// <param name="bytePointerPosition"></param>
-    public D3DTX_V6(BinaryReader reader, bool showConsole = false)
-    {
-
-    }
-
-    public void ModifyD3DTX(TexMetadata metadata, ImageSection[] sections)
-    {
-
-    }
-
-    public void UpdateArrayCapacities()
-    {
-        mToonRegions_ArrayCapacity = 8 + (uint)(20 * mToonRegions.Length);
-        mToonRegions_ArrayLength = mToonRegions.Length;
-    }
-
-    public void WriteBinaryData(BinaryWriter writer)
-    {
-
-    }
-
-    public uint GetHeaderByteSize()
-    {
-        uint totalSize = 0;
-
-        totalSize += (uint)Marshal.SizeOf(mVersion); //mVersion [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mSamplerState_BlockSize); //mSamplerState Block Size [4 bytes]
-        totalSize += mSamplerState.GetByteSize(); //mSamplerState mData [4 bytes] 
-        totalSize += (uint)Marshal.SizeOf(mPlatform_BlockSize); //mPlatform Block Size [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mPlatform); //mPlatform [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mName_BlockSize); //mName Block Size [4 bytes] //mName block size (size + string len)
-        totalSize += (uint)Marshal.SizeOf(mName.Length); //mName (strength length prefix) [4 bytes]
-        totalSize += (uint)mName.Length;  //mName [x bytes]
-        totalSize += (uint)Marshal.SizeOf(mImportName_BlockSize); //mImportName Block Size [4 bytes] //mImportName block size (size + string len)
-        totalSize += (uint)Marshal.SizeOf(mImportName.Length); //mImportName (strength length prefix) [4 bytes] (this is always 0)
-        totalSize += (uint)mImportName.Length; //mImportName [x bytes] (this is always 0)
-        totalSize += (uint)Marshal.SizeOf(mImportScale); //mImportScale [4 bytes]
-        totalSize += mToolProps.GetByteSize();
-        totalSize += (uint)Marshal.SizeOf(mNumMipLevels); //mNumMipLevels [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mWidth); //mWidth [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mHeight); //mHeight [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mSurfaceFormat); //mSurfaceFormat [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mTextureLayout); //mTextureLayout [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mSurfaceGamma); //mSurfaceGamma [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mResourceUsage); //mResourceUsage [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mType); //mType [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mSwizzleSize); //mSwizzleSize [4 bytes]
-        totalSize += mSwizzle.GetByteSize();
-        totalSize += (uint)Marshal.SizeOf(mSpecularGlossExponent); //mSpecularGlossExponent [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mHDRLightmapScale); //mHDRLightmapScale [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mToonGradientCutoff); //mToonGradientCutoff [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mAlphaMode); //mAlphaMode [4 bytes]
-        totalSize += (uint)Marshal.SizeOf((int)mColorMode); //mColorMode [4 bytes]
-        totalSize += mUVOffset.GetByteSize(); //[4 bytes]
-        totalSize += mUVScale.GetByteSize(); //[4 bytes]
-
-        totalSize += (uint)Marshal.SizeOf(mToonRegions_ArrayCapacity); //mToonRegions DCArray Capacity [4 bytes]
-        totalSize += (uint)Marshal.SizeOf(mToonRegions_ArrayLength); //mToonRegions DCArray Length [4 bytes]
-        for (int i = 0; i < mToonRegions_ArrayLength; i++)
-        {
-            totalSize += mToonRegions[i].GetByteSize();
-        }
-
-        totalSize += mStreamHeader.GetByteSize();
-
-        for (int i = 0; i < mStreamHeader.mRegionCount; i++)
-        {
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-            totalSize += 4; //[4 bytes]
-        }
-
-        return totalSize;
-    }
-
-    public void PrintConsole()
-    {
-        Console.WriteLine(GetDebugInfo());
-    }
-
     public void WriteToBinary(BinaryWriter writer, TelltaleToolGame game = TelltaleToolGame.DEFAULT, T3PlatformType platform = T3PlatformType.ePlatform_None, bool printDebug = false)
     {
         writer.Write(mVersion); //mVersion [4 bytes]
@@ -465,9 +377,9 @@ public class D3DTX_V6 : ID3DTX
     {
         mWidth = metadata.Width;
         mHeight = metadata.Height;
-        mSurfaceFormat = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format, mSurfaceFormat);
+        mSurfaceFormat = metadata.Format;
         mNumMipLevels = metadata.MipLevels;
-        mSurfaceGamma = DDS_DirectXTexNet.IsSRGB((DXGIFormat)metadata.Format) ? T3SurfaceGamma.eSurfaceGamma_sRGB : T3SurfaceGamma.eSurfaceGamma_Linear;
+        mSurfaceGamma = metadata.SurfaceGamma;
 
         mPixelData.Clear();
         mPixelData = DDS_DirectXTexNet.GetPixelDataListFromSections(imageSections);
@@ -619,5 +531,73 @@ public class D3DTX_V6 : ID3DTX
         d3dtxInfo += "|||||||||||||||||||||||||||||||||||||||";
 
         return d3dtxInfo;
+    }
+
+    public void UpdateArrayCapacities()
+    {
+        mToonRegions_ArrayCapacity = 8 + (uint)(20 * mToonRegions.Length);
+        mToonRegions_ArrayLength = mToonRegions.Length;
+    }
+
+    public uint GetHeaderByteSize()
+    {
+        uint totalSize = 0;
+
+        totalSize += (uint)Marshal.SizeOf(mVersion); //mVersion [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mSamplerState_BlockSize); //mSamplerState Block Size [4 bytes]
+        totalSize += mSamplerState.GetByteSize(); //mSamplerState mData [4 bytes] 
+        totalSize += (uint)Marshal.SizeOf(mPlatform_BlockSize); //mPlatform Block Size [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mPlatform); //mPlatform [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mName_BlockSize); //mName Block Size [4 bytes] //mName block size (size + string len)
+        totalSize += (uint)Marshal.SizeOf(mName.Length); //mName (strength length prefix) [4 bytes]
+        totalSize += (uint)mName.Length;  //mName [x bytes]
+        totalSize += (uint)Marshal.SizeOf(mImportName_BlockSize); //mImportName Block Size [4 bytes] //mImportName block size (size + string len)
+        totalSize += (uint)Marshal.SizeOf(mImportName.Length); //mImportName (strength length prefix) [4 bytes] (this is always 0)
+        totalSize += (uint)mImportName.Length; //mImportName [x bytes] (this is always 0)
+        totalSize += (uint)Marshal.SizeOf(mImportScale); //mImportScale [4 bytes]
+        totalSize += mToolProps.GetByteSize();
+        totalSize += (uint)Marshal.SizeOf(mNumMipLevels); //mNumMipLevels [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mWidth); //mWidth [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mHeight); //mHeight [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mSurfaceFormat); //mSurfaceFormat [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mTextureLayout); //mTextureLayout [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mSurfaceGamma); //mSurfaceGamma [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mResourceUsage); //mResourceUsage [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mType); //mType [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mSwizzleSize); //mSwizzleSize [4 bytes]
+        totalSize += mSwizzle.GetByteSize();
+        totalSize += (uint)Marshal.SizeOf(mSpecularGlossExponent); //mSpecularGlossExponent [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mHDRLightmapScale); //mHDRLightmapScale [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mToonGradientCutoff); //mToonGradientCutoff [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mAlphaMode); //mAlphaMode [4 bytes]
+        totalSize += (uint)Marshal.SizeOf((int)mColorMode); //mColorMode [4 bytes]
+        totalSize += mUVOffset.GetByteSize(); //[4 bytes]
+        totalSize += mUVScale.GetByteSize(); //[4 bytes]
+
+        totalSize += (uint)Marshal.SizeOf(mToonRegions_ArrayCapacity); //mToonRegions DCArray Capacity [4 bytes]
+        totalSize += (uint)Marshal.SizeOf(mToonRegions_ArrayLength); //mToonRegions DCArray Length [4 bytes]
+        for (int i = 0; i < mToonRegions_ArrayLength; i++)
+        {
+            totalSize += mToonRegions[i].GetByteSize();
+        }
+
+        totalSize += mStreamHeader.GetByteSize();
+
+        for (int i = 0; i < mStreamHeader.mRegionCount; i++)
+        {
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+            totalSize += 4; //[4 bytes]
+        }
+
+        return totalSize;
+    }
+
+    public void PrintConsole()
+    {
+        Console.WriteLine(GetDebugInfo());
     }
 }
