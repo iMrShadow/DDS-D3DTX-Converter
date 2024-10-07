@@ -378,12 +378,12 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <!-- Bits Per Pixel -->
-                                        <Label Name="ChannelCountLabel"
-                                               Content="Bits Per Pixel:"
+                                        <Label Name="ColorSpaceCountLabel"
+                                               Content="Color Space"
                                                Width="130"
                                                HorizontalAlignment="Left" />
-                                        <SelectableTextBlock Name="ChannelcountTextblock"
-                                                             Text="{Binding ImageProperties.BitsPerPixel}"
+                                        <SelectableTextBlock Name="ColorSpaceCountTextblock"
+                                                             Text="{Binding ImageProperties.SurfaceGamma}"
                                                              HorizontalAlignment="Left"
                                                              VerticalAlignment="Center" />
                                     </StackPanel>
@@ -490,7 +490,9 @@
                                             Height="3"
                                             CornerRadius="10" />
                                     <CheckBox IsChecked="{Binding ImageAdvancedOptions.EnableAutomaticCompression, Mode=TwoWay}"
-                                              ToolTip.Tip="Enable this option if you want to compress your textures. Works only for DXT/BC compression.">Enable Automatic Compression</CheckBox>
+                                              ToolTip.Tip="Enable this option if you want to compress your textures. Works only for DXT/BC compression.">Auto Compression</CheckBox>
+                                    <CheckBox IsChecked="{Binding ImageAdvancedOptions.EnableTelltaleNormalMap, Mode=TwoWay}"
+                                              ToolTip.Tip="When enabled, the channels are reversed for RGB normal maps and BC5 compression is used on RG normal maps.">Auto Normal Maps</CheckBox>
                                     <Border Background="Gray"
                                             HorizontalAlignment="Stretch"
                                             Height="3"

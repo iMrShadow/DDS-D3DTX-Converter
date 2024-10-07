@@ -12,7 +12,7 @@ public class ImageProperties : ObservableObject
     public string Width { get; set; } = string.Empty;
     public string Height { get; set; } = string.Empty;
     public string SurfaceFormat { get; set; } = string.Empty;
-    public string BitsPerPixel { get; set; } = string.Empty;
+    public string SurfaceGamma { get; set; } = string.Empty;
     public string MipMapCount { get; set; } = string.Empty;
     public string ArraySize { get; set; } = string.Empty;
     public string HasAlpha { get; set; } = string.Empty;
