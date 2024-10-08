@@ -19,7 +19,6 @@ using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using IImage = Avalonia.Media.IImage;
 using TelltaleTextureTool.DirectX;
-using Avalonia.Data;
 using System.ComponentModel;
 using Avalonia.Data.Converters;
 using System.ComponentModel.DataAnnotations;
@@ -98,7 +97,6 @@ public partial class MainViewModel : ViewModelBase
 
     private readonly ObservableCollection<FormatItemViewModel> _otherTypes =
         [
-            new FormatItemViewModel { Name = "DDS", ItemStatus = true },
               new FormatItemViewModel { Name = "D3DTX", ItemStatus = true }
             ];
 
@@ -130,12 +128,6 @@ public partial class MainViewModel : ViewModelBase
         Patterns = ["*.ttarch", "*.ttarch2"]
     };
 
-    [ObservableProperty]
-    private ObservableCollection<DataGridColumn>? _columns = new ObservableCollection<DataGridColumn>()
-    {
-        new DataGridTextColumn(){Header = "1", Binding = new Binding("KrnListValueId"){ Source = _workingDirectoryFiles }},
-    };
-
     private readonly MainManager mainManager = MainManager.GetInstance();
     private readonly Uri _assetsUri = new("avares://TelltaleTextureTool/Assets/");
     private static readonly string ErrorSvgFilename = "error.svg";
@@ -147,17 +139,16 @@ public partial class MainViewModel : ViewModelBase
         ImageEffect.DEFAULT,
         ImageEffect.SWIZZLE_ABGR,
         ImageEffect.RESTORE_Z,
-        ImageEffect.REMOVE_Z];
+        ImageEffect.REMOVE_Z
+        ];
 
     public T3PlatformType[] SwizzlePlatforms { get; } = [
         T3PlatformType.ePlatform_All,
         T3PlatformType.ePlatform_Xbox,
-        T3PlatformType.ePlatform_XBOne,
         T3PlatformType.ePlatform_PS3,
         T3PlatformType.ePlatform_PS4,
         T3PlatformType.ePlatform_NX,
-        T3PlatformType.ePlatform_Wii,
-        T3PlatformType.ePlatform_WiiU,
+        T3PlatformType.ePlatform_Vita
         ];
 
     public TelltaleToolGame[] Games { get; } = [
@@ -170,6 +161,7 @@ public partial class MainViewModel : ViewModelBase
      TelltaleToolGame.BONE_THE_GREAT_COW_RACE, // LV11
      TelltaleToolGame.CSI_HARD_EVIDENCE, // LV10
      TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_OG, // LV9
+     TelltaleToolGame.SAM_AND_MAX_BEYOND_TIME_AND_SPACE_NEW,
      TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_101, // LV8
      TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_102, // LV8
      TelltaleToolGame.STRONG_BADS_COOL_GAME_FOR_ATTRACTIVE_PEOPLE_103, // LV7
@@ -223,9 +215,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _chooseOutputDirectoryCheckboxStatus;
     [ObservableProperty] private bool _isMipSliderVisible;
     [ObservableProperty] private bool _isFaceSliderVisible;
-    [ObservableProperty] private bool _isImageInformationVisible;
-    [ObservableProperty] private bool _isDebugInformationVisible;
-
+    [ObservableProperty] private bool _isImageInformationVisible = true;
+    [ObservableProperty] private bool _isDebugInformationVisible = false;
     [ObservableProperty] private string _debugInfo = string.Empty;
     [ObservableProperty] private uint _mipValue;
     [ObservableProperty] private uint _faceValue;
@@ -233,7 +224,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private uint _maxFaceCount;
     [ObservableProperty] private static ObservableCollection<WorkingDirectoryFile> _workingDirectoryFiles = [];
     [ObservableProperty] private ObservableCollection<WorkingDirectoryFile> _archiveFiles = [];
-    [ObservableProperty] private ImageData _imageData = new ImageData();
+    [ObservableProperty] private ImageData _imageData = new();
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor("ResetPanAndZoomCommand")]
@@ -262,7 +253,7 @@ public partial class MainViewModel : ViewModelBase
         {
             Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
         };
-      ImageAdvancedOptions = new ImageAdvancedOptions(this);
+        ImageAdvancedOptions = new ImageAdvancedOptions(this);
     }
 
     #region MAIN MENU BUTTONS ACTIONS
@@ -649,7 +640,17 @@ public partial class MainViewModel : ViewModelBase
             }
             else if (Directory.Exists(textureFilePath))
             {
-                Converter.ConvertBulk(textureFilePath, outputDirectoryPath, ImageAdvancedOptions, oldTextureType, newTextureType);
+                if (!ChooseOutputDirectoryCheckboxStatus)
+                {
+                    outputDirectoryPath = textureFilePath;
+                }
+
+                if (Converter.ConvertBulk(textureFilePath, outputDirectoryPath, ImageAdvancedOptions, oldTextureType, newTextureType))
+                {
+                    var mainWindow = GetMainWindow();
+                    var messageBox = MessageBoxes.GetSuccessBox("All textures have been converted successfully!");
+                    await MessageBoxManager.GetMessageBoxStandard(messageBox).ShowWindowDialogAsync(mainWindow);
+                }
             }
         }
         catch (Exception ex)
@@ -659,7 +660,7 @@ public partial class MainViewModel : ViewModelBase
             var messageBox =
                 MessageBoxes.GetErrorBox(ex.Message);
             await MessageBoxManager.GetMessageBoxStandard(messageBox).ShowWindowDialogAsync(mainWindow);
-            Logger.Instance().Log(ex);
+            Logger.Log(ex);
         }
         finally
         {
@@ -713,7 +714,7 @@ public partial class MainViewModel : ViewModelBase
             }
             else if (workingDirectoryFile.FileType == ".dds")
             {
-                debugInfo = DDS_DirectXTexNet.GetDDSDebugInfo(textureFilePath);
+                debugInfo = TextureManager.GetDDSDebugInfo(textureFilePath);
             }
             else
             {
@@ -736,7 +737,7 @@ public partial class MainViewModel : ViewModelBase
     ///</summary>
     private async Task UpdateUiAsync()
     {
-        // update our texture directory UI
+        // Update our texture directory UI
         try
         {
             DirectoryPath = mainManager.GetWorkingDirectoryPath();
@@ -777,6 +778,7 @@ public partial class MainViewModel : ViewModelBase
             if (Directory.GetParent(DirectoryPath) == null) return;
             WorkingDirectoryFiles.Clear();
             await mainManager.SetWorkingDirectoryPath(Directory.GetParent(DirectoryPath).ToString());
+            DataGridSelectedItem = null;
         }
         catch (Exception ex)
         {
@@ -799,7 +801,7 @@ public partial class MainViewModel : ViewModelBase
 
     #region HELPERS
 
-    private Window GetMainWindow()
+    private static Window GetMainWindow()
     {
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
             return lifetime.MainWindow;
@@ -848,12 +850,12 @@ public partial class MainViewModel : ViewModelBase
 
             if (itemExtension != string.Empty)
             {
-               SelectedFromFormat = _folderTypes[GetFormatPosition(itemExtension)];
-               IsFromSelectedComboboxEnable = false;
+                SelectedFromFormat = _folderTypes[GetFormatPosition(itemExtension)];
+                IsFromSelectedComboboxEnable = false;
             }
 
             ConvertButtonStatus = true;
-            
+
             // SelectedComboboxIndex = GetFormatPosition(itemExtension);
             // There is an issue in Avalonia relating to dynamic sources and binding indexes.
             // Github issue: https://github.com/AvaloniaUI/Avalonia/issues/13736
@@ -1001,6 +1003,14 @@ public partial class MainViewModel : ViewModelBase
             Source = SvgSource.Load(ErrorSvgFilename, _assetsUri)
         };
         ImageNamePreview = string.Empty;
+
+        ImageData.Reset();
+
+        MaxMipCount = ImageData.MaxMip;
+        MaxFaceCount = ImageData.MaxFace;
+
+        IsFaceSliderVisible = MaxFaceCount != 0;
+        IsMipSliderVisible = MaxMipCount != 0;
     }
 
     [RelayCommand]
@@ -1128,7 +1138,7 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private Task OpenFileExplorer(string path)
+    private static Task OpenFileExplorer(string path)
     {
         MainManager.OpenFileExplorer(path);
         return Task.CompletedTask;
@@ -1144,6 +1154,7 @@ public partial class MainViewModel : ViewModelBase
     {
         await HandleExceptionAsync("Error during previewing image.\nError message: " + ex.Message);
         ImagePreview = new SvgImage { Source = SvgSource.Load(ErrorSvgFilename, _assetsUri) };
+        ImageProperties = new ImageProperties();
     }
 
     private async Task HandleExceptionAsync(string message)

@@ -20,6 +20,34 @@ public static class MessageBoxes
     /// </summary>
     /// <param name="message"></param>
     /// <returns></returns>
+    public static MessageBoxStandardParams GetSuccessBox(string message)
+    {
+        var bitmap = new Bitmap(AssetLoader.Open(new Uri(APP_ICON)));
+
+        return new MessageBoxStandardParams
+        {
+            ButtonDefinitions = ButtonEnum.Ok,
+            ContentTitle = "Success",
+            ContentMessage = message,
+            Icon = Icon.Success,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            WindowIcon = new WindowIcon(bitmap),
+            CanResize = false,
+            MaxWidth = 500,
+            MaxHeight = 800,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            ShowInCenter = true,
+            Topmost = false,
+            EnterDefaultButton = ClickEnum.Ok,
+            EscDefaultButton = ClickEnum.Ok
+        };
+    }
+
+    /// <summary>
+    /// Creates and returns the error dialog.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
     public static MessageBoxStandardParams GetErrorBox(string message)
     {
         var bitmap = new Bitmap(AssetLoader.Open(new Uri(APP_ICON)));
