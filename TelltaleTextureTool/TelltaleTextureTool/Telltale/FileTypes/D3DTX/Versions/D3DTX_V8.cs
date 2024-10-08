@@ -408,7 +408,7 @@ public class D3DTX_V8 : ID3DTX
         mSurfaceGamma = metadata.SurfaceGamma;
 
         mPixelData.Clear();
-        mPixelData = DDS_DirectXTexNet.GetPixelDataListFromSections(imageSections);
+        mPixelData = TextureManager.GetPixelDataListFromSections(imageSections);
 
         mStreamHeader = new()
         {

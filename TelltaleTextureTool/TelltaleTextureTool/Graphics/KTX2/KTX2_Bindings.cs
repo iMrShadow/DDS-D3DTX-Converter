@@ -1,11 +1,7 @@
 using TelltaleTextureTool.DirectX.Enums;
 using Hexa.NET.DirectXTex;
-using Ktx;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Runtime.InteropServices;
-using static Ktx.Ktx2;
 
 namespace TelltaleTextureTool.DirectX;
 

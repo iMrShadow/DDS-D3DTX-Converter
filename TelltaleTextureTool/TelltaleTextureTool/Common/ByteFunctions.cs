@@ -8,7 +8,7 @@ namespace TelltaleTextureTool.Utilities;
 public static class ByteFunctions
 {
     /// <summary>
-    /// 
+    /// Get the number of all items in a list of byte arrays
     /// </summary>
     /// <param name="array"></param>
     /// <returns></returns>
@@ -43,25 +43,6 @@ public static class ByteFunctions
         return value;
     }
 
-    public static string ReadNullTerminatedString(BinaryReader reader)
-    {
-        StringBuilder sb = new();
-
-        // If files names longer than 256 characters exist, then I woudld be impressed.
-        for (int i = 0; i < 256; i++)
-        {
-            char c = reader.ReadChar();
-            if (c != '\0')
-            {
-                break;
-            }
-
-            sb.Append(c);
-        }
-
-        return sb.ToString();
-    }
-
     public static string ReadFixedString(BinaryReader reader, int length)
     {
         string value = "";
@@ -78,15 +59,12 @@ public static class ByteFunctions
     {
         char parsedChar = reader.ReadChar();
 
-        switch (parsedChar)
+        return parsedChar switch
         {
-            case '1':
-                return true;
-            case '0':
-                return false;
-            default:
-                throw new Exception("Invalid Telltale Boolean data.");
-        }
+            '1' => true,
+            '0' => false,
+            _ => throw new Exception("Invalid Telltale Boolean data."),
+        };
     }
 
     /// <summary>
@@ -124,23 +102,6 @@ public static class ByteFunctions
     /// <param name="value"></param>
     public static void WriteBoolean(BinaryWriter writer, bool value) => writer.Write(value ? '1' : '0');
 
-    public static byte[] GetBytes(string stringValue)
-    {
-        //create byte array of the length of the string
-        byte[] stringBytes = new byte[stringValue.Length];
-
-        //for the length of the string, get each byte value
-        for (int i = 0; i < stringBytes.Length; i++)
-        {
-            stringBytes[i] = Convert.ToByte(stringValue[i]);
-        }
-
-        //return it
-        return stringBytes;
-    }
-
-    public static uint ConvertStringToUInt32(string sValue) => BitConverter.ToUInt32(GetBytes(sValue), 0);
-
     /// <summary>
     /// Combines two byte arrays into one.
     /// </summary>
@@ -162,74 +123,7 @@ public static class ByteFunctions
         return bytes;
     }
 
-    /// <summary>
-    /// Checks if the pointer position is at the DCArray capacity, if's not then it moves the pointer past where it should be after reading the DCArray.
-    /// </summary>
-    /// <param name="pointerPositionBeforeCapacity"></param>
-    /// <param name="arrayCapacity"></param>
-    /// <param name="bytePointerPosition"></param>
-    public static void DCArrayCheckAdjustment(uint pointerPositionBeforeCapacity, uint arrayCapacity, ref uint bytePointerPosition)
-    {
-        uint estimatedOffPoint = pointerPositionBeforeCapacity + arrayCapacity;
-        Console.WriteLine("(DCArray Check) Estimated to be at = {0}", estimatedOffPoint);
-
-        if (bytePointerPosition != estimatedOffPoint)
-        {
-            Console.WriteLine("(DCArray Check) Left off at = {0}", bytePointerPosition);
-            Console.WriteLine("(DCArray Check) Skipping by using the estimated position...", bytePointerPosition);
-            bytePointerPosition = estimatedOffPoint;
-        }
-        else
-        {
-            Console.WriteLine("(DCArray Check) Left off at = {0}", bytePointerPosition);
-        }
-
-    }
-
-    /// <summary>
-    /// Checks if we have reached the end of the file.
-    /// </summary>
-    /// <param name="bytePointerPosition"></param>
-    /// <param name="fileSize"></param>
-    public static void ReachedEndOfFile(uint bytePointerPosition, uint fileSize)
-    {
-        if (bytePointerPosition != fileSize)
-        {
-            Console.WriteLine("(End Of File Check) Didn't reach the end of the file!");
-            Console.WriteLine("(End Of File Check) Left off at = {0}", bytePointerPosition);
-            Console.WriteLine("(End Of File Check) File Size = {0}", fileSize);
-        }
-        else
-        {
-            Console.WriteLine("(End Of File Check) Reached end of file!");
-            Console.WriteLine("(End Of File Check) Left off at = {0}", bytePointerPosition);
-            Console.WriteLine("(End Of File Check) File Size = {0}", fileSize);
-        }
-    }
-
     public static byte[] LoadTexture(string path) => File.ReadAllBytes(path);
-
-    /// <summary>
-    /// Checks if we have reached a specific offset in the file.
-    /// </summary>
-    /// <param name="bytePointerPosition"></param>
-    /// <param name="offsetPoint"></param>
-    public static void ReachedOffset(uint bytePointerPosition, uint offsetPoint)
-    {
-        if (bytePointerPosition != offsetPoint)
-        {
-            Console.WriteLine("(Offset Check) Didn't reach the offset!");
-            Console.WriteLine("(Offset Check) Left off at = {0}", bytePointerPosition);
-            Console.WriteLine("(Offset Check) Offset = {0}", offsetPoint);
-        }
-        else
-        {
-            Console.WriteLine("(Offset Check) Reached the offset!");
-            Console.WriteLine("(Offset Check) Left off at = {0}", bytePointerPosition);
-            Console.WriteLine("(Offset Check) Offset = {0}", offsetPoint);
-        }
-
-    }
 
     public static byte[] GetBytesAfterBytePattern(string searchString, byte[] fileBytes)
     {

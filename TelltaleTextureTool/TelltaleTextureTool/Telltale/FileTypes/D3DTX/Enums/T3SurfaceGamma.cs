@@ -5,7 +5,7 @@
 /// </summary>
 public enum T3SurfaceGamma
 {
-    eSurfaceGamma_Unknown = -1,
-    eSurfaceGamma_Linear = 0,
-    eSurfaceGamma_sRGB = 1,
+    Unknown = -1,
+    Linear = 0,
+    sRGB = 1,
 }

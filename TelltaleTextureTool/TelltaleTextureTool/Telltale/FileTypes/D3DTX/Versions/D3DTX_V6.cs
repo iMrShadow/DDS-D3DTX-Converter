@@ -6,7 +6,6 @@ using TelltaleTextureTool.TelltaleTypes;
 using TelltaleTextureTool.Utilities;
 using TelltaleTextureTool.DirectX;
 using System.Runtime.InteropServices;
-using Hexa.NET.DirectXTex;
 using TelltaleTextureTool.DirectX.Enums;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 
@@ -382,7 +381,7 @@ public class D3DTX_V6 : ID3DTX
         mSurfaceGamma = metadata.SurfaceGamma;
 
         mPixelData.Clear();
-        mPixelData = DDS_DirectXTexNet.GetPixelDataListFromSections(imageSections);
+        mPixelData = TextureManager.GetPixelDataListFromSections(imageSections);
 
         mStreamHeader = new()
         {

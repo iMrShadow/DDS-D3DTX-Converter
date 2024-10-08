@@ -346,7 +346,7 @@ public class D3DTX_V4 : ID3DTX
         mNumMipLevels = metadata.MipLevels;
 
         mPixelData.Clear();
-        mPixelData = DDS_DirectXTexNet.GetPixelDataListFromSections(imageSections);
+        mPixelData = TextureManager.GetPixelDataListFromSections(imageSections);
 
         mStreamHeader = new()
         {

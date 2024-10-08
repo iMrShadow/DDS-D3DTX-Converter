@@ -16,7 +16,6 @@
         <!-- <Style Selector="ads:MsBox"> -->
         <!-- <Setter Property="Background" Value="#FFDDDDDD" /> -->
         <!-- </Style> -->
-        <avalonia:HyperLinkStyle />
 		
         <Style Selector="mscontrols|MsBoxStandardView">
             <Setter Property="Background"

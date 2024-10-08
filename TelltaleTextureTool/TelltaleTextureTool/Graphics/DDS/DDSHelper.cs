@@ -2,7 +2,6 @@
 using TelltaleTextureTool.TelltaleEnums;
 using Hexa.NET.DirectXTex;
 using SkiaSharp;
-using static Ktx.Ktx2;
 
 namespace TelltaleTextureTool.DirectX;
 
@@ -18,7 +17,7 @@ namespace TelltaleTextureTool.DirectX;
 /// <summary>
 /// The class is used for decoding and encoding .dds headers. 
 /// </summary>
-public static partial class DDS_HELPER
+public static partial class DDSHelper
 {
     /// <summary>
     /// Get the Telltale surface format from a DXGI format.
@@ -135,13 +134,13 @@ public static partial class DDS_HELPER
     /// <param name="gamma"></param>
     /// <param name="platformType"></param>
     /// <returns>The corresponding DXGI_Format.</returns>
-    public static DXGIFormat GetDXGIFormat(T3SurfaceFormat format, T3SurfaceGamma gamma = T3SurfaceGamma.eSurfaceGamma_Linear, T3PlatformType platformType = T3PlatformType.ePlatform_PC)
+    public static DXGIFormat GetDXGIFormat(T3SurfaceFormat format, T3SurfaceGamma gamma = T3SurfaceGamma.Linear, T3PlatformType platformType = T3PlatformType.ePlatform_PC)
     {
         DXGIFormat dxgiFormat = format switch
         {
             // In order of T3SurfaceFormat enum
             //--------------------ARGB8--------------------
-            T3SurfaceFormat.ARGB8 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.B8G8R8A8_UNORM_SRGB : DXGIFormat.B8G8R8A8_UNORM,
+            T3SurfaceFormat.ARGB8 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.B8G8R8A8_UNORM_SRGB : DXGIFormat.B8G8R8A8_UNORM,
             //--------------------ARGB16--------------------
             T3SurfaceFormat.ARGB16 => DXGIFormat.R16G16B16A16_UNORM,
             //--------------------RGB565--------------------
@@ -161,7 +160,7 @@ public static partial class DDS_HELPER
             //--------------------RG8--------------------
             T3SurfaceFormat.RG8 => DXGIFormat.R8G8_UNORM,
             //--------------------RGBA8--------------------
-            T3SurfaceFormat.RGBA8 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.RGBA8 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //--------------------R32--------------------
             T3SurfaceFormat.R32 => DXGIFormat.R32_FLOAT,
             //--------------------RG32--------------------
@@ -219,11 +218,11 @@ public static partial class DDS_HELPER
             //--------------------Depth24F_Stencil8--------------------
             T3SurfaceFormat.Depth24F_Stencil8 => DXGIFormat.D24_UNORM_S8_UINT,
             //--------------------DXT1 / BC1--------------------
-            T3SurfaceFormat.BC1 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+            T3SurfaceFormat.BC1 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
             //--------------------DXT2 and DXT3 / BC2--------------------
-            T3SurfaceFormat.BC2 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC2_UNORM_SRGB : DXGIFormat.BC2_UNORM,
+            T3SurfaceFormat.BC2 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC2_UNORM_SRGB : DXGIFormat.BC2_UNORM,
             //--------------------DXT4 and DXT5 / BC3--------------------
-            T3SurfaceFormat.BC3 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
+            T3SurfaceFormat.BC3 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
             //--------------------ATI1 / BC4--------------------
             T3SurfaceFormat.BC4 => DXGIFormat.BC4_UNORM,
             //--------------------ATI2 / BC5--------------------
@@ -231,21 +230,21 @@ public static partial class DDS_HELPER
             //--------------------BC6H--------------------
             T3SurfaceFormat.BC6 => DXGIFormat.BC6H_UF16,
             //--------------------BC7--------------------
-            T3SurfaceFormat.BC7 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC7_UNORM_SRGB : DXGIFormat.BC7_UNORM,
+            T3SurfaceFormat.BC7 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC7_UNORM_SRGB : DXGIFormat.BC7_UNORM,
             //--------------------ATC--------------------
-            T3SurfaceFormat.ATC_RGB => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.ATC_RGB => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //--------------------ATCA--------------------
-            T3SurfaceFormat.ATC_RGB1A => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.ATC_RGB1A => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //--------------------ATCI--------------------
-            T3SurfaceFormat.ATC_RGBA => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.ATC_RGBA => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC2--------------------
-            T3SurfaceFormat.PVRTC2 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.PVRTC2 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC2a--------------------
-            T3SurfaceFormat.PVRTC2a => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.PVRTC2a => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC4--------------------
-            T3SurfaceFormat.PVRTC4 => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.PVRTC4 => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------PVRTC4a--------------------
-            T3SurfaceFormat.PVRTC4a => gamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
+            T3SurfaceFormat.PVRTC4a => gamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM,
             //-------------------CTX1--------------------
             T3SurfaceFormat.CTX1 => DXGIFormat.BC1_UNORM,
             //--------------------UNKNOWN--------------------
@@ -275,23 +274,23 @@ public static partial class DDS_HELPER
 
     public static DXGIFormat GetEquivalentDXGIFormat(T3SurfaceFormat format, T3SurfaceGamma surfaceGamma) => format switch
     {
-        T3SurfaceFormat.ATC_RGB => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.ATC_RGBA => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
-        T3SurfaceFormat.ATC_RGB1A => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
-        T3SurfaceFormat.ETC1_RGB => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.ETC2_RGB => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.ETC2_RGBA => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
-        T3SurfaceFormat.ETC2_RGB1A => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.ETC2_R => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.ETC2_RG => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
-        T3SurfaceFormat.ATSC_RGBA_4x4 => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
-        T3SurfaceFormat.PVRTC2 => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.PVRTC2a => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.PVRTC4 => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
-        T3SurfaceFormat.PVRTC4a => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.ATC_RGB => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.ATC_RGBA => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
+        T3SurfaceFormat.ATC_RGB1A => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
+        T3SurfaceFormat.ETC1_RGB => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.ETC2_RGB => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.ETC2_RGBA => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
+        T3SurfaceFormat.ETC2_RGB1A => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.ETC2_R => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.ETC2_RG => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
+        T3SurfaceFormat.ATSC_RGBA_4x4 => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC3_UNORM_SRGB : DXGIFormat.BC3_UNORM,
+        T3SurfaceFormat.PVRTC2 => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.PVRTC2a => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.PVRTC4 => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
+        T3SurfaceFormat.PVRTC4a => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.BC1_UNORM_SRGB : DXGIFormat.BC1_UNORM,
         T3SurfaceFormat.CTX1 => DXGIFormat.BC4_UNORM,
 
-        _ => surfaceGamma == T3SurfaceGamma.eSurfaceGamma_sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM
+        _ => surfaceGamma == T3SurfaceGamma.sRGB ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM
     };
 
     /// <summary>

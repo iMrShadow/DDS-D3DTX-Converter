@@ -74,7 +74,7 @@ namespace TelltaleTextureTool.Main
                 ArraySize = d3dtxMetadata.IsCubemap() ? d3dtxMetadata.ArraySize * 6 : d3dtxMetadata.ArraySize,
                 Depth = d3dtxMetadata.Depth,
                 MipLevels = d3dtxMetadata.MipLevels,
-                Format = d3dtx.IsLegacyD3DTX() ? (int)DDS_HELPER.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (int)DDS_HELPER.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
+                Format = d3dtx.IsLegacyD3DTX() ? (int)DDSHelper.GetDXGIFormat(d3dtxMetadata.D3DFormat) : (int)DDSHelper.GetDXGIFormat(surfaceFormat, surfaceGamma, platformType),
                 Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
             };
 
@@ -86,7 +86,7 @@ namespace TelltaleTextureTool.Main
             image.Initialize(ref metadata, CPFlags.None);
 
             //DDSFlags flags = D3DTX_Master.IsFormatIncompatibleWithDDS(surfaceFormat) ? DDSFlags.ForceDx9Legacy : DDSFlags.ForceDx9Legacy;
-            header = DDS_DirectXTexNet.GetDDSHeaderBytes(image);
+            header = TextureManager.GetDDSHeaderBytes(image);
 
             Console.WriteLine("Header length: " + header.Length);
 
@@ -107,27 +107,27 @@ namespace TelltaleTextureTool.Main
                 ArraySize = d3dtxMetadata.ArraySize,
                 Depth = d3dtxMetadata.Depth,
                 MipLevels = d3dtxMetadata.MipLevels,
-                Format = (int)DDS_HELPER.GetEquivalentDXGIFormat(surfaceFormat, surfaceGamma),
+                Format = (int)DDSHelper.GetEquivalentDXGIFormat(surfaceFormat, surfaceGamma),
                 Dimension = d3dtxMetadata.IsVolumemap() ? TexDimension.Texture3D : TexDimension.Texture2D,
             };
 
             image.Initialize(ref metadata, CPFlags.None);
 
-            header = DDS_DirectXTexNet.GetDDSHeaderBytes(image, DDSFlags.ForceDx9Legacy);
+            header = TextureManager.GetDDSHeaderBytes(image, DDSFlags.ForceDx9Legacy);
 
             Console.WriteLine("Header length: " + header.Length);
 
             if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGB)
             {
-                DDS_DirectXTexNet.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', ' ');
+                TextureManager.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', ' ');
             }
             else if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGBA)
             {
-                DDS_DirectXTexNet.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', 'A');
+                TextureManager.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', 'A');
             }
             else if (d3dtx.d3dtxMetadata.Format == T3SurfaceFormat.ATC_RGB1A)
             {
-                DDS_DirectXTexNet.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', 'I');
+                TextureManager.SetDDSHeaderFourCC(ref header, 'A', 'T', 'C', 'I');
             }
 
             image.Release();

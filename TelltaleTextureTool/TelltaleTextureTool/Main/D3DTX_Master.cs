@@ -36,9 +36,8 @@ namespace TelltaleTextureTool.Main
 
         public struct D3DTX_JSON
         {
-            public TelltaleToolGame GameID;
+            public string GameID;
             public T3PlatformType PlatformType;
-
             public int ConversionType;
         }
 
@@ -242,8 +241,8 @@ namespace TelltaleTextureTool.Main
         {
             using BinaryWriter writer = new(File.Create(destinationPath));
 
-            metaHeaderObject.WriteToBinary(writer);
-            d3dtxObject.WriteToBinary(writer);
+            metaHeaderObject.WriteToBinary(writer,Game, Platform, true);
+            d3dtxObject.WriteToBinary(writer, Game, Platform, true);
         }
 
         public string GetD3DTXDebugInfo()
@@ -284,7 +283,7 @@ namespace TelltaleTextureTool.Main
             int metaObjectIndex = 1;
             int d3dtxObjectIndex = 2;
 
-            Game = firstObject.ToObject<D3DTX_JSON>().GameID;
+            Game = TelltaleToolGameExtensions.GetTelltaleToolGameFromString(firstObject.ToObject<D3DTX_JSON>().GameID);
 
             // I am creating the metaObject again instead of using the firstObject variable and i am aware of the performance hit.
             JObject? metaObject = jarray[metaObjectIndex] as JObject;
@@ -297,6 +296,11 @@ namespace TelltaleTextureTool.Main
             CreateD3DTX(Game, jsond3dtxObject);
 
             d3dtxMetadata = d3dtxObject.GetD3DTXMetadata();
+
+            Console.WriteLine("METADATA JSON");
+            Console.WriteLine(d3dtxMetadata.MipLevels);
+            Console.WriteLine(d3dtxMetadata.RegionHeaders.Length);
+            Console.WriteLine(d3dtxMetadata.Format);
         }
 
         public void ConvertJSONObjectToD3dtx(JObject jObject)
@@ -360,7 +364,7 @@ namespace TelltaleTextureTool.Main
             {
                 "6VSM" or "MSV6" => MetaVersion.MSV6,
                 "5VSM" or "4VSM" or "MSV5" or "MSV4" => MetaVersion.MSV5,
-                "ERTM" or "MTRE"=> MetaVersion.MTRE,
+                "ERTM" or "MTRE" => MetaVersion.MTRE,
                 "NIBM" or "MBIN" => MetaVersion.MBIN,
                 _ => throw new Exception("This meta version is not supported!"),
             };
@@ -384,7 +388,7 @@ namespace TelltaleTextureTool.Main
 
             D3DTX_JSON conversionTypeObject = new()
             {
-                GameID = Game,
+                GameID = TelltaleToolGameExtensions.GetGameName(Game),
                 PlatformType = Platform
             };
 
@@ -405,7 +409,7 @@ namespace TelltaleTextureTool.Main
                 //sections = sections.Skip(1).ToArray();
                 //}
 
-                d3dtxObject.ModifyD3DTX(metadata, sections.ToArray()); //ISSUE HERE WITH DXT5 AND MIP MAPS WITH UPSCALED TEXTURES
+                d3dtxObject.ModifyD3DTX(metadata, sections.ToArray());
             }
             else
             {
@@ -414,7 +418,7 @@ namespace TelltaleTextureTool.Main
                 IEnumerable<ImageSection> newSections = sections;
                 newSections = sections.OrderBy(section => section.Pixels.Length);
 
-                d3dtxObject.ModifyD3DTX(metadata, newSections.ToArray()); //ISSUE HERE WITH DXT5 AND MIP MAPS WITH UPSCALED TEXTURES
+                d3dtxObject.ModifyD3DTX(metadata, newSections.ToArray());
                 metaHeaderObject.SetMetaSectionChunkSizes(d3dtxObject.GetHeaderByteSize(), 0, ByteFunctions.GetByteArrayListElementsCount(d3dtxObject.GetPixelData()));
             }
         }
@@ -441,7 +445,7 @@ namespace TelltaleTextureTool.Main
         /// </summary>
         /// <param name="sourceFile"></param>
         /// <returns></returns>
-        public int ReadD3DTXFileD3DTXVersionOnly(string sourceFile)
+        public static int ReadD3DTXFileD3DTXVersionOnly(string sourceFile)
         {
             string metaFourCC = ReadD3DTXFileMetaVersionOnly(sourceFile);
 
@@ -604,9 +608,9 @@ namespace TelltaleTextureTool.Main
             return newPixelData.SelectMany(b => b).ToArray();
         }
 
-        public byte[] DecodePixelDataByPlatform(byte[] pixelData, T3SurfaceFormat surfaceFormat, int width, int height, T3PlatformType platformType)
+        public static byte[] DecodePixelDataByPlatform(byte[] pixelData, T3SurfaceFormat surfaceFormat, int width, int height, T3PlatformType platformType)
         {
-            DrSwizzler.DDS.DXEnums.DXGIFormat format = (DrSwizzler.DDS.DXEnums.DXGIFormat)DDS_HELPER.GetDXGIFormat(surfaceFormat);
+            DrSwizzler.DDS.DXEnums.DXGIFormat format = (DrSwizzler.DDS.DXEnums.DXGIFormat)DDSHelper.GetDXGIFormat(surfaceFormat);
 
             return platformType switch
             {
@@ -704,21 +708,8 @@ namespace TelltaleTextureTool.Main
             };
         }
 
-        public string GetDDSHeaderInfo()
+        public bool IsLegacyConsole()
         {
-            string info = "";
-            foreach (var region in GetPixelData())
-            {
-                // if (ByteFunctions.Ge)
-                // {
-                //     info += DDS_DirectXTexNet.GetDDSDebugInfo(DirectXTex.GetMetadata(region));
-                // }
-            }
-
-            return info;
-        }
-
-        public bool IsLegacyConsole(){
             return Platform != T3PlatformType.ePlatform_None;
         }
     }

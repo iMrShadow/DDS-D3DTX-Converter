@@ -14,11 +14,6 @@ public struct T3SamplerStateBlock
     mData = reader.ReadUInt32(); //mSamplerState [4 bytes]
   }
 
-  public readonly void WriteBinaryData(BinaryWriter writer)
-  {
-    writer.Write(mData); //mData [4 bytes] 
-  }
-
   public readonly uint GetByteSize()
   {
     uint totalByteSize = 0;

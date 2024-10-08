@@ -7,9 +7,7 @@ using TelltaleTextureTool.Utilities;
 using System.Threading;
 using System.Linq;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using Hexa.NET.DirectXTex;
-using TelltaleTextureTool.DirectX.Enums;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 using TelltaleTextureTool.TelltaleEnums;
 
@@ -134,14 +132,6 @@ public static class Converter
                 case TextureType.D3DTX:
                     ConvertTextureFromOthersToD3Dtx(sourcePath, resultPath, oldTextureType, options);
                     break;
-                case TextureType.PNG:
-                case TextureType.JPEG:
-                case TextureType.BMP:
-                case TextureType.TIFF:
-                case TextureType.TGA:
-                case TextureType.HDR:
-                    ConvertTextureFromDdsToOthers(sourcePath, resultPath, newTextureType);
-                    break;
                 default:
                     throw new Exception("Invalid file type.");
             }
@@ -153,8 +143,6 @@ public static class Converter
         {
             switch (newTextureType)
             {
-                case TextureType.DDS:
-                    ConvertTextureFileFromOthersToDds(sourcePath, resultPath); break;
                 case TextureType.D3DTX:
                     ConvertTextureFromOthersToD3Dtx(sourcePath, resultPath, oldTextureType, options); break;
                 default:
@@ -233,20 +221,47 @@ public static class Converter
             D3DTX_Master d3dtxMaster = new();
 
             // Parse the .json file as a d3dtx
-            d3dtxMaster.ReadD3DTXJSON(textureFilePathJson);
+            try
+            {
+                d3dtxMaster.ReadD3DTXJSON(textureFilePathJson);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Conversion failed.\nFailed to read the .d3dtx file.");
+            }
 
             // If the d3dtx is a legacy D3DTX, force the use of the DX9 legacy flag
             DDSFlags flags = d3dtxMaster.IsLegacyD3DTX() ? DDSFlags.ForceDx9Legacy : DDSFlags.None;
 
             Texture texture = new(sourceFilePath, oldTextureType, flags);
 
+            if (d3dtxMaster.d3dtxMetadata.TextureType == T3TextureType.eTxBumpmap ||
+                            d3dtxMaster.d3dtxMetadata.TextureType == T3TextureType.eTxNormalMap)
+            {
+                options.IsTelltaleNormalMap = true;
+            }
+            else if (d3dtxMaster.d3dtxMetadata.TextureType == T3TextureType.eTxNormalXYMap)
+            {
+                options.IsTelltaleNormalMap = true;
+            }
+
+            if (d3dtxMaster.d3dtxMetadata.SurfaceGamma == T3SurfaceGamma.sRGB)
+            {
+                options.IsSRGB = true;
+            }
+
             texture.ChangePreviewImage(options, true);
 
             // Get the image
             texture.GetDDSInformation(out D3DTXMetadata metadata, out ImageSection[] sections, flags);
 
-            metadata.Platform = options.PlatformType;
+            if (options.EnableSwizzle)
+            {
+                metadata.Platform = options.PlatformType;
+            }
 
+            Console.WriteLine("DXGI: " + texture.Metadata.Format);
+            Console.WriteLine(metadata.Format);
             // Modify the d3dtx file using our dds data
             d3dtxMaster.ModifyD3DTX(metadata, sections);
 
@@ -259,174 +274,6 @@ public static class Converter
         else
         {
             throw new FileNotFoundException("Conversion failed.\nNo .json file was found for the file.");
-        }
-    }
-
-    /// <summary>
-    /// The main function for reading and converting said .bmp into a .dds file
-    /// </summary>
-    /// <param name="sourceFilePath"></param>
-    /// <param name="destinationDirectory"></param>
-    public static void ConvertTextureFileFromOthersToDds(string sourceFilePath, string destinationDirectory)
-    {
-        if (string.IsNullOrEmpty(sourceFilePath) || string.IsNullOrEmpty(destinationDirectory))
-        {
-            throw new ArgumentException("Arguments cannot be null in OthersToDds function.");
-        }
-
-        // Deconstruct the source file path
-        string textureFileDirectory = Path.GetDirectoryName(sourceFilePath);
-        string textureFileNameOnly = Path.GetFileNameWithoutExtension(sourceFilePath);
-
-        // Create the names of the following files
-        string textureFileNameWithJSON = textureFileNameOnly + Main_Shared.jsonExtension;
-
-        // Create the path of these files. If things go well, these files (depending on the version) should exist in the same directory at the original .dds file.
-        string textureFilePath_JSON = Path.Combine(textureFileDirectory, textureFileNameWithJSON);
-
-        //TODO Update to DirectXTexNet
-
-        // If a json file exists (for newer 5VSM and 6VSM)
-        if (File.Exists(textureFilePath_JSON))
-        {
-            // Create a new d3dtx object
-            D3DTX_Master d3dtxFile = new();
-
-            // Parse the .json file as a d3dtx
-            d3dtxFile.ReadD3DTXJSON(textureFilePath_JSON);
-
-            // MasterOptions options = new()
-            // {
-            //     outputDirectory = new() { directory = destinationDirectory },
-            //     outputOverwrite = new(),
-            //     outputFileType = new() { fileType = TelltaleTextureTool.TexconvEnums.TexconvEnumFileTypes.dds }
-            // };
-
-            // if (d3dtxFile.HasMipMaps() == false)
-            //     options.outputMipMaps = new() { remove = true };
-
-            // switch (d3dtxFile.d3dtxMetadata.TextureType)
-            // {
-            //     case T3TextureType.eTxSingleChannelSDFDetailMap:
-            //         options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
-
-            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-
-            //         //   DirectXTex.LoadFromWICFile(sourceFilePath).SaveToDDSFile(Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(sourceFilePath) + Main_Shared.ddsExtension), DirectXTex.DDSFlags.ForceDX10Ext);
-            //         //   DirectXTex.SaveToWICFile(DirectXTex.LoadFromDDSFile(sourceFilePath), WICCodecs.WIC_CODEC_PNG, Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(sourceFilePath) + Main_Shared.pngExtension));
-            //         break;
-            //     case T3TextureType.eTxBumpmap:
-            //     case T3TextureType.eTxNormalMap:
-
-            //         options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
-            //         options.outputTreatTypelessAsUNORM = new();
-
-            //         if (fixes_generic_to_dds)
-            //             options.outputSwizzle = new() { mask = "abgr" };
-
-            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-            //         break;
-            //     case T3TextureType.eTxNormalXYMap:
-
-            //         options.outputFormat = new() { format = DXGIFormat.BC5_UNORM };
-            //         //options.outputSRGB = new() { srgbMode = TexconvEnums.TexconvEnumSrgb.srgbo };
-            //         options.outputTreatTypelessAsUNORM = new();
-
-            //         if (fixes_generic_to_dds)
-            //             options.outputSwizzle = new() { mask = "rg00" };
-
-            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-            //         break;
-            //     default:
-            //         if (ImageUtilities.IsImageOpaque(sourceFilePath))
-            //             options.outputFormat = new() { format = DXGIFormat.BC1_UNORM };
-            //         else
-            //             options.outputFormat = new() { format = DXGIFormat.BC3_UNORM };
-
-            //         await TexconvApp.RunTexconvAsync(sourceFilePath, options);
-            //         break;
-            // }
-        }
-        // If we didn't find a json file, we're screwed!
-        else
-        {
-            throw new FileNotFoundException("Conversion failed.\nNo .json file was found for the file.");
-        }
-
-        string outputTextureFilePath = Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(sourceFilePath) + Main_Shared.ddsExtension);
-
-        // Check if the output file exists, if it doesn't then the conversion failed so notify the user
-        if (File.Exists(outputTextureFilePath) == false)
-        {
-            throw new FileNotFoundException("Conversion failed. Output file was not created.");
-        }
-    }
-
-    /// <summary>
-    /// The main function for reading and converting said .dds into the  more accessible supported file formats.
-    /// </summary>
-    /// <param name="sourceFilePath"></param>
-    /// <param name="destinationDirectory"></param>
-    /// <param name="newFileType"></param>
-    public static void ConvertTextureFromDdsToOthers(string sourceFilePath, string destinationDirectory,
-        TextureType newTextureType)
-    {
-        // Null safety validation of inputs.
-        if (string.IsNullOrEmpty(sourceFilePath) || string.IsNullOrEmpty(destinationDirectory))
-        {
-            throw new ArgumentException("Arguments cannot be null in DdsToOthers function.");
-        }
-
-        // Deconstruct the source file path
-        string? textureFileDirectory = Path.GetDirectoryName(sourceFilePath);
-        string textureFileNameOnly = Path.GetFileNameWithoutExtension(sourceFilePath);
-
-        // Create the names of the following files
-        string textureFileNameWithJson = textureFileNameOnly + Main_Shared.jsonExtension;
-
-        // Create the path of these files. If things go well, these files (depending on the version) should exist in the same directory at the original .dds file.
-        string textureFilePathJson = textureFileDirectory + Path.DirectorySeparatorChar + textureFileNameWithJson;
-        string outputTextureFilePath =
-            destinationDirectory + Path.DirectorySeparatorChar + textureFileNameOnly + GetExtension(newTextureType)[0];
-
-        // If a json file exists (for newer 5VSM and 6VSM)
-        if (File.Exists(textureFilePathJson))
-        {
-            // Create a new d3dtx object
-            D3DTX_Master d3dtxFile = new();
-
-            // Parse the .json file as a d3dtx
-            d3dtxFile.ReadD3DTXJSON(textureFilePathJson);
-
-            // Get the d3dtx texture type
-            T3TextureType d3dtxTextureType = d3dtxFile.d3dtxMetadata.TextureType;
-
-            //ConvertOptions
-            if (d3dtxTextureType == T3TextureType.eTxBumpmap || d3dtxTextureType == T3TextureType.eTxNormalMap)
-            {
-                //  DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.SWIZZLE_ABGR);
-            }
-            else if (d3dtxTextureType == T3TextureType.eTxNormalXYMap)
-            {
-                //   DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.RESTORE_Z);
-            }
-            else
-            {
-                //     DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.DEFAULT);
-            }
-        }
-        // If we didn't find a JSON file, use default conversion.
-        else
-        {
-            // DDS_DirectXTexNet.SaveDDSToWIC(sourceFilePath, destinationDirectory, newTextureType, ImageEffect.DEFAULT);
-            throw new FileNotFoundException(
-                "No .json file was found for the file.\nDefaulting to classic conversion.");
-        }
-
-        // Check if the output file exists, if it doesn't then the conversion failed so notify the user
-        if (!File.Exists(outputTextureFilePath))
-        {
-            throw new FileNotFoundException("Conversion failed. Output file was not created.");
         }
     }
 }

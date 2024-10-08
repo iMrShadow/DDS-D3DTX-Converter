@@ -32,7 +32,7 @@ internal class PVR_Main
             {
                 using PVRTexture texture = new PVRTexture(textureHeader, ptr);
 
-                var colorSpace = d3dtxMetadata.SurfaceGamma == TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_sRGB ? PVRTexLibColourSpace.sRGB : PVRTexLibColourSpace.Linear;
+                var colorSpace = d3dtxMetadata.SurfaceGamma == TelltaleEnums.T3SurfaceGamma.sRGB ? PVRTexLibColourSpace.sRGB : PVRTexLibColourSpace.Linear;
                 texture.Transcode(RGBA8888, PVRTexLibVariableType.UnsignedByteNorm, colorSpace);
 
                 void* ddsPtr = null;

@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,7 +27,7 @@ public class WorkingDirectory
     public List<WorkingDirectoryFile> WorkingDirectoryFiles = [];
 
     //hardcoded filters
-    public List<string> filterFileExtensions = [".d3dtx", ".dds", ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".json", ".tga", ".hdr"];
+    public List<string> filterFileExtensions = [".d3dtx", ".dds", ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".json", ".tga", ".hdr", ""];
 
     /// <summary>
     /// Gets the files from the provided directory path.

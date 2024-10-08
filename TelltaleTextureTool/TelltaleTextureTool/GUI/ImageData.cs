@@ -46,6 +46,21 @@ public class ImageData
         ImageProperties = imageProperties;
     }
 
+    public void Reset()
+    {
+        if (HasPixelData)
+        {
+            HasPixelData = false;
+            DDSImage.Release();
+        }
+
+        ImageProperties = new ImageProperties();
+        MaxMip = 0;
+        MaxFace = 0;
+        CurrentFilePath = string.Empty;
+        CurrentTextureType = TextureType.Unknown;
+    }
+
     /// <summary>
     /// Applies the effects to the image.
     /// </summary>
@@ -103,11 +118,11 @@ public class ImageData
         imageProperties = new ImageProperties()
         {
             Name = metadata.TextureName,
-            SurfaceFormat = d3dtx.GetSurfaceFormat(),
             Width = metadata.Width.ToString(),
             Height = metadata.Height.ToString(),
             HasAlpha = d3dtx.GetHasAlpha(),
-            // ChannelCount = d3dtx.GetChannelCount(),
+            SurfaceFormat = d3dtx.GetSurfaceFormat(),
+            SurfaceGamma = metadata.SurfaceGamma.ToString(),
             MipMapCount = metadata.MipLevels.ToString(),
             TextureLayout = metadata.Dimension.ToString(),
             AlphaMode = metadata.AlphaMode.ToString(),
@@ -120,7 +135,7 @@ public class ImageData
             DDS_Master ddsFile = new(d3dtx);
             var array = ddsFile.GetData(d3dtx);
 
-            DDSImage = new DirectX.Texture(array, TextureType.D3DTX);
+            DDSImage = new Texture(array, TextureType.D3DTX);
         }
     }
 
@@ -138,19 +153,14 @@ public class ImageData
 
         var d3dtx = new D3DTX_Master();
         d3dtx.ReadD3DTXFile(CurrentFilePath, Game, options.IsLegacyConsole);
-        d3dtx.ReadD3DTXJSON(Path.Combine(Path.GetDirectoryName(CurrentFilePath), Path.GetFileNameWithoutExtension(CurrentFilePath) + ".json"));
 
-        // Initialize image properties
-        D3DTXMetadata metadata = d3dtx.GetMetadata();
-
-        if (metadata.TextureType == T3TextureType.eTxNormalMap || metadata.TextureType == T3TextureType.eTxBumpmap)
+        try
         {
-            options.EnableEditing = true;
-            options.ImageEffect = ImageEffect.SWIZZLE_ABGR;
-        } else if (metadata.TextureType == T3TextureType.eTxNormalXYMap)
+            d3dtx.ReadD3DTXJSON(Path.Combine(Path.GetDirectoryName(CurrentFilePath), Path.GetFileNameWithoutExtension(CurrentFilePath) + ".json"));
+        }
+        catch (Exception)
         {
-            options.EnableEditing = true;
-            options.ImageEffect = CurrentTextureType == TextureType.D3DTX ? ImageEffect.RESTORE_Z : ImageEffect.REMOVE_Z;
+            // Silent Error if the JSON file is not found or it's invalid.
         }
 
         if (d3dtx.IsLegacyConsole())
@@ -168,7 +178,7 @@ public class ImageData
             DDSImage = new Texture(CurrentFilePath, CurrentTextureType);
         }
 
-        imageProperties = DDS_DirectXTexNet.GetDDSProperties(CurrentFilePath, DDSImage.Metadata);
+        imageProperties = TextureManager.GetDDSProperties(CurrentFilePath, DDSImage.Metadata);
     }
 
     /// <summary>

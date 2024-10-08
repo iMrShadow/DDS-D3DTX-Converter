@@ -8,7 +8,6 @@ namespace TelltaleTextureTool;
 
 public partial class ImageAdvancedOptions : ObservableObject
 {
-
     // Private telltale games
     [ObservableProperty]
     private TelltaleToolGame _gameID = TelltaleToolGame.DEFAULT;
@@ -35,13 +34,20 @@ public partial class ImageAdvancedOptions : ObservableObject
     private bool _isLegacyConsole;
 
     [ObservableProperty]
-    private bool _enableAutomaticCompression;
+    private bool _enableAutomaticCompression = true;
 
     [ObservableProperty]
     private bool _isAutomaticCompression;
+    [ObservableProperty]
+    private bool _enableTelltaleNormalMap = true;
 
     [ObservableProperty]
-    private bool _isManualCompression;
+    private bool _isTelltaleNormalMap = false;
+
+    [ObservableProperty]
+    private bool _isTelltaleXYNormalMap = false;
+    [ObservableProperty]
+    private bool _isSRGB = false;
 
     [ObservableProperty]
     private T3SurfaceFormat _format;
@@ -104,9 +110,10 @@ public partial class ImageAdvancedOptions : ObservableObject
         _compression = imageAdvancedOptions._compression;
         _enableAutomaticCompression = imageAdvancedOptions._enableAutomaticCompression;
         _isAutomaticCompression = imageAdvancedOptions._isAutomaticCompression;
-        _isManualCompression = imageAdvancedOptions._isManualCompression;
         _format = imageAdvancedOptions._format;
+        _isTelltaleNormalMap = imageAdvancedOptions._isTelltaleNormalMap;
         _enableNormalMap = imageAdvancedOptions._enableNormalMap;
+        _enableTelltaleNormalMap = imageAdvancedOptions._enableTelltaleNormalMap;
         _isLegacyConsole = imageAdvancedOptions._isLegacyConsole;
         _encodeDDSHeader = imageAdvancedOptions._encodeDDSHeader;
         _filterValues = imageAdvancedOptions._filterValues;

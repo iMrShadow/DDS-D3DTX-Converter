@@ -19,13 +19,13 @@ public class Logger
         Directory.CreateDirectory(CrashesDirectory);
     }
 
-    public void Log(Exception e)
+    public static void Log(Exception e)
     {
         // Create a new text file with the current date as the file name
         string logFileName = DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".txt";
         string logFilePath = Path.Combine(CrashesDirectory, logFileName);
 
-        using (StreamWriter writer = new StreamWriter(logFilePath))
+        using (StreamWriter writer = new(logFilePath))
         {
             writer.WriteLine("Timestamp: " + DateTime.Now);
             writer.WriteLine("Error Details: " + e.Message);

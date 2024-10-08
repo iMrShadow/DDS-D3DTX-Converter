@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using TelltaleTextureTool.Telltale.FileTypes.D3DTX;
 using System.Numerics;
 using System.Text;
-using static TelltaleTextureTool.DirectX.DDS_DirectXTexNet;
+using static TelltaleTextureTool.DirectX.TextureManager;
 using TelltaleTextureTool.TelltaleEnums;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -48,7 +48,7 @@ public enum ImageEffect
 /// <summary>
 /// A class that provides methods to interact with DirectXTexNet. Mainly used for loading and saving DDS files.
 /// </summary>
-public unsafe static partial class DDS_DirectXTexNet
+public unsafe static partial class TextureManager
 {
 
     /// <summary>
@@ -74,13 +74,9 @@ public unsafe static partial class DDS_DirectXTexNet
         return debugInfo;
     }
 
-    public static ImageProperties GetDDSProperties(string ddsFilePath, TexMetadata ddsMetadata, DDSFlags flags = DDSFlags.None)
+    public static ImageProperties GetDDSProperties(string ddsFilePath, TexMetadata ddsMetadata)
     {
         DXGIFormat dxgiFormat = (DXGIFormat)ddsMetadata.Format;
-
-        var bpp = DirectXTex.BitsPerPixel((int)dxgiFormat);
-
-        string hasAlpha = DirectXTex.HasAlpha((int)dxgiFormat) ? "True" : "False";
 
         ImageProperties properties = new()
         {
@@ -89,8 +85,8 @@ public unsafe static partial class DDS_DirectXTexNet
             Height = ddsMetadata.Height.ToString(),
             Width = ddsMetadata.Width.ToString(),
             SurfaceFormat = dxgiFormat.ToString(),
-            HasAlpha = hasAlpha,
-            BitsPerPixel = bpp.ToString(),
+            HasAlpha = DirectXTex.HasAlpha((int)dxgiFormat) ? "True" : "False",
+            SurfaceGamma = DirectXTex.IsSRGB((int)dxgiFormat) ? "sRGB" : "Linear",
             MipMapCount = ddsMetadata.MipLevels.ToString(),
             ArraySize = ddsMetadata.ArraySize.ToString(),
             TextureLayout = ddsMetadata.Dimension.ToString(),
@@ -185,7 +181,6 @@ public unsafe static partial class DDS_DirectXTexNet
         image.Release();
     }
 
-
     public static D3DTXMetadata GetDDSInformation(TexMetadata metadata)
     {
         return new D3DTXMetadata
@@ -195,10 +190,10 @@ public unsafe static partial class DDS_DirectXTexNet
             Depth = (uint)metadata.Depth,
             ArraySize = (uint)metadata.ArraySize,
             MipLevels = (uint)metadata.MipLevels,
-            Format = DDS_HELPER.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format),
-            SurfaceGamma = DirectXTex.IsSRGB(metadata.Format) ? TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_sRGB : TelltaleEnums.T3SurfaceGamma.eSurfaceGamma_Linear,
-            D3DFormat = DDS_HELPER.GetD3DFORMAT((DXGIFormat)metadata.Format, metadata),
-            Dimension = DDS_HELPER.GetDimensionFromDDS(metadata),
+            Format = DDSHelper.GetTelltaleSurfaceFormat((DXGIFormat)metadata.Format),
+            SurfaceGamma = DirectXTex.IsSRGB(metadata.Format) ? T3SurfaceGamma.sRGB : T3SurfaceGamma.Linear,
+            D3DFormat = DDSHelper.GetD3DFORMAT((DXGIFormat)metadata.Format, metadata),
+            Dimension = DDSHelper.GetDimensionFromDDS(metadata),
         };
     }
 
@@ -513,28 +508,21 @@ public unsafe partial class Texture
         blob.Release();
     }
 
-    public void LoadDDS(string filePath, DDSFlags flags = DDSFlags.None)
-    {
-        DDS_DirectXTexNet.GetDDSImage(filePath, out ScratchImage Image, out TexMetadata Metadata, flags);
-    }
-
     public string GetDDSDebugInfo()
     {
-        return DDS_DirectXTexNet.GetDDSDebugInfo(Metadata);
+        return TextureManager.GetDDSDebugInfo(Metadata);
     }
 
     public void ConvertToRGBA()
     {
-        int format = (int)(DirectXTex.IsSRGB(Image.GetMetadata().Format) ? DXGIFormat.R8G8B8A8_UNORM_SRGB : DXGIFormat.R8G8B8A8_UNORM);
-
         ScratchImage destImage = DirectXTex.CreateScratchImage();
 
         TexMetadata ogMeta = Image.GetMetadata();
-        Decompress((DXGIFormat)format);
+        Decompress(DXGIFormat.R8G8B8A8_UNORM);
 
-        if (Image.GetMetadata().Format != (uint)DXGIFormat.R8G8B8A8_UNORM_SRGB && Image.GetMetadata().Format != (uint)DXGIFormat.R8G8B8A8_UNORM)
+        if (Image.GetMetadata().Format != (uint)DXGIFormat.R8G8B8A8_UNORM)
         {
-            DirectXTex.Convert2(Image.GetImages(), Image.GetImageCount(), ref ogMeta, format, TexFilterFlags.Default, 0.5f, ref destImage).ThrowIf();
+            DirectXTex.Convert2(Image.GetImages(), Image.GetImageCount(), ref ogMeta, (int)DXGIFormat.R8G8B8A8_UNORM, TexFilterFlags.Default, 0.5f, ref destImage).ThrowIf();
 
             Image.Release();
             Image = destImage;
@@ -549,8 +537,7 @@ public unsafe partial class Texture
 
     public byte[] GetSectionPixelData(uint mip, uint face)
     {
-        if ((uint)Image.GetMetadata().Format != (uint)DXGIFormat.R8G8B8A8_UNORM_SRGB
-            && (uint)Image.GetMetadata().Format != (uint)DXGIFormat.R8G8B8A8_UNORM)
+        if ((uint)Image.GetMetadata().Format != (uint)DXGIFormat.R8G8B8A8_UNORM)
         {
             ConvertToRGBA();
         }
@@ -583,7 +570,7 @@ public unsafe partial class Texture
         pixels = GetSectionPixelData(mip, face);
         width = PreviewWidth;
         height = PreviewHeight;
-        pitch = DDS_DirectXTexNet.ComputePitch(PreviewFormat, PreviewWidth, PreviewHeight);
+        pitch = ComputePitch(PreviewFormat, PreviewWidth, PreviewHeight);
         length = width * height * (DirectXTex.BitsPerPixel((int)PreviewFormat) / 8);
     }
 
@@ -638,7 +625,7 @@ public unsafe partial class Texture
     {
         if (DirectXTex.IsCompressed((int)format))
         {
-            throw new Exception("Invalid format");
+            throw new Exception("Invalid format!");
         }
 
         ScratchImage transformedImage = DirectXTex.CreateScratchImage();
@@ -706,7 +693,16 @@ public unsafe partial class Texture
             switch (textureType)
             {
                 case TextureType.DDS: DirectXTex.LoadFromDDSFile(filePath, flags, ref texMetadata, ref scratchImage).ThrowIf(); break;
-                case TextureType.PNG: DirectXTex.LoadFromPNGFile(filePath, ref texMetadata, ref scratchImage).ThrowIf(); break;
+                case TextureType.PNG:
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        DirectXTex.LoadFromWICFile(filePath, WICFlags.AllFrames, ref texMetadata, ref scratchImage, default).ThrowIf(); break;
+                    }
+                    else if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    {
+                        DirectXTex.LoadFromPNGFile(filePath, ref texMetadata, ref scratchImage).ThrowIf();
+                    }
+                    break;
                 case TextureType.HDR: DirectXTex.LoadFromHDRFile(filePath, ref texMetadata, ref scratchImage).ThrowIf(); break;
                 case TextureType.JPEG: DirectXTex.LoadFromJPEGFile(filePath, ref texMetadata, ref scratchImage).ThrowIf(); break;
                 case TextureType.TGA: DirectXTex.LoadFromTGAFile2(filePath, ref texMetadata, ref scratchImage).ThrowIf(); break;
@@ -733,11 +729,13 @@ public unsafe partial class Texture
                 OriginalImage = scratchImage;
                 OriginalMetadata = texMetadata;
             }
+
         }
         catch (Exception e)
         {
             Console.WriteLine(e.Message);
             scratchImage.Release();
+            throw new Exception("Failed to load image!");
         }
     }
 
@@ -780,6 +778,11 @@ public unsafe partial class Texture
             }
         }
 
+        if (options.EnableTelltaleNormalMap && options.IsTelltaleNormalMap)
+        {
+            TransformImage(ImageEffect.SWIZZLE_ABGR);
+        }
+
         if (CurrentOptions.EnableNormalMap != options.EnableNormalMap)
         {
             if (!CurrentOptions.EnableNormalMap)
@@ -794,11 +797,40 @@ public unsafe partial class Texture
             }
             else if (options.ManualGenerateMips && options.SetMips > 1)
             {
-                GenerateMipMaps(options.SetMips);
+                GenerateMipMaps(Math.Min(options.SetMips, GetMaxMipLevels()));
             }
         }
 
-        if (keepOriginal)
+        if (options.EnableAutomaticCompression)
+        {
+            if (options.EnableNormalMap && options.IsTelltaleXYNormalMap)
+            {
+                Compress(DXGIFormat.BC5_UNORM);
+            }
+            else if (OriginalImage.IsAlphaAllOpaque())
+            {
+                if (options.IsSRGB)
+                {
+                    Compress(DXGIFormat.BC1_UNORM_SRGB);
+                }
+                else
+                {
+                    Compress(DXGIFormat.BC1_UNORM);
+                }
+            }
+            else
+            {
+                if (options.IsSRGB)
+                {
+                    Compress(DXGIFormat.BC3_UNORM_SRGB);
+                }
+                else
+                {
+                    Compress(DXGIFormat.BC3_UNORM);
+                }
+            }
+        }
+        else if (keepOriginal)
         {
             Compress((DXGIFormat)OriginalImage.GetMetadata().Format);
         }
@@ -853,7 +885,6 @@ public unsafe partial class Texture
 
         foreach (var image in images)
         {
-
             image.Pixels = platform switch
             {
                 T3PlatformType.ePlatform_NX => DrSwizzler.Swizzler.SwitchSwizzle(image.Pixels, (int)image.Width, (int)image.Height, (DrSwizzler.DDS.DXEnums.DXGIFormat)image.Format),
@@ -865,7 +896,7 @@ public unsafe partial class Texture
             };
         }
 
-        byte[] header = DDS_DirectXTexNet.GetDDSHeaderBytes(Image);
+        byte[] header = GetDDSHeaderBytes(Image);
         byte[] pixels = images.SelectMany(x => x.Pixels).ToArray();
 
         byte[] newDDS = ByteFunctions.Combine(header, pixels);
@@ -894,7 +925,7 @@ public unsafe partial class Texture
             };
         }
 
-        byte[] header = DDS_DirectXTexNet.GetDDSHeaderBytes(Image);
+        byte[] header = GetDDSHeaderBytes(Image);
         byte[] pixels = images.SelectMany(x => x.Pixels).ToArray();
 
         byte[] newDDS = ByteFunctions.Combine(header, pixels);
@@ -929,10 +960,10 @@ public unsafe partial class Texture
     {
         Decompress();
 
-        if (Metadata.Format != (int)DXGIFormat.R8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.B8G8R8A8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.B8G8R8X8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.R8G8B8A8_UNORM)
+        if (Image.GetMetadata().Format != (int)DXGIFormat.R8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B8G8R8A8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B8G8R8X8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.R8G8B8A8_UNORM)
         {
             Convert(DXGIFormat.R8G8B8A8_UNORM);
         }
@@ -941,7 +972,7 @@ public unsafe partial class Texture
         {
             if (Metadata.Depth == 1)
             {
-                DirectXTex.SaveToPNGFile(Image.GetImage(0, 0, 0), filePath);
+                DirectXTex.SaveToPNGFile(Image.GetImage(0, 0, 0), filePath).ThrowIf();
             }
             else
             {
@@ -968,8 +999,8 @@ public unsafe partial class Texture
     {
         Decompress();
 
-        if (Metadata.Format != (int)DXGIFormat.R8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.R8G8B8A8_UNORM)
+        if (Image.GetMetadata().Format != (int)DXGIFormat.R8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.R8G8B8A8_UNORM)
         {
             Convert(DXGIFormat.R8G8B8A8_UNORM);
         }
@@ -1005,16 +1036,16 @@ public unsafe partial class Texture
     {
         Decompress();
 
-        if (Metadata.Format != (int)DXGIFormat.R8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.A8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.R8G8B8A8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.R8G8B8A8_UNORM_SRGB &&
-            Metadata.Format != (int)DXGIFormat.B8G8R8A8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.B8G8R8A8_UNORM_SRGB &&
-            Metadata.Format != (int)DXGIFormat.B8G8R8X8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.B8G8R8X8_UNORM_SRGB &&
-            Metadata.Format != (int)DXGIFormat.B8G8R8X8_UNORM &&
-            Metadata.Format != (int)DXGIFormat.B5G5R5A1_UNORM)
+        if (Image.GetMetadata().Format != (int)DXGIFormat.R8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.A8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.R8G8B8A8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.R8G8B8A8_UNORM_SRGB &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B8G8R8A8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B8G8R8A8_UNORM_SRGB &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B8G8R8X8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B8G8R8X8_UNORM_SRGB &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B8G8R8X8_UNORM &&
+            Image.GetMetadata().Format != (int)DXGIFormat.B5G5R5A1_UNORM)
         {
             Convert(DXGIFormat.R8G8B8A8_UNORM);
         }
@@ -1052,7 +1083,7 @@ public unsafe partial class Texture
     {
         Decompress();
 
-        if (Metadata.Format != (int)DXGIFormat.R32G32B32A32_FLOAT)
+        if (Image.GetMetadata().Format != (int)DXGIFormat.R32G32B32A32_FLOAT)
         {
             Convert(DXGIFormat.R32G32B32A32_FLOAT);
         }
@@ -1088,7 +1119,7 @@ public unsafe partial class Texture
     {
         Decompress();
 
-        if (Metadata.Format == (int)DXGIFormat.R8G8_UNORM || Metadata.Format == (int)DXGIFormat.R8G8_SNORM)
+        if (Image.GetMetadata().Format == (int)DXGIFormat.R8G8_UNORM || Image.GetMetadata().Format == (int)DXGIFormat.R8G8_SNORM)
         {
             Convert(DXGIFormat.R8G8B8A8_UNORM);
         }
@@ -1103,7 +1134,7 @@ public unsafe partial class Texture
             {
                 for (uint i = 0; i < Metadata.Depth; i++)
                 {
-                    StringBuilder sb = new StringBuilder();
+                    StringBuilder sb = new();
                     sb.Append(filePath).Append('_').Append(i);
                     DirectXTex.SaveToWICFile(Image.GetImage(0, 0, i), WICFlags.None, DirectXTex.GetWICCodec(WICCodecs.CodecBmp), filePath, null, default).ThrowIf();
                 }
@@ -1113,7 +1144,7 @@ public unsafe partial class Texture
         {
             for (uint i = 0; i < Metadata.ArraySize; i++)
             {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 sb.Append(filePath).Append('_').Append(i);
                 DirectXTex.SaveToWICFile(Image.GetImage(0, i, 0), WICFlags.None, DirectXTex.GetWICCodec(WICCodecs.CodecBmp), filePath, null, default).ThrowIf();
             }
@@ -1138,7 +1169,15 @@ public unsafe partial class Texture
                 SaveAsWIC(filePath); break;
             case TextureType.PNG:
                 filePath += ".png";
-                SaveAsPNG(filePath); break;
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    SaveAsWIC(filePath);
+                }
+                else if (Environment.OSVersion.Platform == PlatformID.Unix)
+                {
+                    SaveAsPNG(filePath);
+                }
+                break;
             case TextureType.JPEG:
                 filePath += ".jpeg";
                 SaveAsJPEG(filePath); break;
@@ -1172,9 +1211,23 @@ public unsafe partial class Texture
         }
     }
 
+    public void ApplyTexFilter(TexFilterFlags filter = TexFilterFlags.Default)
+    {
+        Decompress();
+
+        TexMetadata texMetadata = Image.GetMetadata();
+
+        ScratchImage transformedImage = DirectXTex.CreateScratchImage();
+
+        DirectXTex.Convert2(Image.GetImages(), Image.GetImageCount(), ref texMetadata, (int)DXGIFormat.R8G8B8A8_UNORM, filter, 0.5f, ref transformedImage).ThrowIf();
+
+        Image.Release();
+        Image = transformedImage;
+    }
+
     public void GetDDSInformation(out D3DTXMetadata metadata, out ImageSection[] sections, DDSFlags flags = DDSFlags.None)
     {
-        metadata = DDS_DirectXTexNet.GetDDSInformation(Image.GetMetadata());
+        metadata = TextureManager.GetDDSInformation(Image.GetMetadata());
         sections = GetDDSImageSections(Image, flags);
     }
 

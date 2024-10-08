@@ -266,7 +266,6 @@
                                                 Width="200"
                                                 IsVisible="False" />
                         </DataGrid.Columns>
-                        <!-- CustomSortComparer="{Binding CustomDateSort}" -->
                         <DataGrid.ContextFlyout>
                             <MenuFlyout>
                                 <MenuItem Name="ContextMenuOpenFile"
@@ -304,7 +303,6 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <!-- IMAGE PREVIEW -->
-                <!-- Background="{DynamicResource MainPanelColor}" -->
                 <!-- Image Properties -->
                 <Grid Grid.Row="0"
                       Background="{DynamicResource MainPanelColor}"
@@ -316,8 +314,7 @@
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Stretch"
                                       Background="{DynamicResource MainPanelColor}"
-                                      IsExpanded="True"
-                                      IsVisible="{Binding IsImageInformationVisible}">
+                                      IsExpanded="{Binding IsImageInformationVisible}">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <Label Name="ImagepreviewImageNameLabel"
@@ -444,7 +441,7 @@
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Stretch"
                                       Background="{DynamicResource MainPanelColor}"
-                                      IsExpanded="True">
+                                      IsExpanded="False">
                                 <StackPanel Margin="0,0,10,10"
                                             Spacing="4">
                                     <Grid ColumnDefinitions="auto,*">
@@ -453,21 +450,6 @@
                                                HorizontalAlignment="Left"
                                                VerticalContentAlignment="Center"
                                                Height="30" />
-                                        <!-- SelectedIndex="{Binding SelectedConvertOptionsComboBoxIndex}" -->
-                                        <ComboBox Grid.Column="1"
-                                                  ItemsSource="{Binding VersionConvertOptionsList}"
-                                                  SelectedItem="{Binding SelectedVersionConvertOption}"
-                                                  HorizontalAlignment="Stretch"
-                                                  VerticalAlignment="Bottom"
-                                                  Height="30"
-                                                  IsEnabled="{Binding VersionConvertComboBoxStatus}"
-                                                  ToolTip.Tip="Choose the conversion option. Use the default option unless you want to edit legacy titles.">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Name}" />
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
                                         <ComboBox Grid.Column="1"
                                                   ItemsSource="{Binding Games}"
                                                   SelectedItem="{Binding ImageAdvancedOptions.GameID, Mode=TwoWay}"
@@ -623,7 +605,7 @@
                                       VerticalAlignment="Top"
                                       HorizontalAlignment="Stretch"
                                       Background="{DynamicResource MainPanelColor}"
-                                      IsVisible="{Binding IsDebugInformationVisible}">
+                                      IsExpanded="False">
                                 <Expander.Header />
                                 <TextBox Background="{DynamicResource PanelSplitterColor}"
                                          HorizontalAlignment="Stretch"
@@ -700,8 +682,6 @@
                     </ScrollViewer>
                 </Grid>
                 <!-- Convert Panel -->
-                <!-- <Grid Grid.Row="2"
-                      Background="{DynamicResource MainPanelColor}" /> -->
             </Grid>
             <Grid Grid.Column="2"
                   Background="{DynamicResource MainPanelColor}">

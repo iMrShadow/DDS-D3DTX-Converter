@@ -45,7 +45,7 @@ public partial class App : Application
         {
             try
             {
-                Logger.Instance().Log(e);
+                Logger.Log(e);
             }
             catch (IOException ex)
             {

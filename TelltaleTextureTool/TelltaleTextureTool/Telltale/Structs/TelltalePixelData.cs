@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using TelltaleTextureTool.Utilities;
 
 namespace TelltaleTextureTool.TelltaleTypes;
 
@@ -34,6 +36,23 @@ public struct TelltalePixelData
     {
         writer.Write(length);
         writer.Write(pixelData);
+    }
+
+    public TelltalePixelData(byte[] ddsData, int skippedOriginalBytes = 0, int skippedDDSBytes = 0)
+    {
+        if (skippedOriginalBytes > ddsData.Length || skippedDDSBytes > ddsData.Length)
+            throw new Exception("One of the parameters is larger than the data size.");
+
+        byte[] copyBuffer = new byte[skippedOriginalBytes];
+
+        Array.Copy(pixelData, 0, copyBuffer, 0, skippedOriginalBytes);
+
+        byte[] copyDDSBuffer = new byte[ddsData.Length - skippedDDSBytes];
+
+        Array.Copy(ddsData, skippedDDSBytes, copyDDSBuffer, 0, ddsData.Length - skippedDDSBytes);
+
+        pixelData = ByteFunctions.Combine(copyBuffer, copyDDSBuffer);
+        length = (uint)pixelData.Length;
     }
 
     public uint GetByteSize()

@@ -59,7 +59,7 @@ public partial class D3DTXMetadata
 
     public T3SurfaceFormat Format { get; set; } = T3SurfaceFormat.Unknown;
 
-    public T3SurfaceGamma SurfaceGamma { get; set; } = T3SurfaceGamma.eSurfaceGamma_Unknown;
+    public T3SurfaceGamma SurfaceGamma { get; set; } = T3SurfaceGamma.Unknown;
 
     public T3TextureLayout Dimension { get; set; } = T3TextureLayout.Unknown;
 

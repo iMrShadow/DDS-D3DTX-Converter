@@ -4,7 +4,6 @@ using Avalonia.Input;
 using CommunityToolkit.Mvvm.Input;
 using TelltaleTextureTool.ViewModels;
 using System;
-using Avalonia.Controls.Primitives;
 
 namespace TelltaleTextureTool.Views;
 

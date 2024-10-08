@@ -1272,7 +1272,7 @@ namespace TelltaleTextureTool.TelltaleD3DTX
             mbIsMipMapped = new TelltaleBoolean(metadata.MipLevels > 1);
             mbEmbedMipMaps = new TelltaleBoolean(metadata.MipLevels > 1);
 
-            var textureData = DDS_DirectXTexNet.GetPixelDataArrayFromSections(imageSections);
+            var textureData = TextureManager.GetPixelDataArrayFromSections(imageSections);
 
             if (mTextureDataFormats > 0x200)
             {
