@@ -1,13 +1,13 @@
-# Telltale Texture Tool
+# Telltale Texture Tool (Fork Edition)
 
 [![Wiki](https://img.shields.io/badge/Wiki-grey)](https://github.com/Telltale-Modding-Group/DDS-D3DTX-Converter/wiki)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/iMrShadow/DDS-D3DTX-Converter)](https://github.com/iMrShadow/DDS-D3DTX-Converter/releases/) [![Discord](https://img.shields.io/badge/Discord-blue?logo=Discord&logoColor=fff)](https://discord.com/invite/HqpnTenqwp)
-
-Newer (Fork) Versions:
 [![Github All Releases](https://img.shields.io/github/downloads/iMrShadow/DDS-D3DTX-Converter/total.svg)](https://github.com/iMrShadow/DDS-D3DTX-Converter/releases/)
 
-Older Versions:
-[![Github All Releases](https://img.shields.io/github/downloads/Telltale-Modding-Group/DDS-D3DTX-Converter/total.svg)](https://github.com/Telltale-Modding-Group/DDS-D3DTX-Converter/releases)  
+
+> [!CAUTION]
+> # Important Update
+> As of October 2024, any new updates to the documentation and fixes will be directly uploaded to the [original project](https://github.com/Telltale-Modding-Group/Telltale-Texture-Tool). Thanks for the people who have used the fork version!
 
 ## Description
 This is an application designed to preview and convert **Telltale textures** (files with the **.d3dtx** extension) to more accessible formats like **PNG**, **JPEG**, **DDS**, **TGA**, **HDR**, **TIFF**, **BMP** and vice versa.
