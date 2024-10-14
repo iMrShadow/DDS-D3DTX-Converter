@@ -12,7 +12,7 @@
 ## Description
 This is an application designed to preview and convert **Telltale textures** (files with the **.d3dtx** extension) to more accessible formats like **PNG**, **JPEG**, **DDS**, **TGA**, **HDR**, **TIFF**, **BMP** and vice versa.
 
-**[DOWNLOAD THE LATEST VERSION HERE](https://github.com/iMrShadow/DDS-D3DTX-Converter/releases)**
+**[DOWNLOAD THE LATEST VERSION HERE](https://github.com/Telltale-Modding-Group/Telltale-Texture-Tool/releases)**
 
 ## Screenshots
 ![Main 1](Docs/tutorial-screenshots/mainThumb.png)
